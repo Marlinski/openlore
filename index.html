@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offisims — Content Tools</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1a1a2e;
+      --bg-panel: #16213e;
+      --bg-surface: #0f3460;
+      --border: #1a3a6a;
+      --text: #e0e0e0;
+      --text-dim: #8899aa;
+      --accent: #e94560;
+      --accent-hover: #ff6b81;
+      --blue: #4a9eff;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --tab-inactive: #0d1b36;
+      --tab-active: #16213e;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ─── Top bar ─────────────────────────────────────────── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      height: 40px;
+      padding: 0 12px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    #topbar .logo {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+      margin-right: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .tab-btn {
+      padding: 8px 18px;
+      background: var(--tab-inactive);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--bg-surface); }
+    .tab-btn.active {
+      background: var(--tab-active);
+      color: var(--text);
+      border-color: var(--accent);
+      border-bottom: 1px solid var(--tab-active);
+    }
+
+    .topbar-spacer { flex: 1; }
+
+    .topbar-action {
+      padding: 5px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .topbar-action:hover { color: var(--text); border-color: var(--accent); }
+
+    /* ─── Tab content ─────────────────────────────────────── */
+    #tab-content {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tab-panel {
+      display: none;
+      height: 100%;
+    }
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* ─── Shared panel styles ─────────────────────────────── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 6px; }
+    .panel-body::-webkit-scrollbar-track { background: var(--bg); }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ─── Buttons ─────────────────────────────────────────── */
+    .btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .btn.primary:hover { background: var(--accent-hover); }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ─── Inputs ──────────────────────────────────────────── */
+    input[type="text"], input[type="number"], select {
+      padding: 4px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--blue); }
+
+    label {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* ─── Status bar ──────────────────────────────────────── */
+    #statusbar {
+      height: 24px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    /* ─── Resize handle (between left panel and center) ───── */
+    .panel-resize-handle {
+      width: 5px;
+      flex-shrink: 0;
+      cursor: col-resize;
+      background: var(--border);
+      position: relative;
+      z-index: 30;
+      transition: background 0.15s;
+    }
+    .panel-resize-handle:hover,
+    .panel-resize-handle.dragging {
+      background: var(--blue);
+    }
+    .panel-resize-handle::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px;
+      height: 32px;
+      border-left: 1px solid rgba(255,255,255,0.2);
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+    .panel-resize-handle:hover::after,
+    .panel-resize-handle.dragging::after {
+      border-left-color: rgba(255,255,255,0.5);
+      border-right-color: rgba(255,255,255,0.5);
+    }
+
+    /* ─── Tileset picker container (shared across tabs) ───── */
+    .tileset-picker-wrap {
+      flex: 1;
+      overflow: auto;
+      cursor: crosshair;
+    }
+
+    .tileset-picker-wrap canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB 1: Composite Builder
+       ═══════════════════════════════════════════════════════════ */
+    #tab-composite {
+      flex-direction: row;
+    }
+
+    #comp-left {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    #comp-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #comp-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #comp-canvas-wrap {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    #comp-canvas-inner {
+      position: relative;
+      display: inline-block;
+    }
+
+    #comp-canvas-inner canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #comp-overlays {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    #comp-right {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    /* Placed part overlay on workspace */
+    .comp-part-overlay {
+      position: absolute;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: move;
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .comp-part-overlay:hover {
+      border-color: var(--blue);
+    }
+    .comp-part-overlay.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* Saved composite item */
+    .comp-saved-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .comp-saved-item:hover { background: var(--bg-surface); }
+    .comp-saved-item canvas {
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+    .comp-saved-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .comp-saved-item .info .name {
+      font-weight: 500;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .comp-saved-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .comp-saved-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .comp-saved-item:hover .delete-btn { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB 2: Room Editor
+       ═══════════════════════════════════════════════════════════ */
+    #tab-room {
+      flex-direction: row;
+    }
+
+    #room-left {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    #room-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #room-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #room-canvas-wrap {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    #room-canvas-inner {
+      position: relative;
+      display: inline-block;
+    }
+
+    #room-canvas-inner canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #room-overlays {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    #room-right {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    /* Room mode toggle buttons */
+    .room-mode-btn {
+      padding: 5px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .room-mode-btn:hover { color: var(--text); border-color: var(--blue); }
+    .room-mode-btn.active {
+      background: var(--bg-surface);
+      color: var(--text);
+      border-color: var(--blue);
+    }
+
+    .layer-tab-btn {
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .layer-tab-btn:hover { color: var(--text); border-color: var(--green); }
+    .layer-tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--text);
+      border-color: var(--green);
+    }
+
+    /* Layout mode walkability cells */
+    .walk-cell {
+      position: absolute;
+      z-index: 5;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.05s;
+    }
+    .walk-cell.walkable {
+      background: rgba(74, 222, 128, 0.25);
+      border: 1px solid rgba(74, 222, 128, 0.15);
+    }
+    .walk-cell.blocked {
+      background: rgba(239, 68, 68, 0.3);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .walk-cell:hover {
+      filter: brightness(1.3);
+    }
+
+    /* Texture mode: show walkability as faint overlay */
+    .walk-ghost {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .walk-ghost.blocked {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.08);
+    }
+
+    /* Room palette items (used for composite list in texture mode) */
+    .room-palette-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .room-palette-item:hover { background: var(--bg-surface); }
+    .room-palette-item.selected {
+      border-color: var(--accent);
+      background: var(--bg-surface);
+    }
+    .room-palette-item canvas {
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+    .room-palette-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .room-palette-item .info .name {
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-palette-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* Room placed item overlay (texture mode) */
+    .room-item-overlay {
+      position: absolute;
+      border: 1px solid rgba(255,255,255,0.15);
+      cursor: move;
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .room-item-overlay:hover {
+      border-color: var(--blue);
+    }
+    .room-item-overlay.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* Paint cursor preview */
+    .paint-cursor {
+      position: absolute;
+      border: 2px dashed var(--accent);
+      background: rgba(233, 69, 96, 0.15);
+      pointer-events: none;
+      z-index: 20;
+      display: none;
+    }
+
+    /* Saved room item */
+    .room-saved-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .room-saved-item:hover { background: var(--bg-surface); }
+    .room-saved-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .room-saved-item .info .name {
+      font-weight: 500;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-saved-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .room-saved-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .room-saved-item:hover .delete-btn { opacity: 1; }
+
+    /* Layout tool selector */
+    .layout-tool-btn {
+      padding: 5px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .layout-tool-btn:hover { color: var(--text); border-color: var(--blue); }
+    .layout-tool-btn.active {
+      background: var(--bg-surface);
+      color: var(--text);
+      border-color: var(--blue);
+    }
+
+    /* Door properties panel */
+    .door-props { margin-top: 8px; }
+    .door-props label { display: block; margin-bottom: 2px; }
+    .door-props .door-id-label {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--blue);
+      margin-bottom: 6px;
+    }
+
+    /* Door list item */
+    .door-list-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .door-list-item:hover { background: var(--bg-surface); }
+    .door-list-item.selected {
+      border-color: var(--blue);
+      background: var(--bg-surface);
+    }
+    .door-list-item .door-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: rgba(147, 130, 255, 0.6);
+      flex-shrink: 0;
+    }
+    .door-list-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .door-list-item .info .name {
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .door-list-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .door-list-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .door-list-item:hover .delete-btn { opacity: 1; }
+
+    /* Tile stack panel (texture mode, right panel) */
+    .tile-stack-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .tile-stack-item:hover { background: var(--bg-surface); }
+    .tile-stack-item.selected {
+      border-color: var(--accent);
+      background: var(--bg-surface);
+    }
+    .tile-stack-item canvas {
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+    .tile-stack-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .tile-stack-item .info .name {
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tile-stack-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .tile-stack-item .stack-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .tile-stack-item .stack-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 4px;
+      line-height: 14px;
+    }
+    .tile-stack-item .stack-actions button:hover {
+      color: var(--text);
+      border-color: var(--blue);
+    }
+    .tile-stack-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .tile-stack-item:hover .delete-btn { opacity: 1; }
+
+    /* Composite parts list (z-order panel) */
+    .comp-part-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .comp-part-item:hover { background: var(--bg-surface); }
+    .comp-part-item.selected {
+      border-color: var(--accent);
+      background: var(--bg-surface);
+    }
+    .comp-part-item canvas {
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+    .comp-part-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .comp-part-item .info .name {
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .comp-part-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .comp-part-item .stack-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .comp-part-item .stack-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 4px;
+      line-height: 14px;
+    }
+    .comp-part-item .stack-actions button:hover {
+      color: var(--text);
+      border-color: var(--blue);
+    }
+    .comp-part-item .stack-actions button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .comp-part-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .comp-part-item:hover .delete-btn { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB 3: Character Definer
+       ═══════════════════════════════════════════════════════════ */
+    #tab-character {
+      flex-direction: row;
+    }
+
+    #char-left {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    #char-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #char-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #char-sheet-wrap {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+    }
+
+    #char-sheet-wrap canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    .char-sheet-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 8px 0 4px 0;
+    }
+    .char-sheet-label:first-child { margin-top: 0; }
+
+    #char-right {
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    /* Drag selection overlay on sheet canvas */
+    .char-drag-overlay {
+      position: absolute;
+      border: 2px solid var(--accent);
+      background: rgba(233, 69, 96, 0.2);
+      pointer-events: none;
+      z-index: 10;
+      display: none;
+    }
+
+    /* Assignment form (appears after selection) */
+    #char-assign-form {
+      display: none;
+      padding: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      margin: 8px 0;
+    }
+    #char-assign-form .assign-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    #char-assign-form .assign-row label {
+      min-width: 50px;
+      font-size: 11px;
+    }
+
+    /* Animation entry item in the right panel list */
+    .char-anim-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      font-size: 11px;
+      cursor: pointer;
+      position: relative;
+    }
+    .char-anim-item:hover { background: var(--bg-surface); }
+    .char-anim-item.selected { border-color: var(--blue); background: var(--bg-surface); }
+    .char-anim-item canvas {
+      image-rendering: pixelated;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .char-anim-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .char-anim-item .info .name {
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .char-anim-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .char-anim-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .char-anim-item:hover .delete-btn { opacity: 1; }
+
+    /* Family group header */
+    .char-family-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      margin-top: 8px;
+      margin-bottom: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--blue);
+      border-bottom: 1px solid var(--border);
+    }
+    .char-family-header:first-child { margin-top: 0; }
+    .char-family-header .speed-input {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--text-dim);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .char-family-header .speed-input input {
+      width: 36px;
+      font-size: 10px;
+      padding: 1px 3px;
+    }
+
+    /* Animation preview box */
+    .char-preview-box {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+    }
+    .char-preview-box canvas {
+      image-rendering: pixelated;
+    }
+    .char-preview-box .label {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    /* Saved character item */
+    .char-saved-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .char-saved-item:hover { background: var(--bg-surface); }
+    .char-saved-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .char-saved-item .info .name {
+      font-weight: 500;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .char-saved-item .info .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .char-saved-item .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .char-saved-item:hover .delete-btn { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB 4: Room Tester
+       ═══════════════════════════════════════════════════════════ */
+    #tab-tester {
+      flex-direction: row;
+    }
+
+    #tester-left {
+      width: 260px;
+      flex-shrink: 0;
+    }
+
+    #tester-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #111;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #tester-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #tester-canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #tester-canvas-wrap canvas {
+      image-rendering: pixelated;
+    }
+
+    #tester-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Top Bar ──────────────────────────────────────────── -->
+  <div id="topbar">
+    <span class="logo">OFFISIMS</span>
+    <button class="tab-btn active" data-tab="composite">1. Composite Builder</button>
+    <button class="tab-btn" data-tab="room">2. Room Editor</button>
+    <button class="tab-btn" data-tab="character">3. Character Definer</button>
+    <button class="tab-btn" data-tab="tester">4. Room Tester</button>
+    <span class="topbar-spacer"></span>
+    <button class="topbar-action" id="btn-export">Export JSON</button>
+    <button class="topbar-action" id="btn-import">Import JSON</button>
+  </div>
+
+  <!-- ─── Tab Content ──────────────────────────────────────── -->
+  <div id="tab-content">
+
+    <!-- Tab 1: Composite Builder -->
+    <div id="tab-composite" class="tab-panel active">
+      <!-- Left: tileset picker + selection info -->
+      <div id="comp-left" class="panel">
+        <div class="panel-header">Tileset</div>
+        <div style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
+          <select id="comp-tileset-select" style="width: 100%;">
+            <option value="room_builder">Room Builder (Floors & Walls)</option>
+            <option value="office_shadow">Office (Black Shadow)</option>
+            <option value="office_shadowless">Office (Shadowless)</option>
+            <option value="office_combined" selected>Office (Combined)</option>
+          </select>
+        </div>
+        <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
+          <label>Zoom</label>
+          <select id="comp-tileset-zoom" style="width: 60px;">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="3">3x</option>
+          </select>
+          <label><input type="checkbox" id="comp-tileset-grid" checked /> Grid</label>
+        </div>
+        <div class="tileset-picker-wrap" id="comp-tileset-container"></div>
+        <div style="padding: 6px 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); flex-shrink: 0;" id="comp-selection-info">
+          Click/drag on the tileset to select a region.
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div class="panel-resize-handle" data-resize-target="comp-left"></div>
+
+      <!-- Center: workspace -->
+      <div id="comp-center">
+        <div id="comp-toolbar">
+          <label>Zoom</label>
+          <select id="comp-zoom">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+          </select>
+          <label><input type="checkbox" id="comp-grid-toggle" checked /> Grid</label>
+          <button class="btn" id="comp-clear-btn">Clear Workspace</button>
+          <div id="comp-mode-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
+            Select a region from the tileset, then click on the workspace to place it.
+          </div>
+        </div>
+        <div id="comp-canvas-wrap">
+          <div id="comp-canvas-inner">
+            <canvas id="comp-canvas"></canvas>
+            <div id="comp-overlays"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: composite details + saved composites -->
+      <div id="comp-right" class="panel">
+        <div class="panel-header">Current Composite</div>
+        <div class="panel-body" id="comp-details">
+          <div style="margin-bottom: 8px;">
+            <label>Name</label>
+            <input type="text" id="comp-name" placeholder="e.g. conference_table" style="width: 100%;" />
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label>Category</label>
+            <select id="comp-category" style="width: 100%;">
+              <option value="furniture">furniture</option>
+              <option value="decor">decor</option>
+              <option value="electronics">electronics</option>
+              <option value="plant">plant</option>
+              <option value="other" selected>other</option>
+            </select>
+          </div>
+          <div id="comp-parts-info" style="font-size: 11px; color: var(--text-dim); margin-bottom: 4px;">
+            No parts placed yet.
+          </div>
+          <div id="comp-parts-list" style="margin-bottom: 8px;"></div>
+          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+            <button class="btn primary" id="comp-save-btn" disabled>Save Composite</button>
+          </div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div class="panel-header" style="padding: 0; border: 0; margin-bottom: 8px;">
+            Saved Composites
+            <span id="comp-saved-count" style="float: right; color: var(--text-dim);">0</span>
+          </div>
+          <div style="margin-bottom: 6px;">
+            <input type="text" id="comp-saved-search" placeholder="Search..." style="width: 100%;" />
+          </div>
+          <div id="comp-saved-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Room Editor -->
+    <div id="tab-room" class="tab-panel">
+      <!-- Left panel: changes based on mode -->
+      <div id="room-left" class="panel">
+        <!-- Layout mode: tool selector + instructions + door properties -->
+        <div id="room-left-layout">
+          <div class="panel-header">Layout Mode</div>
+          <div class="panel-body">
+            <div style="margin-bottom: 8px;">
+              <label style="margin-bottom: 4px; display: block;">Tool:</label>
+              <div style="display: flex; gap: 4px;">
+                <button class="layout-tool-btn active" data-layout-tool="walk">Walkability</button>
+                <button class="layout-tool-btn" data-layout-tool="door">Door</button>
+              </div>
+            </div>
+            <!-- Walk tool instructions -->
+            <div id="layout-walk-info" style="margin-bottom: 12px; line-height: 1.5;">
+              <strong>Paint walkability:</strong><br/>
+              Left-click / drag = <span style="color: #ef4444;">blocked</span><br/>
+              Right-click / drag = <span style="color: #4ade80;">walkable</span>
+            </div>
+            <!-- Door tool instructions -->
+            <div id="layout-door-info" style="display: none; margin-bottom: 12px; line-height: 1.5;">
+              <strong>Place doors:</strong><br/>
+              Click a tile to place a door.<br/>
+              Click an existing door to select it.
+            </div>
+            <hr style="border-color: var(--border); margin: 8px 0;" />
+            <div id="room-layout-stats" style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">
+              Walkable: 0 / 0 tiles
+            </div>
+            <!-- Selected door properties -->
+            <div id="door-props-panel" class="door-props" style="display: none;">
+              <hr style="border-color: var(--border); margin: 8px 0;" />
+              <div class="door-id-label" id="door-props-id">door-1</div>
+              <label>Target (room#door):</label>
+              <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+                <select id="door-target-room" style="flex: 1;">
+                  <option value="">(none)</option>
+                </select>
+                <select id="door-target-door" style="flex: 1;">
+                  <option value="">(none)</option>
+                </select>
+              </div>
+              <div id="door-target-display" style="font-size: 10px; color: var(--text-dim); margin-bottom: 6px;"></div>
+              <button class="btn" id="door-remove-btn" style="font-size: 11px;">Remove Door</button>
+            </div>
+            <hr style="border-color: var(--border); margin: 8px 0;" />
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              Doors
+              <span id="room-door-count" style="float: right;">0</span>
+            </div>
+            <div id="room-door-list"></div>
+          </div>
+        </div>
+        <!-- Texture mode: tileset picker + composites list -->
+        <div id="room-left-texture" style="display: none; height: 100%; flex-direction: column;">
+          <div class="panel-header">Tileset</div>
+          <div style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
+            <select id="room-tileset-select" style="width: 100%;">
+              <option value="room_builder">Room Builder (Floors & Walls)</option>
+              <option value="office_shadow">Office (Black Shadow)</option>
+              <option value="office_shadowless">Office (Shadowless)</option>
+              <option value="office_combined" selected>Office (Combined)</option>
+            </select>
+          </div>
+          <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
+            <label>Zoom</label>
+            <select id="room-tileset-zoom" style="width: 60px;">
+              <option value="1">1x</option>
+              <option value="2" selected>2x</option>
+              <option value="3">3x</option>
+            </select>
+            <label><input type="checkbox" id="room-tileset-grid" checked /> Grid</label>
+          </div>
+          <div class="tileset-picker-wrap" id="room-tileset-container"></div>
+          <div style="padding: 6px 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); flex-shrink: 0;" id="room-selection-info">
+            Click/drag on tileset to select brush.
+          </div>
+          <div style="padding: 6px 8px; border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">
+            Composites
+          </div>
+          <div class="panel-body" id="room-composite-list"></div>
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div class="panel-resize-handle" data-resize-target="room-left"></div>
+
+      <!-- Center: room canvas -->
+      <div id="room-center">
+        <div id="room-toolbar">
+          <button class="room-mode-btn active" data-room-mode="layout">Layout</button>
+          <button class="room-mode-btn" data-room-mode="texture">Texture</button>
+          <span style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></span>
+          <span id="room-layer-tabs" style="display: none;">
+            <button class="layer-tab-btn active" data-layer-tab="floor">Floor</button>
+            <button class="layer-tab-btn" data-layer-tab="object">Object</button>
+            <button class="layer-tab-btn" data-layer-tab="both">Both</button>
+            <span style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></span>
+          </span>
+          <label>Zoom</label>
+          <select id="room-zoom">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="3">3x</option>
+          </select>
+          <label><input type="checkbox" id="room-grid-toggle" checked /> Grid</label>
+          <div id="room-mode-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
+            Left-click = blocked, Right-click = walkable. Drag to paint.
+          </div>
+        </div>
+        <div id="room-canvas-wrap">
+          <div id="room-canvas-inner">
+            <canvas id="room-canvas"></canvas>
+            <div id="room-overlays"></div>
+            <div class="paint-cursor" id="room-paint-cursor"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: room settings + export + saved rooms -->
+      <div id="room-right" class="panel">
+        <div class="panel-header">Room Settings</div>
+        <div class="panel-body" id="room-details">
+          <div style="margin-bottom: 8px;">
+            <label>Room Name</label>
+            <input type="text" id="room-name" placeholder="e.g. main_office" style="width: 100%;" />
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <div style="flex:1;">
+              <label>Width (tiles)</label>
+              <input type="number" id="room-width" value="16" min="4" max="50" style="width: 100%;" />
+            </div>
+            <div style="flex:1;">
+              <label>Height (tiles)</label>
+              <input type="number" id="room-height" value="12" min="4" max="50" style="width: 100%;" />
+            </div>
+          </div>
+          <button class="btn" id="room-resize-btn" style="margin-bottom: 8px;">Apply Size</button>
+          <div id="room-info" style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">
+            No room data yet.
+          </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+            <button class="btn primary" id="room-save-btn" disabled>Save Room</button>
+            <button class="btn" id="room-clear-btn">Clear Room</button>
+          </div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+            <button class="btn" id="room-export-layout-btn" disabled>Export room.dat</button>
+            <button class="btn" id="room-export-texture-btn" disabled>Export room_texture.dat</button>
+          </div>
+          <!-- Tile stack (texture mode): shows all placements at clicked tile -->
+          <div id="tile-stack-panel" style="display: none;">
+            <hr style="border-color: var(--border); margin: 12px 0;" />
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              Tile Stack
+              <span id="tile-stack-count" style="float: right;">0</span>
+            </div>
+            <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 6px;" id="tile-stack-pos"></div>
+            <div id="tile-stack-list"></div>
+          </div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div class="panel-header" style="padding: 0; border: 0; margin-bottom: 8px;">
+            Saved Rooms
+            <span id="room-saved-count" style="float: right; color: var(--text-dim);">0</span>
+          </div>
+          <div id="room-saved-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Character Definer -->
+    <div id="tab-character" class="tab-panel">
+      <!-- Left: character selection + frame config + save -->
+      <div id="char-left" class="panel">
+        <div class="panel-header">Character Sheet</div>
+        <div class="panel-body">
+          <div style="margin-bottom: 8px;">
+            <label>Character</label>
+            <select id="char-sheet-select" style="width: 100%;">
+              <option value="adam">Adam</option>
+              <option value="alex">Alex</option>
+              <option value="amelia">Amelia</option>
+              <option value="bob">Bob</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+            <label>Frame W</label>
+            <input type="number" id="char-frame-w" value="16" min="1" max="128" style="width: 52px;" />
+            <label>H</label>
+            <input type="number" id="char-frame-h" value="32" min="1" max="128" style="width: 52px;" />
+          </div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;" id="char-sheet-info">
+            Loading sheets...
+          </div>
+          <hr style="border-color: var(--border); margin: 8px 0;" />
+          <!-- Assignment form (shown after drag-selecting a region) -->
+          <div id="char-assign-form">
+            <div style="font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Assign Selection</div>
+            <div class="assign-row">
+              <label>Family</label>
+              <select id="char-assign-family" style="flex: 1;">
+                <option value="idle">idle</option>
+                <option value="walk">walk</option>
+                <option value="sit_office">sit_office</option>
+                <option value="sit_couch">sit_couch</option>
+              </select>
+              <input type="text" id="char-assign-family-custom" placeholder="or type custom" style="width: 80px;" />
+            </div>
+            <div class="assign-row">
+              <label>Direction</label>
+              <select id="char-assign-dir" style="flex: 1;">
+                <option value="down">down</option>
+                <option value="up">up</option>
+                <option value="left">left</option>
+                <option value="right">right</option>
+              </select>
+            </div>
+            <div class="assign-row">
+              <label>Info</label>
+              <span id="char-assign-info" style="font-size: 10px; color: var(--text-dim);">—</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn primary" id="char-assign-btn" style="font-size: 11px;">Assign</button>
+              <button class="btn" id="char-assign-cancel-btn" style="font-size: 11px;">Cancel</button>
+            </div>
+          </div>
+          <div id="char-assign-hint" style="font-size: 11px; color: var(--text-dim); line-height: 1.5;">
+            Drag on the sprite sheet to select a frame range, then assign it to a family + direction.
+          </div>
+          <hr style="border-color: var(--border); margin: 8px 0;" />
+          <div style="margin-bottom: 8px;">
+            <label>Character Name</label>
+            <input type="text" id="char-name" placeholder="e.g. Adam" style="width: 100%;" />
+          </div>
+          <div id="char-save-status" style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;"></div>
+          <button class="btn primary" id="char-save-btn" disabled>Save Character</button>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div class="panel-header" style="padding: 0; border: 0; margin-bottom: 8px;">
+            Saved Characters
+            <span id="char-saved-count" style="float: right; color: var(--text-dim);">0</span>
+          </div>
+          <div id="char-saved-list"></div>
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div class="panel-resize-handle" data-resize-target="char-left"></div>
+
+      <!-- Center: both sprite sheets stacked with drag-selection -->
+      <div id="char-center">
+        <div id="char-toolbar">
+          <label>Zoom</label>
+          <select id="char-zoom">
+            <option value="2">2x</option>
+            <option value="3">3x</option>
+            <option value="4" selected>4x</option>
+            <option value="6">6x</option>
+            <option value="8">8x</option>
+          </select>
+          <label><input type="checkbox" id="char-grid-toggle" checked /> Grid</label>
+          <div id="char-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
+            Drag on the sheet to select frames. Assigned strips are color-coded.
+          </div>
+        </div>
+        <div id="char-sheet-wrap">
+          <div style="position: relative; display: inline-block;">
+            <div class="char-sheet-label">Idle Sheet</div>
+            <div id="char-idle-canvas-wrap" style="position: relative; display: inline-block;">
+              <canvas id="char-idle-canvas"></canvas>
+              <div class="char-drag-overlay" id="char-idle-drag"></div>
+            </div>
+            <div class="char-sheet-label" style="margin-top: 16px;">Walk Sheet</div>
+            <div id="char-walk-canvas-wrap" style="position: relative; display: inline-block;">
+              <canvas id="char-walk-canvas"></canvas>
+              <div class="char-drag-overlay" id="char-walk-drag"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: animations list + previews -->
+      <div id="char-right" class="panel">
+        <div class="panel-header">Animations</div>
+        <div class="panel-body">
+          <div id="char-anim-list"></div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            Preview
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label>Speed</label>
+            <input type="range" id="char-anim-speed" min="1" max="20" value="8" style="width: 100%;" />
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim);">
+              <span>Slow</span>
+              <span id="char-anim-speed-label">8 fps</span>
+              <span>Fast</span>
+            </div>
+          </div>
+          <div id="char-preview-area" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+            <div style="color: var(--text-dim); font-size: 11px;">Assign animations to preview.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Room Tester -->
+    <div id="tab-tester" class="tab-panel">
+      <!-- Left: room + character selection -->
+      <div id="tester-left" class="panel">
+        <div class="panel-header">Room Tester</div>
+        <div class="panel-body">
+          <div style="margin-bottom: 8px;">
+            <label>Room</label>
+            <select id="tester-room-select" style="width: 100%;">
+              <option value="">(no rooms saved)</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label>Character</label>
+            <select id="tester-char-select" style="width: 100%;">
+              <option value="">(no characters saved)</option>
+            </select>
+          </div>
+          <button class="btn primary" id="tester-load-btn" disabled>Load Room</button>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div style="font-size: 11px; color: var(--text-dim); line-height: 1.6;">
+            <strong>Controls:</strong><br/>
+            WASD / Arrow keys = move<br/>
+            Character idles when standing still.
+          </div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
+          <div id="tester-info" style="font-size: 11px; color: var(--text-dim);">
+            Select a room and character, then click "Load Room".
+          </div>
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div class="panel-resize-handle" data-resize-target="tester-left"></div>
+
+      <!-- Center: PixiJS canvas -->
+      <div id="tester-center">
+        <div id="tester-toolbar">
+          <label>Zoom</label>
+          <select id="tester-zoom">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+          </select>
+          <label><input type="checkbox" id="tester-grid-toggle" /> Grid</label>
+          <label><input type="checkbox" id="tester-walk-toggle" /> Walkability</label>
+          <div id="tester-mode-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
+            Load a room to begin testing.
+          </div>
+        </div>
+        <div id="tester-canvas-wrap">
+          <div id="tester-hint">Select a room and character, then click "Load Room"</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── Status Bar ───────────────────────────────────────── -->
+  <div id="statusbar">
+    <span id="status-text">Ready</span>
+    <span class="topbar-spacer"></span>
+    <span id="status-composites">Composites: 0</span>
+    <span id="status-rooms">Rooms: 0</span>
+    <span id="status-characters">Characters: 0</span>
+  </div>
+
+  <script type="module" src="/src/app/main.ts"></script>
+</body>
+</html>

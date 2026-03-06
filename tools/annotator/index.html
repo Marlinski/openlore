@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offisims - Sprite Annotator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Left: sprite browser ─────────────────────────────── */
+    #sprite-browser {
+      width: 340px;
+      background: #16213e;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    #sprite-browser h2 {
+      padding: 12px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #333;
+      background: #0f3460;
+    }
+    #sprite-filter {
+      padding: 8px 12px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 8px;
+    }
+    #sprite-filter input, #sprite-filter select {
+      flex: 1;
+      padding: 6px 8px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    #sprite-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      align-content: start;
+    }
+    .sprite-thumb {
+      aspect-ratio: 2/3;
+      background: #0a0a1a;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      image-rendering: pixelated;
+      overflow: hidden;
+    }
+    .sprite-thumb:hover { border-color: #4a9eff; }
+    .sprite-thumb.annotated { border-color: #00cc44; }
+    .sprite-thumb.selected { border-color: #ffcc00; background: #2a2a0a; }
+    .sprite-thumb img {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+    .sprite-thumb .sprite-id {
+      position: absolute;
+      bottom: 1px;
+      right: 3px;
+      font-size: 9px;
+      color: #888;
+      text-shadow: 0 0 3px #000;
+    }
+    .sprite-thumb .sprite-label {
+      position: absolute;
+      top: 1px;
+      left: 3px;
+      font-size: 8px;
+      color: #0f0;
+      text-shadow: 0 0 3px #000;
+      max-width: 90%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .sprite-thumb:active { cursor: grabbing; }
+
+    /* ── Center: workspace ────────────────────────────────── */
+    #workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #toolbar {
+      padding: 8px 16px;
+      background: #0f3460;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #toolbar button {
+      padding: 6px 14px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    #toolbar button:hover { background: #2a2a4e; }
+    #toolbar button.primary { background: #1a6b3a; border-color: #2a8b4a; }
+    #toolbar button.primary:hover { background: #2a8b4a; }
+    #toolbar label { font-size: 12px; white-space: nowrap; }
+    #toolbar input, #toolbar select {
+      padding: 4px 8px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    #toolbar input[type="number"] { width: 44px; }
+    #toolbar select { width: 110px; }
+    #toolbar input[type="text"] { width: 160px; }
+    #toolbar input[type="checkbox"] { width: auto; }
+    .toolbar-sep {
+      width: 1px;
+      height: 24px;
+      background: #444;
+    }
+
+    #canvas-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      background: #0a0a1a;
+      position: relative;
+    }
+
+    /* The drop zone / preview area */
+    #preview-area {
+      position: relative;
+      image-rendering: pixelated;
+      background: repeating-conic-gradient(#1a1a2e 0% 25%, #12122a 0% 50%) 50% / 16px 16px;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      min-width: 200px;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #preview-area.drag-over {
+      border-color: #4a9eff;
+      background-color: rgba(74, 158, 255, 0.05);
+    }
+    #preview-area.has-sprite {
+      border-style: solid;
+      border-color: #333;
+    }
+    #drop-hint {
+      color: #555;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* Grid overlay on preview */
+    .preview-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .preview-grid .grid-line {
+      position: absolute;
+      background: rgba(255,255,255,0.12);
+    }
+    .preview-grid .grid-line.h { height: 1px; left: 0; right: 0; }
+    .preview-grid .grid-line.v { width: 1px; top: 0; bottom: 0; }
+
+    /* Occupancy overlay on preview */
+    .occ-cell {
+      position: absolute;
+      border: 2px solid rgba(255,80,80,0.6);
+      background: rgba(255,80,80,0.15);
+      box-sizing: border-box;
+      cursor: pointer;
+      z-index: 5;
+    }
+    .occ-cell.active {
+      background: rgba(255,80,80,0.35);
+      border-color: rgba(255,80,80,0.9);
+    }
+    .occ-cell:hover {
+      background: rgba(255,80,80,0.25);
+    }
+
+    #sprite-img-preview {
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    /* ── Right: composite list ────────────────────────────── */
+    #composite-list {
+      width: 300px;
+      background: #16213e;
+      border-left: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    #composite-list h2 {
+      padding: 12px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #333;
+      background: #0f3460;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #composite-list h2 span { font-size: 11px; color: #888; }
+    #comp-filter {
+      padding: 6px 10px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 6px;
+    }
+    #comp-filter input, #comp-filter select {
+      flex: 1;
+      padding: 4px 8px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    #composites-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .composite-item {
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .composite-item:hover { border-color: #4a9eff; }
+    .composite-item.active { border-color: #ffcc00; background: #2a2a0a; }
+    .composite-item .thumb {
+      width: 40px;
+      height: 60px;
+      flex-shrink: 0;
+      background: #0a0a1a;
+      border-radius: 3px;
+      overflow: hidden;
+      image-rendering: pixelated;
+    }
+    .composite-item .thumb img {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+    .composite-item .info { flex: 1; min-width: 0; }
+    .composite-item .name { font-weight: 600; font-size: 11px; }
+    .composite-item .meta { font-size: 10px; color: #888; }
+    .composite-item .actions { display: flex; gap: 3px; flex-shrink: 0; }
+    .composite-item .actions button {
+      padding: 2px 6px;
+      background: transparent;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+    .composite-item .actions button:hover { background: #333; }
+    .composite-item .actions button.delete:hover { background: #660000; }
+
+    #file-actions {
+      padding: 8px;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    #file-actions button {
+      flex: 1;
+      padding: 6px 10px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      min-width: 80px;
+    }
+    #file-actions button:hover { background: #2a2a4e; }
+
+    #status {
+      padding: 4px 16px;
+      background: #0f3460;
+      font-size: 11px;
+      color: #888;
+      border-top: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <!-- Left: Sprite Browser -->
+  <div id="sprite-browser">
+    <h2>Sprites <span style="font-size:11px;color:#888">(339 — each 2x3 tiles)</span></h2>
+    <div id="sprite-filter">
+      <input type="text" id="filter-search" placeholder="Filter by ID..." />
+      <select id="filter-used">
+        <option value="all">All</option>
+        <option value="unannotated">Unannotated</option>
+        <option value="annotated">Annotated</option>
+      </select>
+    </div>
+    <div id="sprite-grid"></div>
+  </div>
+
+  <!-- Center: Workspace -->
+  <div id="workspace">
+    <div id="toolbar">
+      <label>Name:</label>
+      <input type="text" id="comp-name" placeholder="Composite name" />
+      <label>Category:</label>
+      <select id="comp-category">
+        <option value="floor">Floor</option>
+        <option value="wall">Wall</option>
+        <option value="furniture" selected>Furniture</option>
+        <option value="decor">Decor</option>
+        <option value="electronics">Electronics</option>
+        <option value="plant">Plant</option>
+        <option value="door">Door</option>
+        <option value="window">Window</option>
+        <option value="other">Other</option>
+      </select>
+      <div class="toolbar-sep"></div>
+      <label>Occ W:</label>
+      <input type="number" id="comp-ow" value="1" min="1" max="2" />
+      <label>H:</label>
+      <input type="number" id="comp-oh" value="1" min="1" max="3" />
+      <label>Off X:</label>
+      <input type="number" id="comp-ox" value="0" min="0" max="1" />
+      <label>Y:</label>
+      <input type="number" id="comp-oy" value="0" min="0" max="2" />
+      <label><input type="checkbox" id="comp-walkable" /> Walkable</label>
+      <div class="toolbar-sep"></div>
+      <button id="btn-save-comp" class="primary">Save</button>
+      <button id="btn-new-comp">New</button>
+      <button id="btn-auto-detect">Auto-detect</button>
+    </div>
+    <div id="canvas-area">
+      <div id="preview-area">
+        <span id="drop-hint">Drag a sprite here or click one</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Composite List -->
+  <div id="composite-list">
+    <h2>Composites <span id="comp-count">0</span></h2>
+    <div id="comp-filter">
+      <input type="text" id="comp-list-search" placeholder="Search..." />
+      <select id="comp-list-cat">
+        <option value="all">All</option>
+        <option value="floor">Floor</option>
+        <option value="wall">Wall</option>
+        <option value="furniture">Furniture</option>
+        <option value="decor">Decor</option>
+        <option value="electronics">Electronics</option>
+        <option value="plant">Plant</option>
+        <option value="door">Door</option>
+        <option value="window">Window</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div id="composites-container"></div>
+    <div id="file-actions">
+      <button id="btn-export">Export JSON</button>
+      <button id="btn-import">Import JSON</button>
+    </div>
+  </div>
+
+  <div id="status">Drag a sprite from the left panel onto the center area, or click to select. Then set occupancy and save.</div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

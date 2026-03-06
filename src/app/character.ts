@@ -1,0 +1,952 @@
+/**
+ * Tab 3: Character Definer
+ *
+ * Unified sprite sheet view: both idle and walk sheets displayed stacked.
+ * Drag-select a region on either sheet to define a frame range, then
+ * assign it to a family (idle/walk/sit_office/sit_couch/custom) + direction.
+ *
+ * Supports multiple variants per family+direction (e.g. idle-down #0 = breathing,
+ * idle-down #1 = sipping coffee). The game runtime can cycle through variants.
+ *
+ * Sprite sheet format (LimeZu):
+ *   - Frame size: 16×32 pixels (configurable)
+ *   - Idle: 384×32 = 24 frames, 1 row
+ *   - Walk: 384×224 = 24 columns × 7 rows
+ */
+
+import {
+  type CharacterDefinition,
+  type CharacterDirection,
+  type CharacterAnimation,
+  type CharacterSheet,
+  type AnimationStrip,
+  CHARACTER_DIRECTIONS,
+  BUILTIN_FAMILIES,
+  getCharacterPath,
+  generateId,
+} from "@shared/types.js";
+import { appState } from "@shared/state.js";
+import { setStatus } from "./main.js";
+
+// ─── DOM elements ─────────────────────────────────────────────────
+
+const sheetSelect = document.getElementById("char-sheet-select") as HTMLSelectElement;
+const sheetInfo = document.getElementById("char-sheet-info") as HTMLDivElement;
+
+const frameWInput = document.getElementById("char-frame-w") as HTMLInputElement;
+const frameHInput = document.getElementById("char-frame-h") as HTMLInputElement;
+
+const zoomSelect = document.getElementById("char-zoom") as HTMLSelectElement;
+const gridToggle = document.getElementById("char-grid-toggle") as HTMLInputElement;
+const hintDiv = document.getElementById("char-hint") as HTMLDivElement;
+
+const idleCanvas = document.getElementById("char-idle-canvas") as HTMLCanvasElement;
+const walkCanvas = document.getElementById("char-walk-canvas") as HTMLCanvasElement;
+const idleDragOverlay = document.getElementById("char-idle-drag") as HTMLDivElement;
+const walkDragOverlay = document.getElementById("char-walk-drag") as HTMLDivElement;
+
+const assignForm = document.getElementById("char-assign-form") as HTMLDivElement;
+const assignHint = document.getElementById("char-assign-hint") as HTMLDivElement;
+const assignFamilySelect = document.getElementById("char-assign-family") as HTMLSelectElement;
+const assignFamilyCustom = document.getElementById("char-assign-family-custom") as HTMLInputElement;
+const assignDirSelect = document.getElementById("char-assign-dir") as HTMLSelectElement;
+const assignInfoSpan = document.getElementById("char-assign-info") as HTMLSpanElement;
+const assignBtn = document.getElementById("char-assign-btn") as HTMLButtonElement;
+const assignCancelBtn = document.getElementById("char-assign-cancel-btn") as HTMLButtonElement;
+
+const animListDiv = document.getElementById("char-anim-list") as HTMLDivElement;
+const animSpeedRange = document.getElementById("char-anim-speed") as HTMLInputElement;
+const animSpeedLabel = document.getElementById("char-anim-speed-label") as HTMLSpanElement;
+const previewArea = document.getElementById("char-preview-area") as HTMLDivElement;
+
+const charNameInput = document.getElementById("char-name") as HTMLInputElement;
+const saveStatusDiv = document.getElementById("char-save-status") as HTMLDivElement;
+const saveBtn = document.getElementById("char-save-btn") as HTMLButtonElement;
+const savedCountSpan = document.getElementById("char-saved-count") as HTMLSpanElement;
+const savedListDiv = document.getElementById("char-saved-list") as HTMLDivElement;
+
+// ─── State ────────────────────────────────────────────────────────
+
+let currentSheetId = "adam";
+let currentZoom = 4;
+let showGrid = true;
+
+/** Mutable frame dimensions (configurable via UI) */
+let frameW = 16;
+let frameH = 32;
+
+/** Loaded sprite sheet images */
+let idleImage: HTMLImageElement | null = null;
+let walkImage: HTMLImageElement | null = null;
+
+/** Grid dimensions for each sheet */
+let idleCols = 0;
+let idleRows = 0;
+let walkCols = 0;
+let walkRows = 0;
+
+/** Current drag-selection state */
+interface DragState {
+  sheet: CharacterSheet;
+  startCol: number;
+  startRow: number;
+  endCol: number;
+  endRow: number;
+  active: boolean;
+}
+
+let drag: DragState = { sheet: "idle", startCol: 0, startRow: 0, endCol: 0, endRow: 0, active: false };
+
+/** Pending selection (after drag completes, before assignment) */
+interface PendingSelection {
+  sheet: CharacterSheet;
+  row: number;
+  startFrame: number;
+  frameCount: number;
+}
+
+let pendingSelection: PendingSelection | null = null;
+
+/**
+ * Animation entries for the current character (what we're building).
+ * Each entry mirrors CharacterAnimation but with an internal id for UI tracking.
+ */
+interface AnimEntry {
+  id: string;
+  family: string;
+  direction: CharacterDirection;
+  variant: number;
+  strip: AnimationStrip;
+}
+
+/** Per-character animation state (keyed by sheetId) */
+interface CharAnimState {
+  entries: AnimEntry[];
+  familySpeeds: Record<string, number>;
+}
+
+const animStates: Map<string, CharAnimState> = new Map();
+
+/** Currently selected animation entry (for highlighting) */
+let selectedAnimId: string | null = null;
+
+/** Animation previews */
+interface AnimPreview {
+  label: string;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  frames: { sx: number; sy: number; sheet: CharacterSheet }[];
+  currentFrame: number;
+}
+
+let animPreviews: AnimPreview[] = [];
+let animTimer: number | null = null;
+
+// ─── Helpers ──────────────────────────────────────────────────────
+
+function getAnimState(sheetId: string): CharAnimState {
+  let state = animStates.get(sheetId);
+  if (!state) {
+    state = { entries: [], familySpeeds: { idle: 4, walk: 8 } };
+    animStates.set(sheetId, state);
+  }
+  return state;
+}
+
+function newEntryId(): string {
+  return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function getFamilyColor(family: string): string {
+  switch (family) {
+    case "idle": return "#4ade80";
+    case "walk": return "#60a5fa";
+    case "sit_office": return "#f472b6";
+    case "sit_couch": return "#c084fc";
+    default: return "#fbbf24";
+  }
+}
+
+function getDirectionLabel(dir: CharacterDirection): string {
+  return dir.charAt(0).toUpperCase() + dir.slice(1);
+}
+
+function getSheetImage(sheet: CharacterSheet): HTMLImageElement | null {
+  return sheet === "idle" ? idleImage : walkImage;
+}
+
+function getSheetCols(sheet: CharacterSheet): number {
+  return sheet === "idle" ? idleCols : walkCols;
+}
+
+function getSheetRows(sheet: CharacterSheet): number {
+  return sheet === "idle" ? idleRows : walkRows;
+}
+
+/** Compute next variant number for a given family+direction */
+function nextVariant(entries: AnimEntry[], family: string, dir: CharacterDirection): number {
+  const existing = entries.filter((e) => e.family === family && e.direction === dir);
+  if (existing.length === 0) return 0;
+  return Math.max(...existing.map((e) => e.variant)) + 1;
+}
+
+// ─── Sheet loading ────────────────────────────────────────────────
+
+async function loadSheets(): Promise<void> {
+  sheetInfo.textContent = "Loading...";
+
+  try {
+    const [idle, walk] = await Promise.all([
+      loadImage(getCharacterPath(currentSheetId, "idle")),
+      loadImage(getCharacterPath(currentSheetId, "walk")),
+    ]);
+
+    idleImage = idle;
+    walkImage = walk;
+
+    idleCols = Math.floor(idle.width / frameW);
+    idleRows = Math.floor(idle.height / frameH);
+    walkCols = Math.floor(walk.width / frameW);
+    walkRows = Math.floor(walk.height / frameH);
+
+    sheetInfo.textContent =
+      `Idle: ${idle.width}x${idle.height} (${idleCols}x${idleRows}) · ` +
+      `Walk: ${walk.width}x${walk.height} (${walkCols}x${walkRows}) · ` +
+      `Frame: ${frameW}x${frameH}`;
+
+    clearSelection();
+    drawSheets();
+    renderAnimList();
+    updatePreviews();
+    updateSaveState();
+  } catch (e) {
+    sheetInfo.textContent = `Error: ${e}`;
+    idleImage = null;
+    walkImage = null;
+  }
+}
+
+function loadImage(path: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${path}`));
+    img.src = path;
+  });
+}
+
+// ─── Sheet canvas rendering ──────────────────────────────────────
+
+function drawSheets(): void {
+  drawSheet("idle");
+  drawSheet("walk");
+}
+
+function drawSheet(sheet: CharacterSheet): void {
+  const img = getSheetImage(sheet);
+  const canvas = sheet === "idle" ? idleCanvas : walkCanvas;
+  if (!img) {
+    canvas.width = 0;
+    canvas.height = 0;
+    return;
+  }
+
+  const z = currentZoom;
+  const w = img.width * z;
+  const h = img.height * z;
+  const cols = getSheetCols(sheet);
+  const rows = getSheetRows(sheet);
+
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+
+  // Draw sprite sheet
+  ctx.drawImage(img, 0, 0, w, h);
+
+  // Draw assigned animation overlays
+  const state = getAnimState(currentSheetId);
+  for (const entry of state.entries) {
+    if (entry.strip.sheet !== sheet) continue;
+
+    const color = getFamilyColor(entry.family);
+    const isSelected = entry.id === selectedAnimId;
+
+    const x = entry.strip.startFrame * frameW * z;
+    const y = entry.strip.row * frameH * z;
+    const fw = entry.strip.frameCount * frameW * z;
+    const fh = frameH * z;
+
+    ctx.fillStyle = color + (isSelected ? "40" : "20");
+    ctx.fillRect(x, y, fw, fh);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = isSelected ? 3 : 1.5;
+    ctx.strokeRect(x + 0.5, y + 0.5, fw - 1, fh - 1);
+
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = `bold ${Math.max(10, z * 3)}px monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    const varLabel = entry.variant > 0 ? ` #${entry.variant}` : "";
+    ctx.fillText(`${entry.family} ${entry.direction}${varLabel}`, x + 3, y + 2);
+  }
+
+  // Grid
+  if (showGrid) {
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= cols; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * frameW * z + 0.5, 0);
+      ctx.lineTo(c * frameW * z + 0.5, h);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= rows; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * frameH * z + 0.5);
+      ctx.lineTo(w, r * frameH * z + 0.5);
+      ctx.stroke();
+    }
+    // Thicker row separators
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.lineWidth = 2;
+    for (let r = 0; r <= rows; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * frameH * z + 0.5);
+      ctx.lineTo(w, r * frameH * z + 0.5);
+      ctx.stroke();
+    }
+  }
+}
+
+// ─── Drag selection on canvases ──────────────────────────────────
+
+function setupCanvasDrag(
+  canvas: HTMLCanvasElement,
+  overlay: HTMLDivElement,
+  sheet: CharacterSheet,
+): void {
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const pos = getGridPos(e, canvas, sheet);
+    if (!pos) return;
+
+    drag = {
+      sheet,
+      startCol: pos.col,
+      startRow: pos.row,
+      endCol: pos.col,
+      endRow: pos.row,
+      active: true,
+    };
+    updateDragOverlay(overlay, sheet);
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (!drag.active || drag.sheet !== sheet) return;
+    const pos = getGridPos(e, canvas, sheet);
+    if (!pos) return;
+    drag.endCol = pos.col;
+    drag.endRow = pos.row;
+    updateDragOverlay(overlay, sheet);
+  });
+
+  // mouseup is global to handle drag that ends outside canvas
+}
+
+function getGridPos(
+  e: MouseEvent,
+  canvas: HTMLCanvasElement,
+  sheet: CharacterSheet,
+): { col: number; row: number } | null {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const z = currentZoom;
+  const cols = getSheetCols(sheet);
+  const rows = getSheetRows(sheet);
+  const col = Math.floor(x / (frameW * z));
+  const row = Math.floor(y / (frameH * z));
+  if (col < 0 || col >= cols || row < 0 || row >= rows) return null;
+  return { col, row };
+}
+
+function updateDragOverlay(overlay: HTMLDivElement, sheet: CharacterSheet): void {
+  if (!drag.active || drag.sheet !== sheet) {
+    overlay.style.display = "none";
+    return;
+  }
+  const z = currentZoom;
+  const minCol = Math.min(drag.startCol, drag.endCol);
+  const maxCol = Math.max(drag.startCol, drag.endCol);
+  const row = drag.startRow; // Lock to start row (strips are single-row)
+
+  overlay.style.display = "block";
+  overlay.style.left = `${minCol * frameW * z}px`;
+  overlay.style.top = `${row * frameH * z}px`;
+  overlay.style.width = `${(maxCol - minCol + 1) * frameW * z}px`;
+  overlay.style.height = `${frameH * z}px`;
+}
+
+function handleMouseUp(): void {
+  if (!drag.active) return;
+
+  const sheet = drag.sheet;
+  const row = drag.startRow; // Single row
+  const minCol = Math.min(drag.startCol, drag.endCol);
+  const maxCol = Math.max(drag.startCol, drag.endCol);
+  const frameCount = maxCol - minCol + 1;
+
+  drag.active = false;
+
+  // Clear both overlays
+  idleDragOverlay.style.display = "none";
+  walkDragOverlay.style.display = "none";
+
+  if (frameCount < 1) return;
+
+  // Set pending selection and show assignment form
+  pendingSelection = { sheet, row, startFrame: minCol, frameCount };
+  showAssignForm();
+}
+
+window.addEventListener("mouseup", handleMouseUp);
+
+// ─── Selection / Assignment ──────────────────────────────────────
+
+function showAssignForm(): void {
+  if (!pendingSelection) return;
+  const sel = pendingSelection;
+
+  assignForm.style.display = "block";
+  assignHint.style.display = "none";
+  assignInfoSpan.textContent =
+    `${sel.sheet} sheet, row ${sel.row}, frames ${sel.startFrame}–${sel.startFrame + sel.frameCount - 1} (${sel.frameCount} frames)`;
+
+  // Auto-select family based on sheet
+  assignFamilySelect.value = sel.sheet === "idle" ? "idle" : "walk";
+  assignFamilyCustom.value = "";
+}
+
+function clearSelection(): void {
+  pendingSelection = null;
+  selectedAnimId = null;
+  assignForm.style.display = "none";
+  assignHint.style.display = "block";
+  idleDragOverlay.style.display = "none";
+  walkDragOverlay.style.display = "none";
+}
+
+function assignSelection(): void {
+  if (!pendingSelection) return;
+
+  const customFamily = assignFamilyCustom.value.trim();
+  const family = customFamily || assignFamilySelect.value;
+  const direction = assignDirSelect.value as CharacterDirection;
+
+  if (!family) return;
+
+  const state = getAnimState(currentSheetId);
+  const variant = nextVariant(state.entries, family, direction);
+
+  state.entries.push({
+    id: newEntryId(),
+    family,
+    direction,
+    variant,
+    strip: {
+      sheet: pendingSelection.sheet,
+      row: pendingSelection.row,
+      startFrame: pendingSelection.startFrame,
+      frameCount: pendingSelection.frameCount,
+    },
+  });
+
+  // Ensure family has a default speed
+  if (!state.familySpeeds[family]) {
+    state.familySpeeds[family] = family === "walk" ? 8 : 4;
+  }
+
+  clearSelection();
+  drawSheets();
+  renderAnimList();
+  updatePreviews();
+  updateSaveState();
+  setStatus(`Assigned ${family} ${direction}${variant > 0 ? ` #${variant}` : ""}`);
+}
+
+// ─── Animation list rendering ────────────────────────────────────
+
+function renderAnimList(): void {
+  animListDiv.innerHTML = "";
+  const state = getAnimState(currentSheetId);
+
+  if (state.entries.length === 0) {
+    const hint = document.createElement("div");
+    hint.style.cssText = "color: var(--text-dim); font-size: 11px; padding: 4px 0;";
+    hint.textContent = "No animations assigned yet. Drag on the sheet to select frames.";
+    animListDiv.appendChild(hint);
+    return;
+  }
+
+  // Group by family
+  const families = new Map<string, AnimEntry[]>();
+  for (const entry of state.entries) {
+    let arr = families.get(entry.family);
+    if (!arr) {
+      arr = [];
+      families.set(entry.family, arr);
+    }
+    arr.push(entry);
+  }
+
+  for (const [family, entries] of families) {
+    // Family header with speed input
+    const header = document.createElement("div");
+    header.className = "char-family-header";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = family;
+    header.appendChild(nameSpan);
+
+    const speedDiv = document.createElement("span");
+    speedDiv.className = "speed-input";
+    speedDiv.textContent = "fps: ";
+    const speedInput = document.createElement("input");
+    speedInput.type = "number";
+    speedInput.min = "1";
+    speedInput.max = "30";
+    speedInput.value = String(state.familySpeeds[family] || 4);
+    speedInput.addEventListener("change", () => {
+      const v = Math.max(1, Math.min(30, parseInt(speedInput.value) || 4));
+      state.familySpeeds[family] = v;
+      speedInput.value = String(v);
+      updatePreviews();
+    });
+    speedDiv.appendChild(speedInput);
+    header.appendChild(speedDiv);
+
+    animListDiv.appendChild(header);
+
+    // Sort entries: by direction order then variant
+    const dirOrder: Record<string, number> = { down: 0, up: 1, left: 2, right: 3 };
+    entries.sort((a, b) => {
+      const da = dirOrder[a.direction] ?? 99;
+      const db = dirOrder[b.direction] ?? 99;
+      if (da !== db) return da - db;
+      return a.variant - b.variant;
+    });
+
+    for (const entry of entries) {
+      const item = document.createElement("div");
+      item.className = "char-anim-item" + (entry.id === selectedAnimId ? " selected" : "");
+
+      // Mini thumbnail
+      const thumb = document.createElement("canvas");
+      const thumbFrames = Math.min(4, entry.strip.frameCount);
+      const thumbScale = 2;
+      thumb.width = thumbFrames * frameW * thumbScale;
+      thumb.height = frameH * thumbScale;
+      thumb.style.width = `${thumb.width}px`;
+      thumb.style.height = `${thumb.height}px`;
+      const img = getSheetImage(entry.strip.sheet);
+      if (img) {
+        const tctx = thumb.getContext("2d")!;
+        tctx.imageSmoothingEnabled = false;
+        for (let f = 0; f < thumbFrames; f++) {
+          tctx.drawImage(
+            img,
+            (entry.strip.startFrame + f) * frameW, entry.strip.row * frameH, frameW, frameH,
+            f * frameW * thumbScale, 0, frameW * thumbScale, frameH * thumbScale,
+          );
+        }
+      }
+
+      const info = document.createElement("div");
+      info.className = "info";
+      const varLabel = entry.variant > 0 ? ` #${entry.variant}` : "";
+      info.innerHTML = `
+        <div class="name" style="color: ${getFamilyColor(entry.family)}">${entry.direction}${varLabel}</div>
+        <div class="meta">${entry.strip.sheet} r${entry.strip.row} f${entry.strip.startFrame}–${entry.strip.startFrame + entry.strip.frameCount - 1}</div>
+      `;
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "delete-btn";
+      delBtn.textContent = "\u00d7";
+      delBtn.title = "Remove";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.entries = state.entries.filter((a) => a.id !== entry.id);
+        if (selectedAnimId === entry.id) selectedAnimId = null;
+        drawSheets();
+        renderAnimList();
+        updatePreviews();
+        updateSaveState();
+      });
+
+      item.addEventListener("click", (e) => {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === "BUTTON" || tag === "INPUT") return;
+        selectedAnimId = selectedAnimId === entry.id ? null : entry.id;
+        drawSheets();
+        renderAnimList();
+      });
+
+      item.appendChild(thumb);
+      item.appendChild(info);
+      item.appendChild(delBtn);
+      animListDiv.appendChild(item);
+    }
+  }
+}
+
+// ─── Animation preview ──────────────────────────────────────────
+
+function updatePreviews(): void {
+  if (animTimer !== null) {
+    clearInterval(animTimer);
+    animTimer = null;
+  }
+  animPreviews = [];
+  previewArea.innerHTML = "";
+
+  const state = getAnimState(currentSheetId);
+  if (state.entries.length === 0) {
+    previewArea.innerHTML = '<div style="color: var(--text-dim); font-size: 11px;">Assign animations to preview.</div>';
+    return;
+  }
+
+  const previewScale = 3;
+  const fps = parseInt(animSpeedRange.value);
+
+  // Show one preview per unique family+direction (variant 0 only for simplicity)
+  const seen = new Set<string>();
+  for (const entry of state.entries) {
+    const key = `${entry.family}:${entry.direction}`;
+    if (seen.has(key)) continue;
+    // Only show variant 0 in preview
+    if (entry.variant !== 0) continue;
+    seen.add(key);
+
+    const img = getSheetImage(entry.strip.sheet);
+    if (!img) continue;
+
+    const box = document.createElement("div");
+    box.className = "char-preview-box";
+
+    const canvas = document.createElement("canvas");
+    canvas.width = frameW * previewScale;
+    canvas.height = frameH * previewScale;
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = `${entry.family} ${entry.direction}`;
+    label.style.color = getFamilyColor(entry.family);
+
+    box.appendChild(canvas);
+    box.appendChild(label);
+    previewArea.appendChild(box);
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+
+    const frames: { sx: number; sy: number; sheet: CharacterSheet }[] = [];
+    for (let f = 0; f < entry.strip.frameCount; f++) {
+      frames.push({
+        sx: (entry.strip.startFrame + f) * frameW,
+        sy: entry.strip.row * frameH,
+        sheet: entry.strip.sheet,
+      });
+    }
+
+    animPreviews.push({
+      label: key,
+      canvas,
+      ctx,
+      frames,
+      currentFrame: 0,
+    });
+  }
+
+  const tick = () => {
+    for (const preview of animPreviews) {
+      if (preview.frames.length === 0) continue;
+      const frame = preview.frames[preview.currentFrame];
+      const img = getSheetImage(frame.sheet);
+      if (!img) continue;
+      preview.ctx.clearRect(0, 0, preview.canvas.width, preview.canvas.height);
+      preview.ctx.drawImage(
+        img,
+        frame.sx, frame.sy, frameW, frameH,
+        0, 0, preview.canvas.width, preview.canvas.height,
+      );
+      preview.currentFrame = (preview.currentFrame + 1) % preview.frames.length;
+    }
+  };
+
+  tick();
+  animTimer = window.setInterval(tick, 1000 / fps);
+}
+
+// ─── Save state ─────────────────────────────────────────────────
+
+function updateSaveState(): void {
+  const name = charNameInput.value.trim();
+  const state = getAnimState(currentSheetId);
+
+  if (!name) {
+    saveStatusDiv.textContent = "Enter a character name.";
+    saveStatusDiv.style.color = "var(--text-dim)";
+    saveBtn.disabled = true;
+    return;
+  }
+
+  if (state.entries.length === 0) {
+    saveStatusDiv.textContent = "No animations assigned.";
+    saveStatusDiv.style.color = "var(--text-dim)";
+    saveBtn.disabled = true;
+    return;
+  }
+
+  // Check for minimum: at least idle+walk with all 4 directions (variant 0)
+  const missingRequired: string[] = [];
+  for (const family of ["idle", "walk"]) {
+    for (const dir of CHARACTER_DIRECTIONS) {
+      const has = state.entries.some(
+        (e) => e.family === family && e.direction === dir && e.variant === 0,
+      );
+      if (!has) missingRequired.push(`${family} ${dir}`);
+    }
+  }
+
+  if (missingRequired.length > 0) {
+    saveStatusDiv.textContent = `Missing: ${missingRequired.join(", ")}`;
+    saveStatusDiv.style.color = "var(--yellow)";
+    // Still allow saving -- just warn. User might want partial definitions.
+    saveBtn.disabled = false;
+    return;
+  }
+
+  const families = new Set(state.entries.map((e) => e.family));
+  const totalAnims = state.entries.length;
+  saveStatusDiv.textContent = `Ready: ${totalAnims} animations across ${families.size} families.`;
+  saveStatusDiv.style.color = "var(--green)";
+  saveBtn.disabled = false;
+}
+
+function saveCharacter(): void {
+  const name = charNameInput.value.trim();
+  if (!name) return;
+
+  const state = getAnimState(currentSheetId);
+  if (state.entries.length === 0) return;
+
+  const existing = appState.characters.find((c) => c.sheetId === currentSheetId);
+
+  const animations: CharacterAnimation[] = state.entries.map((e) => ({
+    family: e.family,
+    direction: e.direction,
+    variant: e.variant,
+    strip: { ...e.strip },
+  }));
+
+  const charDef: CharacterDefinition = {
+    id: existing?.id || generateId(),
+    name,
+    sheetId: currentSheetId,
+    frameWidth: frameW,
+    frameHeight: frameH,
+    animations,
+    familySpeeds: { ...state.familySpeeds },
+  };
+
+  appState.addCharacter(charDef);
+  setStatus(`Saved character "${name}" (${currentSheetId})`);
+  renderSavedList();
+}
+
+// ─── Saved characters list ──────────────────────────────────────
+
+function renderSavedList(): void {
+  savedCountSpan.textContent = String(appState.characters.length);
+  savedListDiv.innerHTML = "";
+
+  for (const char of appState.characters) {
+    const item = document.createElement("div");
+    item.className = "char-saved-item";
+
+    const info = document.createElement("div");
+    info.className = "info";
+    const families = new Set(char.animations.map((a) => a.family));
+    const familyStr = [...families].join(", ");
+    info.innerHTML = `
+      <div class="name">${char.name}</div>
+      <div class="meta">${char.sheetId} · ${char.frameWidth}x${char.frameHeight} · ${char.animations.length} anims · ${familyStr}</div>
+    `;
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "\u00d7";
+    delBtn.title = "Delete character";
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      appState.removeCharacter(char.id);
+      renderSavedList();
+      setStatus(`Deleted character "${char.name}"`);
+    });
+
+    item.addEventListener("click", () => {
+      loadCharacterDef(char);
+    });
+
+    item.appendChild(info);
+    item.appendChild(delBtn);
+    savedListDiv.appendChild(item);
+  }
+}
+
+function loadCharacterDef(char: CharacterDefinition): void {
+  currentSheetId = char.sheetId;
+  sheetSelect.value = char.sheetId;
+  charNameInput.value = char.name;
+
+  // Restore frame dimensions
+  frameW = char.frameWidth;
+  frameH = char.frameHeight;
+  frameWInput.value = String(frameW);
+  frameHInput.value = String(frameH);
+
+  // Rebuild animation state from definition
+  const state = getAnimState(char.sheetId);
+  state.entries = char.animations.map((a) => ({
+    id: newEntryId(),
+    family: a.family,
+    direction: a.direction,
+    variant: a.variant,
+    strip: { ...a.strip },
+  }));
+  state.familySpeeds = { ...char.familySpeeds };
+
+  loadSheets();
+  setStatus(`Loaded character "${char.name}" for editing`);
+}
+
+// ─── Canvas click to select existing animation ──────────────────
+
+function setupCanvasClick(canvas: HTMLCanvasElement, sheet: CharacterSheet): void {
+  canvas.addEventListener("click", (e) => {
+    // Only handle single-clicks (no drag)
+    if (pendingSelection) return;
+
+    const pos = getGridPos(e, canvas, sheet);
+    if (!pos) return;
+
+    const state = getAnimState(currentSheetId);
+    const hit = state.entries.find(
+      (a) =>
+        a.strip.sheet === sheet &&
+        a.strip.row === pos.row &&
+        pos.col >= a.strip.startFrame &&
+        pos.col < a.strip.startFrame + a.strip.frameCount,
+    );
+
+    if (hit) {
+      selectedAnimId = selectedAnimId === hit.id ? null : hit.id;
+      drawSheets();
+      renderAnimList();
+    }
+  });
+}
+
+// ─── Event listeners ────────────────────────────────────────────
+
+sheetSelect.addEventListener("change", () => {
+  currentSheetId = sheetSelect.value;
+  charNameInput.value = currentSheetId.charAt(0).toUpperCase() + currentSheetId.slice(1);
+  clearSelection();
+  loadSheets();
+});
+
+zoomSelect.addEventListener("change", () => {
+  currentZoom = parseInt(zoomSelect.value);
+  drawSheets();
+});
+
+gridToggle.addEventListener("change", () => {
+  showGrid = gridToggle.checked;
+  drawSheets();
+});
+
+frameWInput.addEventListener("change", () => {
+  const v = Math.max(1, Math.min(128, parseInt(frameWInput.value) || 16));
+  frameW = v;
+  frameWInput.value = String(v);
+  recalcGridAndRedraw();
+});
+
+frameHInput.addEventListener("change", () => {
+  const v = Math.max(1, Math.min(128, parseInt(frameHInput.value) || 32));
+  frameH = v;
+  frameHInput.value = String(v);
+  recalcGridAndRedraw();
+});
+
+function recalcGridAndRedraw(): void {
+  if (idleImage) {
+    idleCols = Math.floor(idleImage.width / frameW);
+    idleRows = Math.floor(idleImage.height / frameH);
+  }
+  if (walkImage) {
+    walkCols = Math.floor(walkImage.width / frameW);
+    walkRows = Math.floor(walkImage.height / frameH);
+  }
+  if (idleImage || walkImage) {
+    sheetInfo.textContent =
+      `Idle: ${idleImage?.width ?? 0}x${idleImage?.height ?? 0} (${idleCols}x${idleRows}) · ` +
+      `Walk: ${walkImage?.width ?? 0}x${walkImage?.height ?? 0} (${walkCols}x${walkRows}) · ` +
+      `Frame: ${frameW}x${frameH}`;
+  }
+  drawSheets();
+  renderAnimList();
+  updatePreviews();
+  updateSaveState();
+}
+
+animSpeedRange.addEventListener("input", () => {
+  const fps = parseInt(animSpeedRange.value);
+  animSpeedLabel.textContent = `${fps} fps`;
+  updatePreviews();
+});
+
+charNameInput.addEventListener("input", updateSaveState);
+saveBtn.addEventListener("click", saveCharacter);
+
+assignBtn.addEventListener("click", assignSelection);
+assignCancelBtn.addEventListener("click", clearSelection);
+
+appState.subscribe(() => {
+  renderSavedList();
+});
+
+// Set up drag on both canvases
+setupCanvasDrag(idleCanvas, idleDragOverlay, "idle");
+setupCanvasDrag(walkCanvas, walkDragOverlay, "walk");
+setupCanvasClick(idleCanvas, "idle");
+setupCanvasClick(walkCanvas, "walk");
+
+// ─── Init ────────────────────────────────────────────────────────
+
+export function initCharacterTab(): void {
+  charNameInput.value = currentSheetId.charAt(0).toUpperCase() + currentSheetId.slice(1);
+  loadSheets();
+  renderSavedList();
+}

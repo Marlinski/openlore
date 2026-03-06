@@ -1,0 +1,429 @@
+/**
+ * Shared data types for Offisims
+ *
+ * Architecture: tileset-direct workflow.
+ * Instead of pre-cutting sprites into an inventory, tools reference
+ * rectangular regions within tileset images directly.
+ * Users click or drag on a tileset to select a region, then place it.
+ *
+ * Composites still exist — they group multiple tileset regions into
+ * pre-assembled multi-tile objects (e.g. a conference table).
+ *
+ * Textures are purely visual — they carry no physics or occupancy data.
+ * Physical constraints (walkability, collision) are defined at the map level.
+ *
+ * Coordinate system:
+ *   - Grid origin is top-left (0,0)
+ *   - X increases rightward, Y increases downward
+ *   - Rendering order: render-time sort by anchor Y (bottom edge + zBias),
+ *     not array position. Floor layer renders first, then object layer.
+ */
+
+/** Tile size in pixels */
+export const TILE_SIZE = 48;
+
+// ─── Tileset definitions ────────────────────────────────────────────
+
+/** Known tileset images */
+export const TILESETS = {
+  room_builder: {
+    path: "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
+    label: "Room Builder (Floors & Walls)",
+    cols: 16,
+    rows: 14,
+  },
+  office_shadow: {
+    path: "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
+    label: "Office (Black Shadow)",
+    cols: 16,
+    rows: 53,
+  },
+  office_shadowless: {
+    path: "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
+    label: "Office (Shadowless)",
+    cols: 16,
+    rows: 53,
+  },
+  office_combined: {
+    path: "/data/sprites/Modern_Office_48x48.png",
+    label: "Office (Combined)",
+    cols: 16,
+    rows: 53,
+  },
+} as const;
+
+export type TilesetId = keyof typeof TILESETS;
+
+// ─── Tileset Region ─────────────────────────────────────────────────
+
+/**
+ * A rectangular region within a tileset image, measured in tiles.
+ * This is the fundamental building block — replaces the old BaseSprite concept.
+ * Everything (placements, composite parts) references tileset regions directly.
+ */
+export interface TilesetRegion {
+  /** Which tileset this region is from */
+  tilesetId: TilesetId;
+  /** Top-left tile column in the tileset (0-indexed) */
+  srcCol: number;
+  /** Top-left tile row in the tileset (0-indexed) */
+  srcRow: number;
+  /** Width in tiles */
+  w: number;
+  /** Height in tiles */
+  h: number;
+}
+
+// ─── Categories ─────────────────────────────────────────────────────
+
+export type SpriteCategory =
+  | "floor"
+  | "wall"
+  | "furniture"
+  | "decor"
+  | "electronics"
+  | "plant"
+  | "door"
+  | "window"
+  | "rug"
+  | "other";
+
+export const SPRITE_CATEGORIES: SpriteCategory[] = [
+  "floor",
+  "wall",
+  "furniture",
+  "decor",
+  "electronics",
+  "plant",
+  "door",
+  "window",
+  "rug",
+  "other",
+];
+
+// ─── Composite Object ───────────────────────────────────────────────
+
+/**
+ * A composite object assembled from one or more tileset regions.
+ * Used for large objects that span multiple regions (e.g. a conference table).
+ */
+export interface CompositeObject {
+  /** Unique identifier */
+  id: string;
+  /** Human-readable name */
+  name: string;
+  /** Category */
+  category: SpriteCategory;
+  /**
+   * Parts that make up this composite.
+   * Each part is a tileset region positioned within the composite.
+   */
+  parts: CompositePart[];
+  /**
+   * Total display size in tiles (computed from parts bounding box).
+   */
+  displaySize: { w: number; h: number };
+}
+
+export interface CompositePart {
+  /** The tileset region for this part */
+  region: TilesetRegion;
+  /** X offset in tiles from the composite's top-left */
+  offsetX: number;
+  /** Y offset in tiles from the composite's top-left */
+  offsetY: number;
+  /**
+   * Manual z-order bias for render-time sorting within the composite.
+   * Added to the anchor Y (bottom edge) when computing sort order.
+   * Positive = renders further in front, negative = renders further behind.
+   * Default 0 when omitted.
+   */
+  zBias?: number;
+}
+
+// ─── Doors ──────────────────────────────────────────────────────────
+
+/**
+ * A door is a single-tile teleport point that connects two rooms.
+ * Placed in Layout mode. The tile is walkable — when the player
+ * steps on it the game transitions to the target room & door.
+ *
+ * Target format: "roomName#doorId" (e.g. "lobby#door-2").
+ * An empty target means the door is not yet connected.
+ */
+export interface DoorDefinition {
+  /** Auto-generated id, unique within the room (e.g. "door-1") */
+  id: string;
+  /** Grid column */
+  col: number;
+  /** Grid row */
+  row: number;
+  /**
+   * Where this door leads: "roomName#doorId".
+   * Empty string means unlinked.
+   */
+  target: string;
+}
+
+// ─── Room Layout (room.dat) ─────────────────────────────────────────
+
+/**
+ * Room layout — pure physics/geometry, no visuals.
+ * Exported as room.dat. Designed to be extensible.
+ * Contains walkability grid + doors (teleport points).
+ */
+export interface RoomLayout {
+  /** Room name (also used as filename stem) */
+  name: string;
+  /** Grid width in tiles */
+  width: number;
+  /** Grid height in tiles */
+  height: number;
+  /**
+   * Walkability grid: flat array of width*height booleans.
+   * Index = row * width + col. true = walkable, false = blocked.
+   * Row 0 is the top row.
+   */
+  walkability: boolean[];
+  /** Door teleport points */
+  doors: DoorDefinition[];
+  /** Format version for future compatibility */
+  version: number;
+}
+
+// ─── Room Texture (room_texture.dat) ────────────────────────────────
+
+/**
+ * A texture placement on the room grid.
+ * References either a tileset region directly, or a composite by ID.
+ * Multiple textures can stack on the same tile (floor under wall under decor).
+ */
+export interface TexturePlacement {
+  /** Grid X position (left edge, in tiles) */
+  gridX: number;
+  /** Grid Y position (top edge, in tiles) */
+  gridY: number;
+  /** Render layer: floor renders first, objects get depth-sorted */
+  layer: "floor" | "object";
+  /**
+   * For direct tileset placements: the region to draw.
+   * Mutually exclusive with compositeId.
+   */
+  region?: TilesetRegion;
+  /**
+   * For composite placements: reference to CompositeObject.id.
+   * Mutually exclusive with region.
+   */
+  compositeId?: string;
+  /**
+   * Manual z-order bias for render-time sorting.
+   * Added to the anchor Y (bottom edge) when computing sort order.
+   * Positive = renders further in front, negative = renders further behind.
+   * Default 0 when omitted.
+   */
+  zBias?: number;
+}
+
+/**
+ * Room texture data — the visual layer.
+ * Contains all sprite/composite placements, ordered top-left to bottom-right.
+ * Exported as room_texture.dat.
+ */
+export interface RoomTexture {
+  /** Must match the corresponding RoomLayout.name */
+  name: string;
+  /** Grid dimensions (must match RoomLayout) */
+  width: number;
+  height: number;
+  /** All texture placements, ordered for rendering */
+  placements: TexturePlacement[];
+  /** Format version */
+  version: number;
+}
+
+/**
+ * Combined room definition stored in project state.
+ * Contains both layout and texture data for editor use.
+ */
+export interface RoomDefinition {
+  /** Room name */
+  name: string;
+  /** Grid width in tiles */
+  width: number;
+  /** Grid height in tiles */
+  height: number;
+  /** Walkability grid (flat array, row-major) */
+  walkability: boolean[];
+  /** Door teleport points */
+  doors: DoorDefinition[];
+  /** Texture placements */
+  placements: TexturePlacement[];
+}
+
+// ─── Character ──────────────────────────────────────────────────────
+
+export type CharacterDirection = "down" | "up" | "left" | "right";
+export const CHARACTER_DIRECTIONS: CharacterDirection[] = ["down", "up", "left", "right"];
+
+/** Which source PNG the strip comes from */
+export type CharacterSheet = "idle" | "walk";
+
+/**
+ * Defines an animation strip within a sprite sheet.
+ * A strip is a contiguous run of frames from a single row.
+ */
+export interface AnimationStrip {
+  /** Which source sheet ("idle" or "walk" PNG) */
+  sheet: CharacterSheet;
+  /** Which row in the sprite sheet (0-indexed) */
+  row: number;
+  /** Starting frame column (0-indexed, default 0) */
+  startFrame: number;
+  /** Number of frames in this strip */
+  frameCount: number;
+}
+
+/**
+ * Common animation family names. Users can also define custom ones.
+ * "idle" and "walk" are required for the game runtime; others are optional.
+ */
+export const BUILTIN_FAMILIES = ["idle", "walk", "sit_office", "sit_couch"] as const;
+
+/**
+ * A single animation entry: one direction-variant within a family.
+ * Multiple variants per direction are allowed (e.g. idle-down #0 = breathing,
+ * idle-down #1 = sipping coffee).
+ */
+export interface CharacterAnimation {
+  /** Animation family name (e.g. "idle", "walk", "sit_office", "sit_couch") */
+  family: string;
+  /** Direction this animation faces */
+  direction: CharacterDirection;
+  /**
+   * Variant index within the same family+direction.
+   * 0 = primary, 1+ = alternates the game can cycle through.
+   */
+  variant: number;
+  /** The actual strip data (source sheet + row + frames) */
+  strip: AnimationStrip;
+}
+
+/**
+ * Full character definition.
+ * Created by the Character Definer tool.
+ *
+ * Animation data is stored as a flat list of CharacterAnimation entries.
+ * The game runtime can look up animations by family + direction + variant.
+ */
+export interface CharacterDefinition {
+  /** Unique identifier */
+  id: string;
+  /** Display name (e.g. "Adam") */
+  name: string;
+  /** Sprite sheet file stem (e.g. "adam" → adam_idle.png, adam_walk.png) */
+  sheetId: string;
+  /** Frame size in pixels */
+  frameWidth: number;
+  frameHeight: number;
+  /** All animation entries */
+  animations: CharacterAnimation[];
+  /**
+   * Per-family playback speed in FPS.
+   * e.g. { "idle": 4, "walk": 8, "sit_office": 4 }
+   */
+  familySpeeds: Record<string, number>;
+}
+
+/** Helper: look up animations by family + direction (all variants) */
+export function getCharacterAnimations(
+  char: CharacterDefinition,
+  family: string,
+  direction: CharacterDirection,
+): CharacterAnimation[] {
+  return char.animations
+    .filter((a) => a.family === family && a.direction === direction)
+    .sort((a, b) => a.variant - b.variant);
+}
+
+/** Helper: get the primary (variant 0) animation for a family + direction */
+export function getCharacterAnimation(
+  char: CharacterDefinition,
+  family: string,
+  direction: CharacterDirection,
+): CharacterAnimation | undefined {
+  return char.animations.find(
+    (a) => a.family === family && a.direction === direction && a.variant === 0,
+  );
+}
+
+/** Helper: get all unique family names from a character definition */
+export function getCharacterFamilies(char: CharacterDefinition): string[] {
+  const families = new Set(char.animations.map((a) => a.family));
+  return [...families];
+}
+
+// ─── Project data (saved to localStorage / exported as JSON) ────────
+
+export interface ProjectData {
+  composites: CompositeObject[];
+  rooms: RoomDefinition[];
+  characters: CharacterDefinition[];
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
+export function getTilesetPath(tilesetId: TilesetId): string {
+  return TILESETS[tilesetId].path;
+}
+
+export function getCharacterPath(name: string, type: "idle" | "walk"): string {
+  return `/data/characters/${name}_${type}.png`;
+}
+
+/** Generate a unique id */
+export function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/** Create an empty walkability grid (all blocked by default) */
+export function createWalkabilityGrid(w: number, h: number, walkable = false): boolean[] {
+  return new Array(w * h).fill(walkable);
+}
+
+/** Get the size of a placement in tiles */
+export function getPlacementSize(
+  p: TexturePlacement,
+  getComposite: (id: string) => CompositeObject | undefined
+): { w: number; h: number } | null {
+  if (p.region) {
+    return { w: p.region.w, h: p.region.h };
+  }
+  if (p.compositeId) {
+    const comp = getComposite(p.compositeId);
+    return comp ? comp.displaySize : null;
+  }
+  return null;
+}
+
+/** Extract RoomLayout (room.dat) from a RoomDefinition */
+export function extractRoomLayout(room: RoomDefinition): RoomLayout {
+  return {
+    name: room.name,
+    width: room.width,
+    height: room.height,
+    walkability: [...room.walkability],
+    doors: room.doors.map((d) => ({ ...d })),
+    version: 1,
+  };
+}
+
+/** Extract RoomTexture (room_texture.dat) from a RoomDefinition */
+export function extractRoomTexture(room: RoomDefinition): RoomTexture {
+  return {
+    name: room.name,
+    width: room.width,
+    height: room.height,
+    placements: room.placements.map((p) => ({ ...p })),
+    version: 1,
+  };
+}
