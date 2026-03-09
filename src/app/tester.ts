@@ -63,7 +63,7 @@ const seqListDiv = document.getElementById("tester-seq-list") as HTMLDivElement;
 let pixiApp: Application | null = null;
 let currentRoom: RoomDefinition | null = null;
 let currentChar: CharacterDefinition | null = null;
-let currentZoom = 2;
+let currentZoom = 1;
 let showGrid = false;
 let showWalkability = false;
 

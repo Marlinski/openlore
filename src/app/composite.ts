@@ -61,7 +61,7 @@ const savedCount = document.getElementById("comp-saved-count") as HTMLSpanElemen
 
 // ─── State ────────────────────────────────────────────────────────
 
-let currentZoom = 2;
+let currentZoom = 1;
 let showGrid = true;
 
 /** Parts placed on the workspace */

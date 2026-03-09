@@ -56,7 +56,7 @@ export class TilesetPicker {
   private onSelect: OnSelectRegion;
 
   private tilesetId: TilesetId = "office_combined";
-  private zoom = 2;
+  private zoom = 1;
   private showGrid = true;
   private img: HTMLImageElement | null = null;
 

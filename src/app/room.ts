@@ -126,7 +126,7 @@ const tileStackList = document.getElementById("tile-stack-list") as HTMLDivEleme
 let mode: EditorMode = "layout";
 let layoutTool: LayoutTool = "walk";
 let layerTab: LayerTab = "floor";
-let currentZoom = 2;
+let currentZoom = 1;
 let showGrid = true;
 
 let roomWidth = 16;
