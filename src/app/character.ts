@@ -20,6 +20,8 @@ import {
   type CharacterAnimation,
   type CharacterSheet,
   type AnimationStrip,
+  type VariantSequence,
+  type VariantSequenceStep,
   CHARACTER_DIRECTIONS,
   BUILTIN_FAMILIES,
   charTilesetId,
@@ -66,6 +68,13 @@ const saveStatusDiv = document.getElementById("char-save-status") as HTMLDivElem
 const saveBtn = document.getElementById("char-save-btn") as HTMLButtonElement;
 const savedCountSpan = document.getElementById("char-saved-count") as HTMLSpanElement;
 const savedListDiv = document.getElementById("char-saved-list") as HTMLDivElement;
+
+// Sequence builder DOM elements
+const seqFamilySelect = document.getElementById("char-seq-family") as HTMLSelectElement;
+const seqDirSelect = document.getElementById("char-seq-dir") as HTMLSelectElement;
+const seqNameInput = document.getElementById("char-seq-name") as HTMLInputElement;
+const seqAddBtn = document.getElementById("char-seq-add-btn") as HTMLButtonElement;
+const seqListDiv = document.getElementById("char-seq-list") as HTMLDivElement;
 
 // ─── State ────────────────────────────────────────────────────────
 
@@ -121,6 +130,7 @@ interface AnimEntry {
 interface CharAnimState {
   entries: AnimEntry[];
   familySpeeds: Record<string, number>;
+  variantSequences: VariantSequence[];
 }
 
 const animStates: Map<string, CharAnimState> = new Map();
@@ -145,7 +155,7 @@ let animTimer: number | null = null;
 function getAnimState(sheetId: string): CharAnimState {
   let state = animStates.get(sheetId);
   if (!state) {
-    state = { entries: [], familySpeeds: { idle: 4, walk: 8 } };
+    state = { entries: [], familySpeeds: { idle: 4, walk: 8 }, variantSequences: [] };
     animStates.set(sheetId, state);
   }
   return state;
@@ -615,7 +625,199 @@ function renderAnimList(): void {
       animListDiv.appendChild(item);
     }
   }
+
+  // Also update the sequence builder UI
+  updateSeqFamilyDropdown();
+  renderSeqList();
 }
+
+// ─── Variant Sequence Builder ───────────────────────────────────
+
+/** Populate the family dropdown in the sequence creator with families that have multi-variant directions */
+function updateSeqFamilyDropdown(): void {
+  const state = getAnimState(currentSheetId);
+  seqFamilySelect.innerHTML = "";
+
+  // Find all family+direction combos that have >1 variant
+  const familiesWithVariants = new Set<string>();
+  const countMap = new Map<string, number>();
+  for (const entry of state.entries) {
+    const key = `${entry.family}:${entry.direction}`;
+    countMap.set(key, (countMap.get(key) || 0) + 1);
+  }
+  for (const [key, count] of countMap) {
+    if (count > 1) {
+      familiesWithVariants.add(key.split(":")[0]);
+    }
+  }
+
+  if (familiesWithVariants.size === 0) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "(no multi-variant families)";
+    seqFamilySelect.appendChild(opt);
+    seqAddBtn.disabled = true;
+    return;
+  }
+
+  seqAddBtn.disabled = false;
+  for (const family of familiesWithVariants) {
+    const opt = document.createElement("option");
+    opt.value = family;
+    opt.textContent = family;
+    seqFamilySelect.appendChild(opt);
+  }
+}
+
+/** Get all variants for a family+direction from current anim state */
+function getVariantsForFamilyDir(family: string, dir: CharacterDirection): number[] {
+  const state = getAnimState(currentSheetId);
+  return state.entries
+    .filter((e) => e.family === family && e.direction === dir)
+    .map((e) => e.variant)
+    .sort((a, b) => a - b);
+}
+
+function addNewSequence(): void {
+  const family = seqFamilySelect.value;
+  const dir = seqDirSelect.value as CharacterDirection;
+  let name = seqNameInput.value.trim();
+
+  if (!family) return;
+
+  const variants = getVariantsForFamilyDir(family, dir);
+  if (variants.length < 2) {
+    setStatus(`${family} ${dir} has only ${variants.length} variant(s) — need at least 2`);
+    return;
+  }
+
+  if (!name) {
+    // Auto-generate a name
+    const state = getAnimState(currentSheetId);
+    const existing = state.variantSequences.filter((s) => s.family === family && s.direction === dir);
+    name = `${family}_${dir}_seq${existing.length + 1}`;
+  }
+
+  const state = getAnimState(currentSheetId);
+
+  // Default: each variant plays once
+  const steps: VariantSequenceStep[] = variants.map((v) => ({ variant: v, repeats: 1 }));
+
+  state.variantSequences.push({
+    name,
+    family,
+    direction: dir,
+    steps,
+  });
+
+  seqNameInput.value = "";
+  renderSeqList();
+  updateSaveState();
+  setStatus(`Created sequence "${name}" for ${family} ${dir}`);
+}
+
+function renderSeqList(): void {
+  seqListDiv.innerHTML = "";
+  const state = getAnimState(currentSheetId);
+
+  if (state.variantSequences.length === 0) {
+    return;
+  }
+
+  for (let si = 0; si < state.variantSequences.length; si++) {
+    const seq = state.variantSequences[si];
+    const item = document.createElement("div");
+    item.className = "char-seq-item";
+
+    // Header
+    const header = document.createElement("div");
+    header.className = "seq-header";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "seq-name";
+    nameSpan.textContent = seq.name;
+    header.appendChild(nameSpan);
+
+    const metaSpan = document.createElement("span");
+    metaSpan.className = "seq-meta";
+    metaSpan.textContent = `${seq.family} ${seq.direction}`;
+    header.appendChild(metaSpan);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "\u00d7";
+    delBtn.title = "Remove sequence";
+    delBtn.addEventListener("click", () => {
+      state.variantSequences.splice(si, 1);
+      renderSeqList();
+      updateSaveState();
+    });
+    header.appendChild(delBtn);
+    item.appendChild(header);
+
+    // Steps
+    for (let sti = 0; sti < seq.steps.length; sti++) {
+      const step = seq.steps[sti];
+      const stepDiv = document.createElement("div");
+      stepDiv.className = "char-seq-step";
+
+      const label = document.createElement("span");
+      label.className = "step-label";
+      label.textContent = `variant #${step.variant}`;
+      stepDiv.appendChild(label);
+
+      const timesLabel = document.createElement("span");
+      timesLabel.style.cssText = "font-size: 10px; color: var(--text-dim);";
+      timesLabel.textContent = "\u00d7";
+      stepDiv.appendChild(timesLabel);
+
+      const repeatsInput = document.createElement("input");
+      repeatsInput.type = "number";
+      repeatsInput.min = "1";
+      repeatsInput.max = "99";
+      repeatsInput.value = String(step.repeats);
+      repeatsInput.addEventListener("change", () => {
+        const v = Math.max(1, Math.min(99, parseInt(repeatsInput.value) || 1));
+        step.repeats = v;
+        repeatsInput.value = String(v);
+        updateSaveState();
+      });
+      stepDiv.appendChild(repeatsInput);
+
+      const stepDel = document.createElement("button");
+      stepDel.className = "delete-btn";
+      stepDel.textContent = "\u00d7";
+      stepDel.title = "Remove step";
+      stepDel.addEventListener("click", () => {
+        seq.steps.splice(sti, 1);
+        renderSeqList();
+        updateSaveState();
+      });
+      stepDiv.appendChild(stepDel);
+
+      item.appendChild(stepDiv);
+    }
+
+    // Add step button
+    const addStepBtn = document.createElement("button");
+    addStepBtn.className = "char-seq-add-step";
+    addStepBtn.textContent = "+ add variant step";
+    addStepBtn.addEventListener("click", () => {
+      const variants = getVariantsForFamilyDir(seq.family, seq.direction);
+      // Find a variant not yet in steps, or just add variant 0
+      const usedVariants = new Set(seq.steps.map((s) => s.variant));
+      const nextVar = variants.find((v) => !usedVariants.has(v)) ?? variants[0] ?? 0;
+      seq.steps.push({ variant: nextVar, repeats: 1 });
+      renderSeqList();
+      updateSaveState();
+    });
+    item.appendChild(addStepBtn);
+
+    seqListDiv.appendChild(item);
+  }
+}
+
+seqAddBtn.addEventListener("click", addNewSequence);
 
 // ─── Animation preview ──────────────────────────────────────────
 
@@ -636,7 +838,7 @@ function updatePreviews(): void {
   const previewScale = 3;
   const fps = parseInt(animSpeedRange.value);
 
-  // Show one preview per unique family+direction (variant 0 only for simplicity)
+  // Show one preview per unique family+direction (variant 0 only)
   const seen = new Set<string>();
   for (const entry of state.entries) {
     const key = `${entry.family}:${entry.direction}`;
@@ -683,6 +885,61 @@ function updatePreviews(): void {
       canvas,
       ctx,
       frames,
+      currentFrame: 0,
+    });
+  }
+
+  // Show one preview per variant sequence (cycles through steps with repeats)
+  for (const seq of state.variantSequences) {
+    // Build combined frame list: for each step, repeat its variant's strip N times
+    const seqFrames: { sx: number; sy: number; tilesetId: string }[] = [];
+    for (const step of seq.steps) {
+      const entry = state.entries.find(
+        (e) => e.family === seq.family && e.direction === seq.direction && e.variant === step.variant,
+      );
+      if (!entry) continue;
+      const stripImg = getStripImage(entry.strip);
+      if (!stripImg) continue;
+
+      for (let rep = 0; rep < step.repeats; rep++) {
+        for (let f = 0; f < entry.strip.frameCount; f++) {
+          seqFrames.push({
+            sx: (entry.strip.startFrame + f) * frameW,
+            sy: entry.strip.row * frameH,
+            tilesetId: entry.strip.tilesetId,
+          });
+        }
+      }
+    }
+
+    if (seqFrames.length === 0) continue;
+
+    const box = document.createElement("div");
+    box.className = "char-preview-box";
+
+    const canvas = document.createElement("canvas");
+    canvas.width = frameW * previewScale;
+    canvas.height = frameH * previewScale;
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = `\u266B ${seq.name}`;
+    label.style.color = getFamilyColor(seq.family);
+
+    box.appendChild(canvas);
+    box.appendChild(label);
+    previewArea.appendChild(box);
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+
+    animPreviews.push({
+      label: `seq:${seq.name}`,
+      canvas,
+      ctx,
+      frames: seqFrames,
       currentFrame: 0,
     });
   }
@@ -777,6 +1034,7 @@ function saveCharacter(): void {
     frameHeight: frameH,
     animations,
     familySpeeds: { ...state.familySpeeds },
+    variantSequences: state.variantSequences.map((s) => ({ ...s, steps: s.steps.map((st) => ({ ...st })) })),
   };
 
   appState.addCharacter(charDef);
@@ -845,6 +1103,10 @@ function loadCharacterDef(char: CharacterDefinition): void {
     strip: { ...a.strip },
   }));
   state.familySpeeds = { ...char.familySpeeds };
+  state.variantSequences = (char.variantSequences || []).map((s) => ({
+    ...s,
+    steps: s.steps.map((st) => ({ ...st })),
+  }));
 
   loadSheets();
   setStatus(`Loaded character "${char.name}" for editing`);

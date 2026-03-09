@@ -1007,6 +1007,77 @@
     }
     .char-saved-item:hover .delete-btn { opacity: 1; }
 
+    /* Variant sequence item */
+    .char-seq-item {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 4px;
+      background: var(--bg);
+    }
+    .char-seq-item .seq-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .char-seq-item .seq-header .seq-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue);
+      flex: 1;
+    }
+    .char-seq-item .seq-header .seq-meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .char-seq-item .seq-header .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .char-seq-item:hover .seq-header .delete-btn { opacity: 1; }
+    .char-seq-step {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 0;
+      font-size: 11px;
+    }
+    .char-seq-step .step-label {
+      flex: 1;
+      color: var(--text);
+    }
+    .char-seq-step input[type="number"] {
+      width: 40px;
+      font-size: 10px;
+      padding: 1px 3px;
+    }
+    .char-seq-step .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 1px 3px;
+    }
+    .char-seq-step:hover .delete-btn { opacity: 1; }
+    .char-seq-add-step {
+      font-size: 10px;
+      color: var(--blue);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 2px 0;
+      margin-top: 2px;
+    }
+    .char-seq-add-step:hover { text-decoration: underline; }
+
     /* ═══════════════════════════════════════════════════════════
        TAB 4: Room Tester
        ═══════════════════════════════════════════════════════════ */
@@ -1457,6 +1528,30 @@
         <div class="panel-body">
           <div id="char-anim-list"></div>
           <hr style="border-color: var(--border); margin: 12px 0;" />
+          <!-- Variant Sequences -->
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            Variant Sequences
+          </div>
+          <div id="char-seq-hint" style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;">
+            Create sequences to cycle through variants with custom repeat counts.
+          </div>
+          <div id="char-seq-create" style="margin-bottom: 8px;">
+            <div style="display: flex; gap: 4px; margin-bottom: 4px; align-items: center;">
+              <select id="char-seq-family" style="flex: 1; font-size: 11px;"></select>
+              <select id="char-seq-dir" style="flex: 1; font-size: 11px;">
+                <option value="down">down</option>
+                <option value="up">up</option>
+                <option value="left">left</option>
+                <option value="right">right</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input type="text" id="char-seq-name" placeholder="sequence name" style="flex: 1; font-size: 11px;" />
+              <button class="btn" id="char-seq-add-btn" style="font-size: 11px;">+ New</button>
+            </div>
+          </div>
+          <div id="char-seq-list"></div>
+          <hr style="border-color: var(--border); margin: 12px 0;" />
           <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
             Preview
           </div>
@@ -1502,6 +1597,14 @@
             Character idles when standing still.
           </div>
           <hr style="border-color: var(--border); margin: 12px 0;" />
+          <!-- Variant sequence selectors (shown after loading, one per family+direction with multiple variants) -->
+          <div id="tester-seq-panel" style="display: none;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              Variant Sequences
+            </div>
+            <div id="tester-seq-list" style="margin-bottom: 8px;"></div>
+            <hr style="border-color: var(--border); margin: 12px 0;" />
+          </div>
           <div id="tester-info" style="font-size: 11px; color: var(--text-dim);">
             Select a room and character, then click "Load Room".
           </div>

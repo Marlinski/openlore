@@ -9,7 +9,7 @@
  */
 
 import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "./types.js";
-import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId } from "./types.js";
+import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId, makeCharTileset } from "./types.js";
 
 const STORAGE_KEY = "offisims_project_v4";
 const OLD_STORAGE_KEY = "offisims_project_v3";
@@ -96,6 +96,15 @@ class AppState {
   addCharacter(char: CharacterDefinition): void {
     this.characters = this.characters.filter((c) => c.id !== char.id);
     this.characters.push(char);
+    // Ensure character sheet tilesets are registered
+    const fw = char.frameWidth || 16;
+    const fh = char.frameHeight || 32;
+    for (const sheet of ["idle", "walk"] as const) {
+      const tsId = charTilesetId(char.sheetId, sheet);
+      if (!findTileset(this.tilesets, tsId)) {
+        this.tilesets.push(makeCharTileset(char.sheetId, sheet, fw, fh, 0, 0));
+      }
+    }
     this.notify();
   }
 
@@ -106,6 +115,33 @@ class AppState {
 
   getCharacter(id: string): CharacterDefinition | undefined {
     return this.characters.find((c) => c.id === id);
+  }
+
+  // ─── Character tileset registration ─────────────────────────
+
+  /**
+   * Scan all characters and ensure their referenced char_* tilesets exist.
+   * This fixes the case where character data references tileset IDs like
+   * "char_adam_idle" but those tilesets were never added (e.g. because the
+   * Character Definer tab wasn't visited, or data was imported without them).
+   *
+   * We can't know the exact image dimensions here (the image hasn't loaded),
+   * so we create tilesets with cols=0, rows=0 as placeholders. The Character
+   * Definer (or tester) will update them after loading the actual image.
+   */
+  private ensureCharacterTilesets(): void {
+    for (const char of this.characters) {
+      const sheetId = char.sheetId;
+      const fw = char.frameWidth || 16;
+      const fh = char.frameHeight || 32;
+
+      for (const sheet of ["idle", "walk"] as const) {
+        const tsId = charTilesetId(sheetId, sheet);
+        if (!findTileset(this.tilesets, tsId)) {
+          this.tilesets.push(makeCharTileset(sheetId, sheet, fw, fh, 0, 0));
+        }
+      }
+    }
   }
 
   // ─── Persistence ────────────────────────────────────────────
@@ -171,6 +207,9 @@ class AppState {
           console.log("Migrated project data from v3 to v4 (added tilesets)");
           this.save(); // persist as v4
         }
+
+        // Ensure all character sheet tilesets are registered
+        this.ensureCharacterTilesets();
       } else {
         // Brand new — seed with defaults
         this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
@@ -244,6 +283,8 @@ class AppState {
     }
 
     console.log(`Import: ${addedTilesets} tilesets, ${addedComps} composites, ${addedRooms} rooms, ${addedChars} characters added`);
+    // Ensure all character sheet tilesets are registered
+    this.ensureCharacterTilesets();
     this.notify();
   }
 
@@ -335,6 +376,7 @@ function migrateCharacter(c: any): CharacterDefinition {
       frameHeight: c.frameHeight || 32,
       animations,
       familySpeeds,
+      variantSequences: c.variantSequences || [],
     };
   }
 
@@ -370,5 +412,6 @@ function migrateCharacter(c: any): CharacterDefinition {
     frameHeight: c.frameHeight || 32,
     animations,
     familySpeeds: c.familySpeeds || {},
+    variantSequences: c.variantSequences || [],
   };
 }

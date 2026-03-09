@@ -32,7 +32,11 @@ import {
   type TexturePlacement,
   type CharacterDefinition,
   type CharacterDirection,
+  type CharacterAnimation,
+  type VariantSequence,
   getCharacterAnimation,
+  getCharacterAnimations,
+  getCharacterSequences,
   getPlacementSize,
 } from "@shared/types.js";
 import { appState } from "@shared/state.js";
@@ -50,6 +54,8 @@ const walkToggle = document.getElementById("tester-walk-toggle") as HTMLInputEle
 const modeHint = document.getElementById("tester-mode-hint") as HTMLDivElement;
 const canvasWrap = document.getElementById("tester-canvas-wrap") as HTMLDivElement;
 const hintDiv = document.getElementById("tester-hint") as HTMLDivElement;
+const seqPanel = document.getElementById("tester-seq-panel") as HTMLDivElement;
+const seqListDiv = document.getElementById("tester-seq-list") as HTMLDivElement;
 
 // ─── State ────────────────────────────────────────────────────────
 
@@ -78,6 +84,28 @@ const MOVE_SPEED = 4;
 let animFamily = "idle";
 let animFrame = 0;
 let animTimer = 0;
+
+/**
+ * Variant sequence playback state.
+ * When a sequence is active for the current family+direction, we cycle
+ * through its steps. Each step plays its variant's full strip `repeats` times.
+ */
+interface SeqPlaybackState {
+  /** The active sequence (null = use variant 0 only) */
+  sequence: VariantSequence | null;
+  /** Current step index in the sequence */
+  stepIndex: number;
+  /** How many full-strip repeats we've done for the current step */
+  repeatsDone: number;
+}
+
+let seqPlayback: SeqPlaybackState = { sequence: null, stepIndex: 0, repeatsDone: 0 };
+
+/**
+ * Selected sequence name per family+direction key ("family:direction").
+ * Empty string or missing = use variant 0 only.
+ */
+const selectedSequences: Map<string, string> = new Map();
 
 /** Key states */
 const keys: Record<string, boolean> = {};
@@ -282,6 +310,9 @@ async function initPixiApp(room: RoomDefinition, char: CharacterDefinition): Pro
   // Create character sprite
   createCharacterSprite(char, room);
 
+  // Populate variant sequence selectors
+  populateSequenceSelectors();
+
   // Draw overlays (grid, walkability)
   drawOverlays(room);
 
@@ -478,9 +509,9 @@ function getCharacterFrameTexture(
 function updateCharacterTexture(): void {
   if (!charSprite || !currentChar) return;
 
-  const anim = getCharacterAnimation(currentChar, animFamily, charDir);
+  const anim = getCurrentAnimation();
   if (!anim) {
-    // Fallback: try idle
+    // Fallback: try idle variant 0
     const fallback = getCharacterAnimation(currentChar, "idle", charDir);
     if (!fallback) return;
     const tex = getCharacterFrameTexture(fallback.strip.tilesetId, fallback.strip.row, fallback.strip.startFrame, 0);
@@ -491,6 +522,130 @@ function updateCharacterTexture(): void {
   const frameIdx = animFrame % anim.strip.frameCount;
   const tex = getCharacterFrameTexture(anim.strip.tilesetId, anim.strip.row, anim.strip.startFrame, frameIdx);
   if (tex) charSprite.texture = tex;
+}
+
+/**
+ * Get the current animation to play, taking variant sequences into account.
+ * If a sequence is active, returns the animation for the current step's variant.
+ * Otherwise returns variant 0.
+ */
+function getCurrentAnimation(): CharacterAnimation | undefined {
+  if (!currentChar) return undefined;
+
+  if (seqPlayback.sequence) {
+    const seq = seqPlayback.sequence;
+    if (seq.steps.length > 0) {
+      const step = seq.steps[seqPlayback.stepIndex % seq.steps.length];
+      // Find the animation for this variant
+      const anims = getCharacterAnimations(currentChar, animFamily, charDir);
+      return anims.find((a) => a.variant === step.variant) ?? anims[0];
+    }
+  }
+
+  return getCharacterAnimation(currentChar, animFamily, charDir);
+}
+
+/**
+ * Build sequence selector UI in seqListDiv.
+ * For each family+direction that has >=1 variant sequence defined,
+ * show a <select> dropdown with "(variant 0 only)" + all sequence names.
+ * Also shows/hides the seqPanel based on whether any sequences exist.
+ */
+function populateSequenceSelectors(): void {
+  seqListDiv.innerHTML = "";
+  selectedSequences.clear();
+  seqPlayback = { sequence: null, stepIndex: 0, repeatsDone: 0 };
+
+  if (!currentChar) {
+    seqPanel.style.display = "none";
+    return;
+  }
+
+  const seqs = currentChar.variantSequences || [];
+  if (seqs.length === 0) {
+    seqPanel.style.display = "none";
+    return;
+  }
+
+  // Group sequences by family+direction
+  const grouped = new Map<string, VariantSequence[]>();
+  for (const s of seqs) {
+    const key = `${s.family}:${s.direction}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(s);
+  }
+
+  seqPanel.style.display = "";
+
+  for (const [key, keySeqs] of grouped) {
+    const [family, direction] = key.split(":");
+
+    const row = document.createElement("div");
+    row.style.marginBottom = "4px";
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "6px";
+
+    const label = document.createElement("span");
+    label.style.fontSize = "11px";
+    label.style.color = "var(--text-dim)";
+    label.style.minWidth = "80px";
+    label.textContent = `${family} ${direction}`;
+    row.appendChild(label);
+
+    const select = document.createElement("select");
+    select.style.flex = "1";
+    select.style.fontSize = "11px";
+
+    // Default option — no sequence
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "(variant 0 only)";
+    select.appendChild(defaultOpt);
+
+    for (const s of keySeqs) {
+      const opt = document.createElement("option");
+      opt.value = s.name;
+      opt.textContent = s.name;
+      select.appendChild(opt);
+    }
+
+    select.addEventListener("change", () => {
+      selectedSequences.set(key, select.value);
+      syncSequencePlayback();
+    });
+
+    row.appendChild(select);
+    seqListDiv.appendChild(row);
+  }
+}
+
+/**
+ * Look up and activate the appropriate sequence for the current family+direction.
+ */
+function syncSequencePlayback(): void {
+  if (!currentChar) {
+    seqPlayback.sequence = null;
+    return;
+  }
+
+  const key = `${animFamily}:${charDir}`;
+  const seqName = selectedSequences.get(key);
+
+  if (!seqName) {
+    seqPlayback.sequence = null;
+    return;
+  }
+
+  const sequences = getCharacterSequences(currentChar, animFamily, charDir);
+  const seq = sequences.find((s) => s.name === seqName) ?? null;
+
+  // Only reset playback if the sequence actually changed
+  if (seq !== seqPlayback.sequence) {
+    seqPlayback.sequence = seq;
+    seqPlayback.stepIndex = 0;
+    seqPlayback.repeatsDone = 0;
+  }
 }
 
 function positionCharacterSprite(): void {
@@ -537,11 +692,18 @@ function updateCharacter(dt: number): void {
   }
 
   // Switch animation family
+  const prevFamily = animFamily;
+  const prevDir = charDir;
   const newFamily = charMoving ? "walk" : "idle";
   if (newFamily !== animFamily) {
     animFamily = newFamily;
     animFrame = 0;
     animTimer = 0;
+  }
+
+  // If family or direction changed, sync sequence playback
+  if (prevFamily !== animFamily || prevDir !== charDir) {
+    syncSequencePlayback();
   }
 
   // Move with collision
@@ -559,13 +721,30 @@ function updateCharacter(dt: number): void {
     }
   }
 
-  // Advance animation
+  // Advance animation with sequence awareness
   const fps = currentChar.familySpeeds[animFamily] ?? (animFamily === "walk" ? 8 : 4);
   animTimer += dt;
   const frameDuration = 1 / fps;
   while (animTimer >= frameDuration) {
     animTimer -= frameDuration;
     animFrame++;
+
+    // Check if we wrapped past the current animation's frame count
+    const currentAnim = getCurrentAnimation();
+    if (currentAnim && animFrame >= currentAnim.strip.frameCount) {
+      animFrame = 0;
+
+      // If a sequence is active, advance the sequence step
+      if (seqPlayback.sequence && seqPlayback.sequence.steps.length > 0) {
+        seqPlayback.repeatsDone++;
+        const step = seqPlayback.sequence.steps[seqPlayback.stepIndex % seqPlayback.sequence.steps.length];
+        if (seqPlayback.repeatsDone >= step.repeats) {
+          // Advance to next step
+          seqPlayback.stepIndex = (seqPlayback.stepIndex + 1) % seqPlayback.sequence.steps.length;
+          seqPlayback.repeatsDone = 0;
+        }
+      }
+    }
   }
 
   // Update sprite

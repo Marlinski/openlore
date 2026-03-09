@@ -331,6 +331,40 @@ export interface AnimationStrip {
 }
 
 /**
+ * A single step in a variant sequence: play a specific variant's strip
+ * a given number of times before advancing to the next step.
+ */
+export interface VariantSequenceStep {
+  /** Which variant index to play (must exist in the character's animations) */
+  variant: number;
+  /** How many times to play the full strip before moving to the next step */
+  repeats: number;
+}
+
+/**
+ * A variant sequence defines a playlist of variants for a specific
+ * family+direction combination. The tester/game cycles through the steps
+ * in order, looping back to the start when done.
+ *
+ * Example: for idle+down with variants 0 (breathing) and 1 (sipping coffee):
+ *   steps: [{variant: 0, repeats: 5}, {variant: 1, repeats: 1}]
+ * This plays breathing 5× then coffee 1×, then loops.
+ *
+ * A character can have multiple named sequences per family+direction.
+ * The active sequence is selected in the tester/game UI.
+ */
+export interface VariantSequence {
+  /** Human-readable name (e.g. "mostly_breathing", "coffee_heavy") */
+  name: string;
+  /** Animation family this sequence applies to (e.g. "idle") */
+  family: string;
+  /** Direction this sequence applies to (e.g. "down") */
+  direction: CharacterDirection;
+  /** Ordered list of steps in the sequence */
+  steps: VariantSequenceStep[];
+}
+
+/**
  * Common animation family names. Users can also define custom ones.
  * "idle" and "walk" are required for the game runtime; others are optional.
  */
@@ -379,6 +413,12 @@ export interface CharacterDefinition {
    * e.g. { "idle": 4, "walk": 8, "sit_office": 4 }
    */
   familySpeeds: Record<string, number>;
+  /**
+   * Named variant sequences for family+direction combos that have
+   * multiple variants. Each sequence defines a weighted playlist.
+   * If empty or no sequence matches, the tester uses variant 0 only.
+   */
+  variantSequences: VariantSequence[];
 }
 
 /** Helper: look up animations by family + direction (all variants) */
@@ -407,6 +447,17 @@ export function getCharacterAnimation(
 export function getCharacterFamilies(char: CharacterDefinition): string[] {
   const families = new Set(char.animations.map((a) => a.family));
   return [...families];
+}
+
+/** Helper: get all variant sequences for a given family+direction */
+export function getCharacterSequences(
+  char: CharacterDefinition,
+  family: string,
+  direction: CharacterDirection,
+): VariantSequence[] {
+  return (char.variantSequences || []).filter(
+    (s) => s.family === family && s.direction === direction,
+  );
 }
 
 // ─── Project data (saved to localStorage / exported as JSON) ────────
