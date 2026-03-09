@@ -113,9 +113,8 @@ const keys: Record<string, boolean> = {};
 
 // ─── Door transition state ──────────────────────────────────────
 
-/** Cooldown after a door transition to prevent immediate re-trigger */
-let doorCooldown = 0;
-const DOOR_COOLDOWN_TIME = 0.5; // seconds
+/** The door ID the character is currently standing on (to avoid re-triggering) */
+let currentDoorId: string | null = null;
 
 /** True while a room transition is in progress (async) */
 let transitioning = false;
@@ -478,6 +477,7 @@ function createCharacterSprite(char: CharacterDefinition, room: RoomDefinition):
   charY = startRow;
   charDir = "down";
   charMoving = false;
+  currentDoorId = null;
   animFamily = "idle";
   animFrame = 0;
   animTimer = 0;
@@ -738,8 +738,8 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
     positionCharacterSprite();
     syncSequencePlayback();
 
-    // Start door cooldown so we don't immediately re-trigger
-    doorCooldown = DOOR_COOLDOWN_TIME;
+    // Mark the destination door as "already on it" so we don't re-trigger
+    currentDoorId = targetDoorId;
 
     // Update the room dropdown to reflect current room
     roomSelect.value = targetRoomName;
@@ -771,11 +771,6 @@ function positionCharacterSprite(): void {
 
 function updateCharacter(dt: number): void {
   if (!currentRoom || !currentChar || transitioning) return;
-
-  // Tick down door cooldown
-  if (doorCooldown > 0) {
-    doorCooldown -= dt;
-  }
 
   // Determine movement direction from keys
   let dx = 0;
@@ -835,17 +830,22 @@ function updateCharacter(dt: number): void {
     }
   }
 
-  // Check for door transition
-  if (doorCooldown <= 0 && currentRoom.doors.length > 0) {
+  // Check for door transition — only trigger when ENTERING a door tile
+  if (currentRoom.doors.length > 0) {
     const door = getDoorAtPosition(currentRoom, charX, charY);
-    if (door && door.target) {
+    const doorId = door?.id ?? null;
+
+    if (door && door.target && doorId !== currentDoorId) {
+      // Just stepped onto a new linked door — trigger transition
       const [targetRoomName, targetDoorId] = parseDoorTarget(door.target);
       if (targetRoomName && targetDoorId) {
-        // Fire and forget — transitionToRoom rebuilds the scene
         transitionToRoom(targetRoomName, targetDoorId);
         return; // skip the rest of this frame
       }
     }
+
+    // Track which door we're on (null if not on any door)
+    currentDoorId = doorId;
   }
 
   // Advance animation with sequence awareness
