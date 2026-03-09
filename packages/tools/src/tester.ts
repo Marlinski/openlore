@@ -39,8 +39,8 @@ import {
   getCharacterAnimations,
   getCharacterSequences,
   getPlacementSize,
-} from "@shared/types.js";
-import { appState } from "@shared/state.js";
+} from "@offisims/shared";
+import { appState } from "./state.js";
 import { setStatus } from "./main.js";
 
 // ─── DOM elements ─────────────────────────────────────────────────

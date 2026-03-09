@@ -8,7 +8,7 @@
  *   4. Room Tester
  */
 
-import { appState } from "@shared/state.js";
+import { appState } from "./state.js";
 import { initCompositeTab } from "./composite.js";
 import { initRoomTab } from "./room.js";
 import { initCharacterTab } from "./character.js";
@@ -58,6 +58,20 @@ document.getElementById("btn-export")!.addEventListener("click", () => {
 document.getElementById("btn-import")!.addEventListener("click", async () => {
   await appState.importFromFile();
   setStatus("Imported project from file");
+});
+
+// ─── Server sync ─────────────────────────────────────────────────
+
+document.getElementById("btn-push")!.addEventListener("click", async () => {
+  setStatus("Syncing to server...");
+  const result = await appState.pushToServer();
+  setStatus(result.ok ? result.message : `Sync failed: ${result.message}`);
+});
+
+document.getElementById("btn-pull")!.addEventListener("click", async () => {
+  setStatus("Loading from server...");
+  const result = await appState.pullFromServer();
+  setStatus(result.ok ? result.message : `Load failed: ${result.message}`);
 });
 
 export function setStatus(text: string): void {

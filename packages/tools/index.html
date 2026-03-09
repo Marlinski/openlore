@@ -1150,6 +1150,9 @@
     <span class="topbar-spacer"></span>
     <button class="topbar-action" id="btn-export">Export JSON</button>
     <button class="topbar-action" id="btn-import">Import JSON</button>
+    <span style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></span>
+    <button class="topbar-action" id="btn-push" style="color: var(--green);">Sync to Server</button>
+    <button class="topbar-action" id="btn-pull" style="color: var(--blue);">Load from Server</button>
   </div>
 
   <!-- ─── Tab Content ──────────────────────────────────────── -->
@@ -1647,6 +1650,6 @@
     <span id="status-characters">Characters: 0</span>
   </div>
 
-  <script type="module" src="/src/app/main.ts"></script>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

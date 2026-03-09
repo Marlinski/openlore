@@ -15,8 +15,8 @@
  *   picker.setZoom(2);
  */
 
-import { TILE_SIZE, type TilesetId, type TilesetRegion, type TilesetDefinition } from "@shared/types.js";
-import { appState } from "@shared/state.js";
+import { TILE_SIZE, type TilesetId, type TilesetRegion, type TilesetDefinition } from "@offisims/shared";
+import { appState } from "./state.js";
 
 /** Global tileset image cache shared across all pickers */
 const imageCache: Map<string, HTMLImageElement> = new Map();

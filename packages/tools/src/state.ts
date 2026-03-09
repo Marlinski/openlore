@@ -8,8 +8,8 @@
  * Migrates from v3 (adds tilesets array with defaults).
  */
 
-import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "./types.js";
-import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId, makeCharTileset } from "./types.js";
+import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "@offisims/shared";
+import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId, makeCharTileset } from "@offisims/shared";
 
 const STORAGE_KEY = "offisims_project_v4";
 const OLD_STORAGE_KEY = "offisims_project_v3";
@@ -312,6 +312,89 @@ class AppState {
       };
       input.click();
     });
+  }
+
+  // ─── Server sync ────────────────────────────────────────────
+
+  /** Push current project data to the game server (PUT /api/game-data) */
+  async pushToServer(): Promise<{ ok: boolean; message: string }> {
+    const data: ProjectData = {
+      tilesets: this.tilesets,
+      composites: this.composites,
+      rooms: this.rooms,
+      characters: this.characters,
+    };
+
+    try {
+      const resp = await fetch("/api/game-data", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        return { ok: false, message: `Server error: ${err.error || resp.statusText}` };
+      }
+
+      const result = await resp.json();
+      return {
+        ok: true,
+        message: `Synced: ${result.rooms} rooms, ${result.characters} characters, ${result.composites} composites, ${result.tilesets} tilesets`,
+      };
+    } catch (err: any) {
+      return { ok: false, message: `Connection failed: ${err.message}` };
+    }
+  }
+
+  /** Pull project data from the game server (GET /api/game-data) and replace local state */
+  async pullFromServer(): Promise<{ ok: boolean; message: string }> {
+    try {
+      const resp = await fetch("/api/game-data");
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        return { ok: false, message: `Server error: ${err.error || resp.statusText}` };
+      }
+
+      const data: ProjectData = await resp.json();
+
+      // Full replace (not merge) — this is a "load from server" operation
+      this.tilesets = data.tilesets || [];
+      this.composites = data.composites || [];
+      this.rooms = (data.rooms || []).map((r: any) => {
+        if (!r.doors) r.doors = [];
+        if (!r.placements) r.placements = [];
+        if (!r.walkability) {
+          const w = r.width || 16;
+          const h = r.height || 12;
+          r.walkability = new Array(w * h).fill(true);
+        }
+        return r;
+      });
+      this.characters = (data.characters || []).map((c: any) => migrateCharacter(c));
+
+      // Ensure default tilesets are present
+      for (const def of DEFAULT_TILESETS) {
+        if (!findTileset(this.tilesets, def.id)) {
+          this.tilesets.push({ ...def });
+        }
+      }
+
+      // Ensure character tilesets are registered
+      this.ensureCharacterTilesets();
+
+      // Persist and notify listeners
+      this.save();
+      for (const fn of this.listeners) fn();
+
+      return {
+        ok: true,
+        message: `Loaded: ${this.rooms.length} rooms, ${this.characters.length} characters, ${this.composites.length} composites, ${this.tilesets.length} tilesets`,
+      };
+    } catch (err: any) {
+      return { ok: false, message: `Connection failed: ${err.message}` };
+    }
   }
 }
 

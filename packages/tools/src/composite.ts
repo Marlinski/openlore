@@ -21,8 +21,8 @@ import {
   type CompositeObject,
   type CompositePart,
   type SpriteCategory,
-} from "@shared/types.js";
-import { appState } from "@shared/state.js";
+} from "@offisims/shared";
+import { appState } from "./state.js";
 import { setStatus } from "./main.js";
 import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetSelect } from "./tileset-picker.js";
 

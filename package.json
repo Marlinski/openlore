@@ -1,21 +1,19 @@
 {
   "name": "offisims",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "annotator": "vite serve tools/annotator --config tools/annotator/vite.config.ts",
-    "editor": "vite serve tools/editor --config tools/editor/vite.config.ts",
-    "preview": "vite serve tools/preview --config tools/preview/vite.config.ts"
-  },
-  "dependencies": {
-    "pixi.js": "^8.6.6"
-  },
-  "devDependencies": {
-    "@types/node": "^25.3.5",
-    "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "tools:dev": "yarn workspace @offisims/tools dev",
+    "tools:build": "yarn workspace @offisims/tools build",
+    "server:dev": "yarn workspace @offisims/server dev",
+    "server:build": "yarn workspace @offisims/server build",
+    "client:dev": "yarn workspace @offisims/client dev",
+    "client:build": "yarn workspace @offisims/client build",
+    "shared:build": "yarn workspace @offisims/shared build",
+    "build": "yarn shared:build && yarn tools:build && yarn server:build && yarn client:build",
+    "dev": "echo 'Use tools:dev, server:dev, or client:dev'"
   }
 }

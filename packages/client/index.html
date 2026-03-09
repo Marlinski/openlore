@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offisims</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ─── Join screen ─────────────────────────────── */
+
+    #join-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 16px;
+    }
+
+    #join-screen h1 {
+      font-size: 2rem;
+      color: #a0c4ff;
+      margin-bottom: 8px;
+    }
+
+    #join-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 280px;
+    }
+
+    #join-form label {
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    #join-form input,
+    #join-form select {
+      padding: 8px 10px;
+      background: #2a2a3e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    #join-form input:focus,
+    #join-form select:focus {
+      border-color: #a0c4ff;
+    }
+
+    #join-btn {
+      padding: 10px;
+      background: #3a5a8a;
+      border: none;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    #join-btn:hover:not(:disabled) {
+      background: #4a6a9a;
+    }
+
+    #join-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    #join-status {
+      font-size: 0.8rem;
+      color: #888;
+      text-align: center;
+    }
+
+    /* ─── Game screen ─────────────────────────────── */
+
+    #game-screen {
+      display: none;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvas-wrap {
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvas-wrap canvas {
+      display: block;
+    }
+
+    /* ─── Bubble container ────────────────────────── */
+
+    #bubble-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .speech-bubble {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #222;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.3;
+      max-width: 200px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid rgba(255, 255, 255, 0.95);
+    }
+
+    /* ─── HUD container ──────────────────────────── */
+
+    #hud-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .hud-status {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    .hud-status.connected {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+
+    .hud-status.disconnected {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .hud-room-name {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 13px;
+      color: #a0c4ff;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .hud-chat-log {
+      position: absolute;
+      bottom: 44px;
+      left: 8px;
+      width: 360px;
+      max-height: 180px;
+      overflow-y: auto;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hud-chat-log::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .hud-chat-log::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+
+    .hud-chat-message {
+      font-size: 13px;
+      line-height: 1.3;
+      padding: 2px 6px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 3px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .hud-chat-name {
+      font-weight: 600;
+      color: #a0c4ff;
+    }
+
+    .hud-chat-text {
+      color: #ddd;
+    }
+
+    .hud-chat-form {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      width: 360px;
+      pointer-events: auto;
+    }
+
+    .hud-chat-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .hud-chat-input:focus {
+      border-color: #a0c4ff;
+      background: rgba(0, 0, 0, 0.75);
+    }
+  </style>
+</head>
+<body>
+  <!-- Join screen -->
+  <div id="join-screen">
+    <h1>Offisims</h1>
+    <form id="join-form">
+      <label for="name-input">Your Name</label>
+      <input id="name-input" type="text" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
+      <label for="char-select">Character</label>
+      <select id="char-select">
+        <option value="">Loading...</option>
+      </select>
+      <button id="join-btn" type="submit" disabled>Join</button>
+    </form>
+    <div id="join-status">Loading...</div>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game-screen">
+    <div id="canvas-wrap"></div>
+    <div id="bubble-container"></div>
+    <div id="hud-container"></div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

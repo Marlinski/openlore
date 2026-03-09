@@ -1,0 +1,3298 @@
+{
+  "tilesets": [
+    {
+      "id": "room_builder",
+      "label": "Room Builder (Floors & Walls)",
+      "path": "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
+      "tileWidth": 48,
+      "tileHeight": 48,
+      "cols": 16,
+      "rows": 14
+    },
+    {
+      "id": "office_shadow",
+      "label": "Office (Black Shadow)",
+      "path": "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
+      "tileWidth": 48,
+      "tileHeight": 48,
+      "cols": 16,
+      "rows": 53
+    },
+    {
+      "id": "office_shadowless",
+      "label": "Office (Shadowless)",
+      "path": "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
+      "tileWidth": 48,
+      "tileHeight": 48,
+      "cols": 16,
+      "rows": 53
+    },
+    {
+      "id": "office_combined",
+      "label": "Office (Combined)",
+      "path": "/data/sprites/Modern_Office_48x48.png",
+      "tileWidth": 48,
+      "tileHeight": 48,
+      "cols": 16,
+      "rows": 53
+    },
+    {
+      "id": "char_adam_idle",
+      "label": "adam (idle)",
+      "path": "/data/characters/adam_idle.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 1
+    },
+    {
+      "id": "char_adam_walk",
+      "label": "adam (walk)",
+      "path": "/data/characters/adam_walk.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 7
+    },
+    {
+      "id": "char_alex_idle",
+      "label": "alex (idle)",
+      "path": "/data/characters/alex_idle.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 1
+    },
+    {
+      "id": "char_alex_walk",
+      "label": "alex (walk)",
+      "path": "/data/characters/alex_walk.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 7
+    },
+    {
+      "id": "char_amelia_idle",
+      "label": "amelia (idle)",
+      "path": "/data/characters/amelia_idle.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 1
+    },
+    {
+      "id": "char_amelia_walk",
+      "label": "amelia (walk)",
+      "path": "/data/characters/amelia_walk.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 7
+    },
+    {
+      "id": "char_bob_idle",
+      "label": "bob (idle)",
+      "path": "/data/characters/bob_idle.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 1
+    },
+    {
+      "id": "char_bob_walk",
+      "label": "bob (walk)",
+      "path": "/data/characters/bob_walk.png",
+      "tileWidth": 16,
+      "tileHeight": 32,
+      "cols": 24,
+      "rows": 7
+    }
+  ],
+  "composites": [
+    {
+      "id": "comp_mmf48h0mfa4wgs",
+      "name": "desk_1",
+      "category": "furniture",
+      "parts": [
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 4,
+            "srcRow": 30,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 1,
+          "offsetY": 0
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 4,
+            "srcRow": 30,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 4,
+          "offsetY": 0
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 0,
+            "srcRow": 26,
+            "w": 7,
+            "h": 3
+          },
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 7,
+            "srcRow": 28,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 1,
+          "offsetY": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 7,
+            "srcRow": 28,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 4,
+          "offsetY": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 13,
+            "srcRow": 30,
+            "w": 1,
+            "h": 1
+          },
+          "offsetX": 1,
+          "offsetY": 0,
+          "zBias": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 14,
+            "srcRow": 31,
+            "w": 1,
+            "h": 1
+          },
+          "offsetX": 2,
+          "offsetY": 0,
+          "zBias": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 15,
+            "srcRow": 31,
+            "w": 1,
+            "h": 1
+          },
+          "offsetX": 3,
+          "offsetY": 0,
+          "zBias": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 7,
+            "srcRow": 26,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 1,
+          "offsetY": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_combined",
+            "srcCol": 10,
+            "srcRow": 26,
+            "w": 3,
+            "h": 2
+          },
+          "offsetX": 4,
+          "offsetY": 1
+        },
+        {
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 5,
+            "srcRow": 8,
+            "w": 1,
+            "h": 2
+          },
+          "offsetX": 5,
+          "offsetY": 2
+        },
+        {
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 1,
+            "srcRow": 8,
+            "w": 1,
+            "h": 2
+          },
+          "offsetX": 2,
+          "offsetY": 2
+        }
+      ],
+      "displaySize": {
+        "w": 7,
+        "h": 4
+      }
+    }
+  ],
+  "rooms": [
+    {
+      "name": "main_office",
+      "width": 16,
+      "height": 12,
+      "walkability": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "doors": [
+        {
+          "id": "door-1",
+          "col": 6,
+          "row": 11,
+          "target": "main_office#door-1"
+        },
+        {
+          "id": "door-2",
+          "col": 7,
+          "row": 11,
+          "target": "coffee_room#door-2"
+        },
+        {
+          "id": "door-3",
+          "col": 0,
+          "row": 5,
+          "target": "main_office#door-5"
+        },
+        {
+          "id": "door-4",
+          "col": 0,
+          "row": 6,
+          "target": "main_office#door-6"
+        },
+        {
+          "id": "door-5",
+          "col": 15,
+          "row": 5,
+          "target": "main_office#door-3"
+        },
+        {
+          "id": "door-6",
+          "col": 15,
+          "row": 6,
+          "target": "main_office#door-4"
+        }
+      ],
+      "placements": [
+        {
+          "gridX": 1,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 6,
+            "srcRow": 7,
+            "w": 1,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 7,
+            "srcRow": 12,
+            "w": 2,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 7,
+            "srcRow": 15,
+            "w": 2,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 12,
+            "srcRow": 38,
+            "w": 2,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 6,
+            "srcRow": 12,
+            "w": 1,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 10,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 6,
+            "srcRow": 10,
+            "w": 1,
+            "h": 2
+          },
+          "zBias": 0
+        },
+        {
+          "gridX": 5,
+          "gridY": 2,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 4,
+            "srcRow": 8,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 2,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 3,
+            "srcRow": 8,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 1,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 10,
+            "srcRow": 47,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 0,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 1,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 0,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 0,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 1,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 2,
+            "srcRow": 11,
+            "w": 1,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 1,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 2,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 2,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 3,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 10,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 1,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 0,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 2,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 5,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 3,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 4,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 7,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 8,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 9,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 13,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 12,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 11,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 10,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 9,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 4,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 2,
+          "gridY": 10,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 11,
+          "layer": "object",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 3,
+          "gridY": 3,
+          "layer": "object",
+          "compositeId": "comp_mmf48h0mfa4wgs"
+        },
+        {
+          "gridX": 8,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 9,
+            "srcRow": 14,
+            "w": 2,
+            "h": 2
+          }
+        },
+        {
+          "gridX": 14,
+          "gridY": 0,
+          "layer": "object",
+          "region": {
+            "tilesetId": "office_shadowless",
+            "srcCol": 12,
+            "srcRow": 15,
+            "w": 1,
+            "h": 3
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 5,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 15,
+          "gridY": 6,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 6,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 7,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 11,
+            "srcRow": 6,
+            "w": 1,
+            "h": 1
+          }
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "mmf8d3gg3xrq6e",
+      "name": "Adam",
+      "sheetId": "adam",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "animations": [
+        {
+          "family": "idle",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 6,
+            "startFrame": 0,
+            "frameCount": 9
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 5,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 5,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        }
+      ],
+      "familySpeeds": {
+        "idle": 4,
+        "walk": 8,
+        "sit_office": 4
+      },
+      "variantSequences": []
+    },
+    {
+      "id": "mmj9km2pwypwhf",
+      "name": "Alex",
+      "sheetId": "alex",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "animations": [
+        {
+          "family": "idle",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 1,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 1,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 1,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 1,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 2,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 2,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 2,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 2,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 6,
+            "startFrame": 0,
+            "frameCount": 9
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 5,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_alex_walk",
+            "row": 5,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        }
+      ],
+      "familySpeeds": {
+        "idle": 4,
+        "walk": 8,
+        "sit_office": 4
+      },
+      "variantSequences": []
+    },
+    {
+      "id": "mmj9ns03wtiuat",
+      "name": "Amelia",
+      "sheetId": "amelia",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "animations": [
+        {
+          "family": "idle",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 1,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 1,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 1,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 1,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 2,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 2,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 2,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 2,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 5,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 5,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_amelia_walk",
+            "row": 6,
+            "startFrame": 0,
+            "frameCount": 9
+          }
+        }
+      ],
+      "familySpeeds": {
+        "idle": 4,
+        "walk": 8,
+        "sit_office": 4
+      },
+      "variantSequences": []
+    },
+    {
+      "id": "mmj9qf01chlvvv",
+      "name": "Bob",
+      "sheetId": "bob",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "animations": [
+        {
+          "family": "idle",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 1,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 1,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 1,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 1,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 2,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 2,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 2,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 2,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 5,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 5,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_bob_walk",
+            "row": 6,
+            "startFrame": 0,
+            "frameCount": 9
+          }
+        }
+      ],
+      "familySpeeds": {
+        "idle": 4,
+        "walk": 8,
+        "sit_office": 4
+      },
+      "variantSequences": []
+    }
+  ]
+}
