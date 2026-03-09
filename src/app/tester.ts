@@ -27,7 +27,6 @@ import {
 } from "pixi.js";
 import {
   TILE_SIZE,
-  TILESETS,
   type TilesetId,
   type RoomDefinition,
   type TexturePlacement,
@@ -121,7 +120,8 @@ function loadTilesetTexture(tilesetId: TilesetId): Promise<Texture> {
   const cached = tilesetTextures.get(tilesetId);
   if (cached) return Promise.resolve(cached);
 
-  const info = TILESETS[tilesetId];
+  const info = appState.getTileset(tilesetId);
+  if (!info) return Promise.reject(new Error(`Unknown tileset ${tilesetId}`));
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {

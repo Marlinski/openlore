@@ -2,18 +2,22 @@
  * Shared application state across all tabs.
  * Uses localStorage for persistence with event-driven updates.
  *
- * V3: Removed baseSprites. Placements and composite parts reference
- * tileset regions directly. No intermediate sprite inventory.
+ * V4: Added dynamic tilesets registry to ProjectData.
+ * Tilesets are now stored alongside composites/rooms/characters.
+ * Default LimeZu tilesets are seeded on first load.
+ * Migrates from v3 (adds tilesets array with defaults).
  */
 
-import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData } from "./types.js";
-import { CHARACTER_DIRECTIONS } from "./types.js";
+import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "./types.js";
+import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset } from "./types.js";
 
-const STORAGE_KEY = "offisims_project_v3";
+const STORAGE_KEY = "offisims_project_v4";
+const OLD_STORAGE_KEY = "offisims_project_v3";
 
 type Listener = () => void;
 
 class AppState {
+  tilesets: TilesetDefinition[] = [];
   composites: CompositeObject[] = [];
   rooms: RoomDefinition[] = [];
   characters: CharacterDefinition[] = [];
@@ -33,6 +37,27 @@ class AppState {
   private notify(): void {
     this.save();
     for (const fn of this.listeners) fn();
+  }
+
+  // ─── Tilesets ────────────────────────────────────────────────
+
+  /** Get a tileset by ID */
+  getTileset(id: string): TilesetDefinition | undefined {
+    return findTileset(this.tilesets, id);
+  }
+
+  /** Add or update a tileset */
+  addTileset(tileset: TilesetDefinition): void {
+    const idx = this.tilesets.findIndex((t) => t.id === tileset.id);
+    if (idx >= 0) this.tilesets[idx] = tileset;
+    else this.tilesets.push(tileset);
+    this.notify();
+  }
+
+  /** Remove a tileset by ID */
+  removeTileset(id: string): void {
+    this.tilesets = this.tilesets.filter((t) => t.id !== id);
+    this.notify();
   }
 
   // ─── Composites ─────────────────────────────────────────────
@@ -87,6 +112,7 @@ class AppState {
 
   private save(): void {
     const data: ProjectData = {
+      tilesets: this.tilesets,
       composites: this.composites,
       rooms: this.rooms,
       characters: this.characters,
@@ -100,7 +126,15 @@ class AppState {
 
   private load(): void {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
+      let migrated = false;
+
+      // Migrate from v3 if v4 doesn't exist yet
+      if (!raw) {
+        raw = localStorage.getItem(OLD_STORAGE_KEY);
+        if (raw) migrated = true;
+      }
+
       if (raw) {
         const data = JSON.parse(raw);
         this.composites = data.composites || [];
@@ -117,14 +151,39 @@ class AppState {
           }
           return r;
         });
+
+        // Load tilesets or seed defaults
+        if (Array.isArray(data.tilesets) && data.tilesets.length > 0) {
+          this.tilesets = data.tilesets;
+        } else {
+          // v3 data or empty tilesets — seed with defaults
+          this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
+        }
+
+        // Ensure all default tilesets are present (merge, don't replace)
+        for (const def of DEFAULT_TILESETS) {
+          if (!findTileset(this.tilesets, def.id)) {
+            this.tilesets.push({ ...def });
+          }
+        }
+
+        if (migrated) {
+          console.log("Migrated project data from v3 to v4 (added tilesets)");
+          this.save(); // persist as v4
+        }
+      } else {
+        // Brand new — seed with defaults
+        this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
       }
     } catch (e) {
       console.error("Failed to load state:", e);
+      this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
     }
   }
 
   exportToJSON(): string {
     const data: ProjectData = {
+      tilesets: this.tilesets,
       composites: this.composites,
       rooms: this.rooms,
       characters: this.characters,
@@ -134,6 +193,19 @@ class AppState {
 
   importFromJSON(json: string): void {
     const data: ProjectData = JSON.parse(json);
+
+    // Merge tilesets: skip duplicates (by id)
+    const incomingTilesets = data.tilesets || [];
+    const existingTilesetIds = new Set(this.tilesets.map((t) => t.id));
+    let addedTilesets = 0;
+    for (const ts of incomingTilesets) {
+      if (!existingTilesetIds.has(ts.id)) {
+        this.tilesets.push(ts);
+        existingTilesetIds.add(ts.id);
+        addedTilesets++;
+      }
+    }
+
     const incomingComposites = data.composites || [];
     const incomingRooms = data.rooms || [];
     const incomingCharacters = (data.characters || []).map((c: any) => migrateCharacter(c));
@@ -171,7 +243,7 @@ class AppState {
       }
     }
 
-    console.log(`Import: ${addedComps} composites, ${addedRooms} rooms, ${addedChars} characters added`);
+    console.log(`Import: ${addedTilesets} tilesets, ${addedComps} composites, ${addedRooms} rooms, ${addedChars} characters added`);
     this.notify();
   }
 

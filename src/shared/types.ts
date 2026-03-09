@@ -24,35 +24,74 @@ export const TILE_SIZE = 48;
 
 // ─── Tileset definitions ────────────────────────────────────────────
 
-/** Known tileset images */
-export const TILESETS = {
-  room_builder: {
-    path: "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
+/**
+ * Dynamic tileset definition — stored in project data.
+ * Each tileset has a unique string ID and the metadata needed to
+ * interpret tile coordinates (tile size, grid dimensions) plus the
+ * image path or data-URL for the actual pixels.
+ */
+export interface TilesetDefinition {
+  /** Unique string identifier (e.g. "room_builder", "my_dungeon_tiles") */
+  id: string;
+  /** Human-readable label shown in dropdowns */
+  label: string;
+  /**
+   * Image source — either an absolute URL path (e.g. "/data/sprites/foo.png")
+   * or a data-URL for user-imported tilesets.
+   */
+  path: string;
+  /** Tile width in pixels (e.g. 48, 32, 16) */
+  tileWidth: number;
+  /** Tile height in pixels (e.g. 48, 32, 16) */
+  tileHeight: number;
+  /** Number of tile columns in the tileset image */
+  cols: number;
+  /** Number of tile rows in the tileset image */
+  rows: number;
+}
+
+/** Tileset ID is just a string — no longer a const union */
+export type TilesetId = string;
+
+/** Built-in tilesets seeded on first load. Users can add more. */
+export const DEFAULT_TILESETS: TilesetDefinition[] = [
+  {
+    id: "room_builder",
     label: "Room Builder (Floors & Walls)",
+    path: "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
+    tileWidth: 48,
+    tileHeight: 48,
     cols: 16,
     rows: 14,
   },
-  office_shadow: {
-    path: "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
+  {
+    id: "office_shadow",
     label: "Office (Black Shadow)",
+    path: "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
+    tileWidth: 48,
+    tileHeight: 48,
     cols: 16,
     rows: 53,
   },
-  office_shadowless: {
-    path: "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
+  {
+    id: "office_shadowless",
     label: "Office (Shadowless)",
+    path: "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
+    tileWidth: 48,
+    tileHeight: 48,
     cols: 16,
     rows: 53,
   },
-  office_combined: {
-    path: "/data/sprites/Modern_Office_48x48.png",
+  {
+    id: "office_combined",
     label: "Office (Combined)",
+    path: "/data/sprites/Modern_Office_48x48.png",
+    tileWidth: 48,
+    tileHeight: 48,
     cols: 16,
     rows: 53,
   },
-} as const;
-
-export type TilesetId = keyof typeof TILESETS;
+];
 
 // ─── Tileset Region ─────────────────────────────────────────────────
 
@@ -365,6 +404,8 @@ export function getCharacterFamilies(char: CharacterDefinition): string[] {
 // ─── Project data (saved to localStorage / exported as JSON) ────────
 
 export interface ProjectData {
+  /** Registered tilesets (images + metadata) */
+  tilesets: TilesetDefinition[];
   composites: CompositeObject[];
   rooms: RoomDefinition[];
   characters: CharacterDefinition[];
@@ -372,8 +413,9 @@ export interface ProjectData {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-export function getTilesetPath(tilesetId: TilesetId): string {
-  return TILESETS[tilesetId].path;
+/** Look up a tileset definition by ID from a tilesets array */
+export function findTileset(tilesets: TilesetDefinition[], id: TilesetId): TilesetDefinition | undefined {
+  return tilesets.find((t) => t.id === id);
 }
 
 export function getCharacterPath(name: string, type: "idle" | "walk"): string {

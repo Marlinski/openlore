@@ -15,7 +15,6 @@
 
 import {
   TILE_SIZE,
-  TILESETS,
   generateId,
   type TilesetId,
   type TilesetRegion,
@@ -25,7 +24,7 @@ import {
 } from "@shared/types.js";
 import { appState } from "@shared/state.js";
 import { setStatus } from "./main.js";
-import { TilesetPicker, loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
+import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetSelect } from "./tileset-picker.js";
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -741,9 +740,11 @@ appState.subscribe(() => {
 // ─── Init ─────────────────────────────────────────────────────────
 
 export function initCompositeTab(): void {
+  // Populate tileset dropdown from state
+  populateTilesetSelect(tilesetSelect, "office_combined");
+
   // Preload all tileset images
-  const tilesetIds = Object.keys(TILESETS) as TilesetId[];
-  const loadPromises = tilesetIds.map((id) => loadTilesetImage(id));
+  const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
 
   Promise.all(loadPromises).then(() => {
     picker.setTileset(tilesetSelect.value as TilesetId);

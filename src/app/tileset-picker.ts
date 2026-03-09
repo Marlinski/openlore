@@ -5,13 +5,18 @@
  * Supports click (1×1 tile) and drag (N×M region) selection.
  * Emits the selected TilesetRegion via a callback.
  *
+ * Tileset metadata is resolved dynamically from appState.tilesets
+ * rather than a hardcoded TILESETS constant, so user-added tilesets
+ * work automatically.
+ *
  * Usage:
  *   const picker = new TilesetPicker(container, onSelect);
  *   picker.setTileset("office_combined");
  *   picker.setZoom(2);
  */
 
-import { TILE_SIZE, TILESETS, type TilesetId, type TilesetRegion } from "@shared/types.js";
+import { TILE_SIZE, type TilesetId, type TilesetRegion, type TilesetDefinition } from "@shared/types.js";
+import { appState } from "@shared/state.js";
 
 /** Global tileset image cache shared across all pickers */
 const imageCache: Map<string, HTMLImageElement> = new Map();
@@ -21,7 +26,7 @@ export function loadTilesetImage(tilesetId: string): Promise<HTMLImageElement> {
   if (cached) return Promise.resolve(cached);
 
   return new Promise((resolve, reject) => {
-    const info = TILESETS[tilesetId as keyof typeof TILESETS];
+    const info = appState.getTileset(tilesetId);
     if (!info) { reject(new Error(`Unknown tileset ${tilesetId}`)); return; }
     const img = new Image();
     img.onload = () => {
@@ -35,6 +40,11 @@ export function loadTilesetImage(tilesetId: string): Promise<HTMLImageElement> {
 
 export function getCachedTilesetImage(tilesetId: string): HTMLImageElement | undefined {
   return imageCache.get(tilesetId);
+}
+
+/** Invalidate a cached image (e.g. when tileset is re-imported) */
+export function invalidateTilesetCache(tilesetId: string): void {
+  imageCache.delete(tilesetId);
 }
 
 export type OnSelectRegion = (region: TilesetRegion) => void;
@@ -86,6 +96,11 @@ export class TilesetPicker {
     window.addEventListener("mouseup", () => this.handleMouseUp());
   }
 
+  /** Get the TilesetDefinition for the current tileset, or undefined */
+  private getInfo(): TilesetDefinition | undefined {
+    return appState.getTileset(this.tilesetId);
+  }
+
   setTileset(id: TilesetId): void {
     this.tilesetId = id;
     this.selection = null;
@@ -121,8 +136,9 @@ export class TilesetPicker {
 
   draw(): void {
     if (!this.img) return;
+    const info = this.getInfo();
+    if (!info) return;
 
-    const info = TILESETS[this.tilesetId];
     const ts = TILE_SIZE * this.zoom;
     const w = info.cols * ts;
     const h = info.rows * ts;
@@ -161,11 +177,12 @@ export class TilesetPicker {
   }
 
   private getGridPos(e: MouseEvent): { col: number; row: number } | null {
+    const info = this.getInfo();
+    if (!info) return null;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const ts = TILE_SIZE * this.zoom;
-    const info = TILESETS[this.tilesetId];
     const col = Math.floor(x / ts);
     const row = Math.floor(y / ts);
     if (col < 0 || col >= info.cols || row < 0 || row >= info.rows) return null;
@@ -245,5 +262,30 @@ export class TilesetPicker {
     this.selectionOverlay.style.top = `${r.srcRow * ts}px`;
     this.selectionOverlay.style.width = `${r.w * ts}px`;
     this.selectionOverlay.style.height = `${r.h * ts}px`;
+  }
+}
+
+// ─── Helpers for populating tileset <select> dropdowns ─────────────
+
+/**
+ * Populate a <select> element with the current tilesets from appState.
+ * Preserves the current selection if still valid.
+ */
+export function populateTilesetSelect(select: HTMLSelectElement, defaultId?: string): void {
+  const currentValue = select.value;
+  select.innerHTML = "";
+  for (const ts of appState.tilesets) {
+    const opt = document.createElement("option");
+    opt.value = ts.id;
+    opt.textContent = ts.label;
+    select.appendChild(opt);
+  }
+  // Restore previous selection if it still exists, else use default
+  if (appState.getTileset(currentValue)) {
+    select.value = currentValue;
+  } else if (defaultId && appState.getTileset(defaultId)) {
+    select.value = defaultId;
+  } else if (appState.tilesets.length > 0) {
+    select.value = appState.tilesets[0].id;
   }
 }

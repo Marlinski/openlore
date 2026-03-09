@@ -31,7 +31,6 @@
 
 import {
   TILE_SIZE,
-  TILESETS,
   type TilesetId,
   type TilesetRegion,
   type DoorDefinition,
@@ -45,7 +44,7 @@ import {
 } from "@shared/types.js";
 import { appState } from "@shared/state.js";
 import { setStatus } from "./main.js";
-import { TilesetPicker, loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
+import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetSelect } from "./tileset-picker.js";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -1771,9 +1770,11 @@ export function initRoomTab(): void {
   // Try to restore previous editor state before anything else
   const restored = restoreEditorState();
 
+  // Populate tileset dropdown dynamically
+  populateTilesetSelect(roomTilesetSelect);
+
   // Preload all tileset images
-  const tilesetIds = Object.keys(TILESETS) as TilesetId[];
-  const loadPromises = tilesetIds.map((id) => loadTilesetImage(id));
+  const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
 
   Promise.all(loadPromises).then(() => {
     roomPicker.setTileset(roomTilesetSelect.value as TilesetId);
