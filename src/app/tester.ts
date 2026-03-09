@@ -700,6 +700,24 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
   setStatus(`Transitioning to "${targetRoomName}"...`);
 
   try {
+    // Same room — just teleport the character, no scene rebuild needed
+    if (currentRoom && targetRoom.name === currentRoom.name) {
+      charX = targetDoor.col;
+      charY = targetDoor.row;
+      charMoving = false;
+      animFamily = "idle";
+      animFrame = 0;
+      animTimer = 0;
+      positionCharacterSprite();
+      syncSequencePlayback();
+      currentDoorId = targetDoorId;
+      updateInfo();
+      setStatus(`Teleported to ${targetDoorId}`);
+      transitioning = false;
+      return;
+    }
+
+    // Different room — full scene rebuild
     // Load any new tileset textures needed by the target room
     const neededTilesets = new Set<TilesetId>();
     for (const p of targetRoom.placements) {
