@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Offisims</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
     * {
       margin: 0;
       padding: 0;
@@ -107,6 +109,7 @@
 
     #canvas-wrap canvas {
       display: block;
+      cursor: pointer;
     }
 
     /* ─── Bubble container ────────────────────────── */
@@ -121,32 +124,87 @@
       overflow: hidden;
     }
 
+    /* ─── Avatar name labels ─────────────────────── */
+
+    .avatar-name-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: #fff;
+      text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0   -1px 0 #000,
+         0    1px 0 #000,
+        -1px  0   0 #000,
+         1px  0   0 #000;
+      white-space: nowrap;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── Speech bubbles (Sims-style pixelated) ──── */
+
     .speech-bubble {
       position: absolute;
       transform: translate(-50%, -100%);
-      background: rgba(255, 255, 255, 0.95);
-      color: #222;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.3;
+      background: #e8f0e8;
+      color: #1a2a1a;
+      padding: 6px 10px;
+      border: 2px solid #2a4a2a;
+      border-radius: 4px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      line-height: 1.6;
       max-width: 200px;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      image-rendering: pixelated;
+      box-shadow:
+        3px 3px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.4);
       pointer-events: none;
       transition: opacity 0.3s;
+      /* Extra bottom margin to make room for the arrow */
+      margin-bottom: 8px;
+    }
+
+    .speech-bubble-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-wrap: break-word;
+      word-break: break-word;
     }
 
     .speech-bubble::after {
       content: '';
       position: absolute;
-      bottom: -6px;
+      bottom: -8px;
       left: 50%;
       transform: translateX(-50%);
+      width: 0;
+      height: 0;
       border-left: 6px solid transparent;
       border-right: 6px solid transparent;
-      border-top: 6px solid rgba(255, 255, 255, 0.95);
+      border-top: 8px solid #2a4a2a;
+    }
+
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 6px solid #e8f0e8;
+      z-index: 1;
     }
 
     /* ─── HUD container ──────────────────────────── */
@@ -180,78 +238,281 @@
       color: #ef4444;
     }
 
-    .hud-room-name {
+    /* ─── Character card (right panel) ──────────── */
+
+    .character-card {
       position: absolute;
-      top: 8px;
-      left: 8px;
-      font-size: 13px;
-      color: #a0c4ff;
-      pointer-events: none;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: rgba(18, 18, 30, 0.95);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      pointer-events: auto;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
     }
 
-    .hud-chat-log {
-      position: absolute;
-      bottom: 44px;
-      left: 8px;
-      width: 360px;
-      max-height: 180px;
+    .character-card.open {
+      transform: translateX(0);
+    }
+
+    .character-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .character-card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e0e0e0;
+      letter-spacing: 0.3px;
+    }
+
+    .character-card-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .character-card-close:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .character-card-body {
+      flex: 1;
       overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .character-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .character-card-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .character-card-info-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .character-card-info-value {
+      font-size: 13px;
+      color: #a0c4ff;
+    }
+
+    .character-card-pm {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .character-card-pm-header {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .character-card-pm-empty {
+      color: rgba(255, 255, 255, 0.2);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px 16px;
+      font-style: italic;
+    }
+
+    /* ─── Channel panel (left panel) ─────────────── */
+
+    .channel-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      display: flex;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .channel-panel-tab {
+      width: 36px;
+      height: 100%;
+      background: rgba(18, 18, 30, 0.7);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 12px;
+      gap: 4px;
+      cursor: pointer;
       pointer-events: auto;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .channel-panel-tab:hover {
+      background: rgba(18, 18, 30, 0.85);
+    }
+
+    .channel-panel-tab-icon {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.3);
+      transition: transform 0.2s;
+    }
+
+    .channel-panel.open .channel-panel-tab-icon {
+      transform: rotate(180deg);
+    }
+
+    .channel-panel-tab-name {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 11px;
+      color: #a0c4ff;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .channel-panel-content {
+      width: 0;
+      height: 100%;
+      background: rgba(18, 18, 30, 0.95);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .channel-panel.open .channel-panel-content {
+      width: 340px;
+    }
+
+    .channel-panel-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 340px;
+    }
+
+    .channel-panel-messages::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .channel-panel-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .channel-panel-messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .channel-panel-messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .channel-panel-msg {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.03);
     }
 
-    .hud-chat-log::-webkit-scrollbar {
-      width: 4px;
+    .channel-panel-msg.self {
+      background: rgba(96, 165, 250, 0.06);
+      border-color: rgba(96, 165, 250, 0.08);
     }
 
-    .hud-chat-log::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.15);
-      border-radius: 2px;
+    .channel-panel-msg-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
     }
 
-    .hud-chat-message {
-      font-size: 13px;
-      line-height: 1.3;
-      padding: 2px 6px;
-      background: rgba(0, 0, 0, 0.45);
-      border-radius: 3px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    .hud-chat-name {
+    .channel-panel-msg-name {
+      font-size: 11px;
       font-weight: 600;
       color: #a0c4ff;
+      letter-spacing: 0.2px;
     }
 
-    .hud-chat-text {
-      color: #ddd;
+    .channel-panel-msg.self .channel-panel-msg-name {
+      color: #60a5fa;
     }
 
-    .hud-chat-form {
-      position: absolute;
-      bottom: 8px;
-      left: 8px;
-      width: 360px;
-      pointer-events: auto;
+    .channel-panel-msg-time {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.2);
     }
 
-    .hud-chat-input {
+    .channel-panel-msg-text {
+      font-size: 13px;
+      color: #d0d0d0;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .channel-panel-form {
+      flex-shrink: 0;
+      padding: 8px 14px 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      min-width: 340px;
+    }
+
+    .channel-panel-input {
       width: 100%;
       padding: 8px 10px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       color: #e0e0e0;
       font-size: 13px;
       outline: none;
     }
 
-    .hud-chat-input:focus {
+    .channel-panel-input:focus {
       border-color: #a0c4ff;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.6);
     }
   </style>
 </head>

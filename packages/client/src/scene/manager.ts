@@ -8,7 +8,10 @@
  *   - Handles local player movement with collision checking
  *   - Sends position updates to the server via Connection
  *   - Responds to server messages (welcome, avatar-join/leave/move, room-change, snap, chat)
- *   - Coordinates with BubbleManager for speech bubbles
+ *   - Coordinates with BubbleManager for speech bubbles and name labels
+ *   - Manages CharacterCard (right panel) for avatar click interactions
+ *   - Manages ChannelPanel (left panel) for room channel chat
+ *   - Renders selection highlight (aura) on the selected avatar
  *
  * Flow:
  *   1. Client connects WebSocket → sends join
@@ -16,9 +19,10 @@
  *   3. Game loop: input → move → collision → animate → z-sort → render
  *   4. Position updates sent to server ~15/sec while moving
  *   5. Server messages update remote avatars / trigger room transitions
+ *   6. Click on avatar → opens character card, shows selection highlight
  */
 
-import { Application, Container, Texture } from "pixi.js";
+import { Application, Container, Graphics, Texture } from "pixi.js";
 import {
   TILE_SIZE,
   type ProjectData,
@@ -44,6 +48,8 @@ import { RoomScene } from "./room.js";
 import { Avatar, loadCharacterTextures, type TextureCache } from "./avatar.js";
 import type { BubbleManager } from "../ui/bubble.js";
 import type { Hud } from "../ui/hud.js";
+import type { CharacterCard } from "../ui/panel.js";
+import type { ChannelPanel } from "../ui/channel.js";
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -52,6 +58,13 @@ const MOVE_SPEED = 4 * TILE_SIZE; // 4 tiles/sec, same as tester
 
 /** How often to send position updates while moving (ms) */
 const POSITION_SEND_INTERVAL = 66; // ~15/sec
+
+/** Click hit-test radius around avatar center in world pixels */
+const AVATAR_CLICK_RADIUS = TILE_SIZE * 0.75;
+
+/** Selection highlight color */
+const SELECTION_COLOR = 0x60a5fa; // blue
+const SELECTION_ALPHA = 0.3;
 
 // ─── SceneManager ─────────────────────────────────────────────────
 
@@ -64,6 +77,8 @@ export class SceneManager {
   private gameData: ProjectData;
   private bubbleManager: BubbleManager | null = null;
   private hud: Hud | null = null;
+  private characterCard: CharacterCard | null = null;
+  private channelPanel: ChannelPanel | null = null;
 
   /** Shared PixiJS texture cache (tileset ID → base Texture) */
   private textureCache: TextureCache = new Map();
@@ -76,6 +91,13 @@ export class SceneManager {
 
   /** Local player's avatar ID */
   private localAvatarId: string | null = null;
+
+  /** Currently selected avatar ID (for character card + highlight) */
+  private selectedAvatarId: string | null = null;
+
+  /** Selection highlight graphics (ellipse aura under selected avatar) */
+  private selectionGfx: Graphics;
+  private selectionPulse = 0; // animation timer
 
   /** Current room name */
   private currentRoomName = "";
@@ -108,6 +130,10 @@ export class SceneManager {
     this.worldContainer = new Container();
     app.stage.addChild(this.worldContainer);
 
+    // Create selection highlight graphics
+    this.selectionGfx = new Graphics();
+    this.selectionGfx.visible = false;
+
     // Set initial viewport
     this.camera.setViewport(app.screen.width, app.screen.height);
 
@@ -139,6 +165,16 @@ export class SceneManager {
     this.hud = hud;
   }
 
+  /** Set the character card (called after construction) */
+  setCharacterCard(card: CharacterCard): void {
+    this.characterCard = card;
+  }
+
+  /** Set the channel panel (called after construction) */
+  setChannelPanel(panel: ChannelPanel): void {
+    this.channelPanel = panel;
+  }
+
   /** Handle window resize */
   onResize(width: number, height: number): void {
     this.camera.setViewport(width, height);
@@ -161,6 +197,64 @@ export class SceneManager {
     return this.avatars;
   }
 
+  /**
+   * Handle a click on the game canvas.
+   * Tests if the click hit an avatar and opens the character card.
+   */
+  handleCanvasClick(screenX: number, screenY: number): void {
+    // If character card is open, close it and deselect
+    if (this.characterCard?.isOpen()) {
+      this.deselectAvatar();
+      return;
+    }
+
+    const world = this.camera.screenToWorld(screenX, screenY);
+
+    // Find the closest avatar within click radius
+    let closestAvatar: Avatar | null = null;
+    let closestDist = AVATAR_CLICK_RADIUS;
+
+    for (const avatar of this.avatars.values()) {
+      // Don't select self
+      if (avatar.id === this.localAvatarId) continue;
+      // Hit-test against the avatar's center (the walkability tile center)
+      const dx = world.x - avatar.x;
+      const dy = world.y - avatar.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestAvatar = avatar;
+      }
+    }
+
+    if (closestAvatar) {
+      this.selectAvatar(closestAvatar);
+    }
+  }
+
+  /** Select an avatar: open character card + show highlight */
+  private selectAvatar(avatar: Avatar): void {
+    this.selectedAvatarId = avatar.id;
+
+    if (this.characterCard) {
+      this.characterCard.open(avatar.id, avatar.name, avatar.characterId);
+    }
+
+    // Show selection highlight
+    this.selectionGfx.visible = true;
+    this.selectionPulse = 0;
+  }
+
+  /** Deselect the current avatar: close card + hide highlight */
+  deselectAvatar(): void {
+    this.selectedAvatarId = null;
+    this.selectionGfx.visible = false;
+
+    if (this.characterCard) {
+      this.characterCard.close();
+    }
+  }
+
   // ─── Game loop ──────────────────────────────────────────────
 
   private update(dt: number): void {
@@ -179,10 +273,13 @@ export class SceneManager {
       }
     }
 
-    // 3. Z-sort
+    // 3. Update selection highlight
+    this.updateSelectionHighlight(dt);
+
+    // 4. Z-sort
     this.roomScene.zSort();
 
-    // 4. Update camera
+    // 5. Update camera
     const localAvatar = this.getLocalAvatar();
     if (localAvatar) {
       this.camera.setTarget(localAvatar.x, localAvatar.y);
@@ -190,10 +287,40 @@ export class SceneManager {
     this.camera.update(dt);
     this.camera.applyTo(this.worldContainer);
 
-    // 5. Update bubbles
+    // 6. Update bubbles and name labels
     if (this.bubbleManager) {
       this.bubbleManager.update();
     }
+  }
+
+  /** Update the selection highlight ellipse */
+  private updateSelectionHighlight(dt: number): void {
+    if (!this.selectedAvatarId || !this.selectionGfx.visible) return;
+
+    const avatar = this.avatars.get(this.selectedAvatarId);
+    if (!avatar) {
+      this.deselectAvatar();
+      return;
+    }
+
+    // Pulse animation (gentle breathing)
+    this.selectionPulse += dt * 3;
+    const pulse = 0.7 + 0.3 * Math.sin(this.selectionPulse);
+    const alpha = SELECTION_ALPHA * pulse;
+
+    // Draw ellipse at avatar feet
+    const rx = TILE_SIZE * 0.45;
+    const ry = TILE_SIZE * 0.2;
+
+    this.selectionGfx.clear();
+    this.selectionGfx.ellipse(0, 0, rx, ry);
+    this.selectionGfx.fill({ color: SELECTION_COLOR, alpha });
+    this.selectionGfx.ellipse(0, 0, rx + 1, ry + 0.5);
+    this.selectionGfx.stroke({ color: SELECTION_COLOR, alpha: alpha * 1.5, width: 1.5 });
+
+    // Position at avatar's feet (bottom of walkability tile)
+    this.selectionGfx.x = avatar.x;
+    this.selectionGfx.y = avatar.y + TILE_SIZE * 0.3;
   }
 
   private updateLocalPlayer(dt: number): void {
@@ -318,6 +445,10 @@ export class SceneManager {
   }
 
   private onAvatarLeave(msg: ServerAvatarLeaveMessage): void {
+    // If the leaving avatar was selected, deselect
+    if (msg.avatarId === this.selectedAvatarId) {
+      this.deselectAvatar();
+    }
     this.removeAvatar(msg.avatarId);
   }
 
@@ -353,11 +484,13 @@ export class SceneManager {
   private onChatMessage(msg: ServerChatMessageMessage): void {
     // Show speech bubble
     if (this.bubbleManager) {
-      this.bubbleManager.show(msg.avatarId, msg.text);
+      this.bubbleManager.show(msg.avatarId, msg.name, msg.text);
     }
-    // Show in HUD chat log
-    if (this.hud) {
-      this.hud.addChatMessage(msg.name, msg.text);
+
+    // Add to channel panel
+    if (this.channelPanel) {
+      const isSelf = msg.avatarId === this.localAvatarId;
+      this.channelPanel.addMessage(msg.name, msg.text, isSelf);
     }
   }
 
@@ -379,10 +512,23 @@ export class SceneManager {
     if (this.bubbleManager) {
       this.bubbleManager.clearAll();
     }
+    if (this.characterCard) {
+      this.characterCard.clearPanel();
+    }
+    if (this.channelPanel) {
+      this.channelPanel.clearMessages();
+      this.channelPanel.setRoomName(roomDef.name);
+    }
+
+    // Deselect any selected avatar
+    this.deselectAvatar();
 
     // Build new room scene
     this.roomScene = new RoomScene(roomDef, this.gameData, this.textureCache);
     this.worldContainer.addChild(this.roomScene.root);
+
+    // Add selection highlight to the object container (so it z-sorts with objects)
+    this.roomScene.root.addChild(this.selectionGfx);
 
     // Set camera bounds
     this.camera.setWorldBounds(this.roomScene.pixelWidth, this.roomScene.pixelHeight);
@@ -412,7 +558,6 @@ export class SceneManager {
     } else {
       this.currentDoorId = null;
     }
-
   }
 
   private spawnAvatar(snapshot: AvatarSnapshot, isLocal: boolean): Avatar | null {
@@ -433,6 +578,11 @@ export class SceneManager {
 
     // Add sprite to room's object layer
     this.roomScene.addAvatarSprite(avatar.sprite, avatar.anchorY);
+
+    // Create name label
+    if (this.bubbleManager) {
+      this.bubbleManager.ensureNameLabel(avatar.id, avatar.name);
+    }
 
     this.avatars.set(avatar.id, avatar);
     return avatar;

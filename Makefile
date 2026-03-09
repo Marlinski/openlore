@@ -33,7 +33,7 @@ client: shared
 
 # ─── Run everything ─────────────────────────────────────────────
 
-## Start all 3 dev servers in parallel (tools + server + client)
+## Start all 3 dev servers (server first, then tools + client)
 dev: shared
 	@echo "Starting all dev servers..."
 	@echo "  Tools:  http://localhost:3000"
@@ -41,8 +41,9 @@ dev: shared
 	@echo "  Client: http://localhost:3002"
 	@echo ""
 	@trap 'kill 0' INT TERM; \
-		yarn workspace @offisims/tools dev & \
 		yarn workspace @offisims/server dev & \
+		while ! curl -sf http://localhost:3001/api/game-data > /dev/null 2>&1; do sleep 0.2; done; \
+		yarn workspace @offisims/tools dev & \
 		yarn workspace @offisims/client dev & \
 		wait
 

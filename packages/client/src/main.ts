@@ -6,8 +6,10 @@
  *   2. Preload all tileset images
  *   3. Create PixiJS application
  *   4. Create Connection, Input, SceneManager, HUD, BubbleManager
- *   5. Connect to server and send join
- *   6. Handle window resize
+ *   5. Create CharacterCard (right panel) and ChannelPanel (left panel)
+ *   6. Connect to server and send join
+ *   7. Handle window resize
+ *   8. Handle canvas clicks for avatar interaction
  *
  * For V1: single-player flow with a simple join form.
  */
@@ -20,6 +22,8 @@ import { Input } from "./input.js";
 import { SceneManager } from "./scene/manager.js";
 import { BubbleManager } from "./ui/bubble.js";
 import { Hud } from "./ui/hud.js";
+import { CharacterCard } from "./ui/panel.js";
+import { ChannelPanel } from "./ui/channel.js";
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
@@ -142,8 +146,8 @@ async function startGame(): Promise<void> {
     // Create scene manager
     const scene = new SceneManager(app, connection, input, gameData);
 
-    // Create HUD
-    const hud = new Hud(hudContainer, connection, input);
+    // Create HUD (status indicator only)
+    const hud = new Hud(hudContainer, connection);
     scene.setHud(hud);
 
     // Create bubble manager
@@ -153,6 +157,24 @@ async function startGame(): Promise<void> {
       () => scene.getAvatars(),
     );
     scene.setBubbleManager(bubbles);
+
+    // Create character card (right panel — avatar interaction)
+    const characterCard = new CharacterCard(gameScreen);
+    scene.setCharacterCard(characterCard);
+
+    // Create channel panel (left panel — room chat)
+    const channelPanel = new ChannelPanel(gameScreen, connection, input);
+    scene.setChannelPanel(channelPanel);
+
+    // Handle canvas clicks for avatar interaction
+    canvas.addEventListener("click", (e) => {
+      // Don't handle clicks when chat is open
+      if (input.chatOpen) return;
+      const rect = canvas.getBoundingClientRect();
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      scene.handleCanvasClick(screenX, screenY);
+    });
 
     // Handle resize — use ResizeObserver for reliable detection
     // (catches dev tools opening, split-screen, etc., not just window resize)
@@ -180,14 +202,14 @@ async function startGame(): Promise<void> {
       hud.updateStatus();
     });
 
-    // Listen for welcome to set room name in HUD
+    // Listen for welcome to set room name in channel panel
     connection.on("welcome", (msg: any) => {
-      hud.setRoomName(msg.room?.name ?? "");
+      channelPanel.setRoomName(msg.room?.name ?? "");
     });
 
-    // Listen for room-change to update HUD room name
+    // Listen for room-change to update channel panel room name
     connection.on("room-change", (msg: any) => {
-      hud.setRoomName(msg.room.name);
+      channelPanel.setRoomName(msg.room.name);
     });
 
     // Listen for errors
