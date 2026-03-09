@@ -716,6 +716,32 @@
     }
     .tile-stack-item:hover .delete-btn { opacity: 1; }
 
+    /* Selection actions bar */
+    .selection-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 6px;
+      margin-bottom: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      flex-wrap: wrap;
+    }
+    .btn-sm {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-sm:hover {
+      background: var(--bg-surface);
+      border-color: var(--accent);
+    }
+
     /* Composite parts list (z-order panel) */
     .comp-part-item {
       display: flex;

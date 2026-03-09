@@ -87,6 +87,7 @@ export class SceneManager {
   private lastPositionSend = 0;
   private lastSentX = 0;
   private lastSentY = 0;
+  private lastSentMoving = false;
 
   /** Room transition in progress */
   private transitioning = false;
@@ -239,7 +240,7 @@ export class SceneManager {
     const moved = avatar.x !== this.lastSentX || avatar.y !== this.lastSentY;
     const timeSince = now - this.lastPositionSend;
 
-    // Send if moved and enough time has passed, or if we just stopped moving
+    // Send if moved and enough time has passed
     if (moved && timeSince >= POSITION_SEND_INTERVAL) {
       this.connection.send({
         type: "position",
@@ -251,8 +252,9 @@ export class SceneManager {
       this.lastPositionSend = now;
       this.lastSentX = avatar.x;
       this.lastSentY = avatar.y;
-    } else if (!avatar.moving && (this.lastSentX !== avatar.x || this.lastSentY !== avatar.y)) {
-      // Send final position when we stop
+      this.lastSentMoving = avatar.moving;
+    } else if (!avatar.moving && (moved || this.lastSentMoving)) {
+      // Send final stop: either position changed or moving state changed
       this.connection.send({
         type: "position",
         x: avatar.x,
@@ -262,6 +264,7 @@ export class SceneManager {
       });
       this.lastSentX = avatar.x;
       this.lastSentY = avatar.y;
+      this.lastSentMoving = false;
       this.lastPositionSend = now;
     }
   }

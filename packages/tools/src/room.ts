@@ -161,8 +161,8 @@ let layoutPaintValue = false;
 /** Currently selected brush */
 let selectedBrush: Brush | null = null;
 
-/** Selected existing placement index (for drag/delete) */
-let selectedPlacementIdx: number | null = null;
+/** Selected placement indices (for drag/delete/collective actions) */
+let selectedPlacements = new Set<number>();
 
 /** Shift+drag painting state */
 let shiftPainting = false;
@@ -264,7 +264,7 @@ function restoreEditorState(): boolean {
     }
 
     // Reset transient state
-    selectedPlacementIdx = null;
+    selectedPlacements.clear();
     selectedBrush = null;
     selectedDoorId = null;
     inspectedTile = null;
@@ -302,7 +302,7 @@ function confirmDiscardChanges(): boolean {
 
 const roomPicker = new TilesetPicker(roomTilesetContainer, (region) => {
   selectedBrush = { type: "region", region };
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   roomSelectionInfo.textContent = `Selected: ${region.w}×${region.h} from (${region.srcCol},${region.srcRow})`;
   renderCompositeList(); // deselect any composite
   drawRoom();
@@ -362,7 +362,7 @@ function renderCompositeList(): void {
 
     item.addEventListener("click", () => {
       selectedBrush = { type: "composite", compositeId: comp.id };
-      selectedPlacementIdx = null;
+      selectedPlacements.clear();
       roomPicker.clearSelection();
       roomSelectionInfo.textContent = `Composite: ${comp.name}`;
       renderCompositeList();
@@ -453,7 +453,7 @@ function setMode(newMode: EditorMode): void {
   tileStackPanel.style.display = mode === "texture" ? "" : "none";
 
   // Reset mode-specific state
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   selectedBrush = null;
   selectedDoorId = null;
   layoutPainting = false;
@@ -497,7 +497,7 @@ function setLayerTab(tab: LayerTab): void {
   });
 
   // Reset selection state when switching layers
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   inspectedTile = null;
 
   updateLayerTabHint();
@@ -970,6 +970,72 @@ function renderTileStack(): void {
   tileStackCount.textContent = String(indices.length);
   tileStackList.innerHTML = "";
 
+  // Show selection actions bar when placements are selected
+  if (selectedPlacements.size > 0) {
+    const bar = document.createElement("div");
+    bar.className = "selection-actions-bar";
+
+    const label = document.createElement("span");
+    label.textContent = `${selectedPlacements.size} selected`;
+    label.style.cssText = "font-size: 10px; color: var(--accent); margin-right: 6px;";
+    bar.appendChild(label);
+
+    // Check what layers the selection contains
+    const hasFloor = [...selectedPlacements].some(i => placements[i]?.layer === "floor");
+    const hasObject = [...selectedPlacements].some(i => placements[i]?.layer === "object");
+
+    if (hasFloor) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-sm";
+      btn.textContent = "To Object";
+      btn.title = "Move selected floor placements to the object layer";
+      btn.addEventListener("click", () => {
+        for (const idx of selectedPlacements) {
+          const p = placements[idx];
+          if (p && p.layer === "floor") p.layer = "object";
+        }
+        drawRoom();
+        setStatus(`Moved ${selectedPlacements.size} placement(s) to object layer`);
+      });
+      bar.appendChild(btn);
+    }
+
+    if (hasObject) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-sm";
+      btn.textContent = "To Floor";
+      btn.title = "Move selected object placements to the floor layer";
+      btn.addEventListener("click", () => {
+        for (const idx of selectedPlacements) {
+          const p = placements[idx];
+          if (p && p.layer === "object") p.layer = "floor";
+        }
+        drawRoom();
+        setStatus(`Moved ${selectedPlacements.size} placement(s) to floor layer`);
+      });
+      bar.appendChild(btn);
+    }
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn btn-sm";
+    delBtn.textContent = "Delete";
+    delBtn.title = "Delete all selected placements";
+    delBtn.style.color = "var(--accent)";
+    delBtn.addEventListener("click", () => {
+      const count = selectedPlacements.size;
+      const sorted = [...selectedPlacements].sort((a, b) => b - a);
+      for (const idx of sorted) {
+        placements.splice(idx, 1);
+      }
+      selectedPlacements.clear();
+      drawRoom();
+      setStatus(`Removed ${count} placement${count > 1 ? "s" : ""}`);
+    });
+    bar.appendChild(delBtn);
+
+    tileStackList.appendChild(bar);
+  }
+
   if (indices.length === 0) {
     tileStackList.innerHTML = '<div style="color: var(--text-dim); font-size: 11px;">Empty tile.</div>';
     return;
@@ -1004,7 +1070,7 @@ function renderTileStack(): void {
     const size = getItemSize(p);
 
     const item = document.createElement("div");
-    item.className = "tile-stack-item" + (placementIdx === selectedPlacementIdx ? " selected" : "");
+    item.className = "tile-stack-item" + (selectedPlacements.has(placementIdx) ? " selected" : "");
 
     // Z-order label (render order index)
     const zLabel = document.createElement("div");
@@ -1077,15 +1143,29 @@ function renderTileStack(): void {
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       placements.splice(placementIdx, 1);
-      if (selectedPlacementIdx === placementIdx) selectedPlacementIdx = null;
-      else if (selectedPlacementIdx !== null && selectedPlacementIdx > placementIdx) selectedPlacementIdx--;
+      // Rebuild selection: remove this index, shift down indices above it
+      const updated = new Set<number>();
+      for (const idx of selectedPlacements) {
+        if (idx === placementIdx) continue;
+        updated.add(idx > placementIdx ? idx - 1 : idx);
+      }
+      selectedPlacements = updated;
       drawRoom();
       setStatus("Removed placement");
     });
 
-    // Click to select
-    item.addEventListener("click", () => {
-      selectedPlacementIdx = placementIdx;
+    // Click to select (shift = toggle add/remove, plain = single select)
+    item.addEventListener("click", (e) => {
+      if (e.shiftKey) {
+        if (selectedPlacements.has(placementIdx)) {
+          selectedPlacements.delete(placementIdx);
+        } else {
+          selectedPlacements.add(placementIdx);
+        }
+      } else {
+        selectedPlacements.clear();
+        selectedPlacements.add(placementIdx);
+      }
       selectedBrush = null;
       renderCompositeList();
       drawRoom();
@@ -1145,7 +1225,7 @@ function updateOverlays(): void {
     if (!size) continue;
 
     const el = document.createElement("div");
-    el.className = "room-item-overlay" + (i === selectedPlacementIdx ? " selected" : "");
+    el.className = "room-item-overlay" + (selectedPlacements.has(i) ? " selected" : "");
     el.style.left = `${p.gridX * ts}px`;
     el.style.top = `${p.gridY * ts}px`;
     el.style.width = `${size.w * ts}px`;
@@ -1181,8 +1261,22 @@ function updateOverlays(): void {
 
       e.stopPropagation();
       e.preventDefault();
-      selectedPlacementIdx = idx;
       selectedBrush = null;
+
+      // Shift+click = toggle selection, plain click = single select
+      if (e.shiftKey) {
+        if (selectedPlacements.has(idx)) {
+          selectedPlacements.delete(idx);
+        } else {
+          selectedPlacements.add(idx);
+        }
+      } else {
+        // If clicking on an already-selected item, keep multi-selection for drag
+        if (!selectedPlacements.has(idx)) {
+          selectedPlacements.clear();
+          selectedPlacements.add(idx);
+        }
+      }
 
       // Set inspected tile to the clicked position
       const rect = canvasInner.getBoundingClientRect();
@@ -1193,12 +1287,14 @@ function updateOverlays(): void {
         inspectedTile = { col, row };
       }
 
-      // Start dragging
-      draggingPlacementIdx = idx;
-      dragOffset = {
-        x: e.clientX - rect.left - p.gridX * ts,
-        y: e.clientY - rect.top - p.gridY * ts,
-      };
+      // Start dragging (only if not shift-toggling)
+      if (!e.shiftKey && selectedPlacements.size > 0) {
+        draggingPlacementIdx = idx;
+        dragOffset = {
+          x: e.clientX - rect.left - p.gridX * ts,
+          y: e.clientY - rect.top - p.gridY * ts,
+        };
+      }
 
       renderCompositeList();
       drawRoom();
@@ -1341,7 +1437,7 @@ function handleTextureMouseDown(e: MouseEvent): void {
 
   // No brush — inspect the tile stack
   inspectedTile = { col: pos.col, row: pos.row };
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   selectedBrush = null;
   renderCompositeList();
   drawRoom();
@@ -1373,28 +1469,41 @@ function handleTextureMouseMove(e: MouseEvent): void {
 
 function handleTextureDragMove(e: MouseEvent): void {
   if (draggingPlacementIdx === null) return;
-  const p = placements[draggingPlacementIdx];
-  if (!p) return;
+  const anchor = placements[draggingPlacementIdx];
+  if (!anchor) return;
 
-  const size = getItemSize(p);
-  if (!size) return;
+  const anchorSize = getItemSize(anchor);
+  if (!anchorSize) return;
 
   const ts = TILE_SIZE * currentZoom;
   const rect = canvasInner.getBoundingClientRect();
   const x = e.clientX - rect.left - dragOffset.x;
   const y = e.clientY - rect.top - dragOffset.y;
 
-  let gridX = Math.round(x / ts);
-  let gridY = Math.round(y / ts);
+  let newGridX = Math.round(x / ts);
+  let newGridY = Math.round(y / ts);
 
-  gridX = Math.max(0, Math.min(roomWidth - size.w, gridX));
-  gridY = Math.max(0, Math.min(roomHeight - size.h, gridY));
+  newGridX = Math.max(0, Math.min(roomWidth - anchorSize.w, newGridX));
+  newGridY = Math.max(0, Math.min(roomHeight - anchorSize.h, newGridY));
 
-  if (p.gridX !== gridX || p.gridY !== gridY) {
-    p.gridX = gridX;
-    p.gridY = gridY;
-    drawRoom();
+  const deltaX = newGridX - anchor.gridX;
+  const deltaY = newGridY - anchor.gridY;
+
+  if (deltaX === 0 && deltaY === 0) return;
+
+  // Move all selected placements by the same delta, clamped to bounds
+  for (const idx of selectedPlacements) {
+    const p = placements[idx];
+    if (!p) continue;
+    const size = getItemSize(p);
+    if (!size) continue;
+    const px = p.gridX + deltaX;
+    const py = p.gridY + deltaY;
+    p.gridX = Math.max(0, Math.min(roomWidth - size.w, px));
+    p.gridY = Math.max(0, Math.min(roomHeight - size.h, py));
   }
+
+  drawRoom();
 }
 
 /** Place brush at grid position (single click) */
@@ -1439,7 +1548,8 @@ function placeBrushAt(col: number, row: number): void {
   }
 
   placements.push(newPlacement);
-  selectedPlacementIdx = placements.length - 1;
+  selectedPlacements.clear();
+  selectedPlacements.add(placements.length - 1);
 
   drawRoom();
   const label = selectedBrush.type === "region"
@@ -1476,17 +1586,21 @@ window.addEventListener("keydown", (e) => {
   ) return;
 
   if (mode === "texture") {
-    if ((e.key === "Delete" || e.key === "Backspace") && selectedPlacementIdx !== null) {
+    if ((e.key === "Delete" || e.key === "Backspace") && selectedPlacements.size > 0) {
       e.preventDefault();
-      placements.splice(selectedPlacementIdx, 1);
-      selectedPlacementIdx = null;
+      // Delete in reverse index order to avoid shifting issues
+      const sorted = [...selectedPlacements].sort((a, b) => b - a);
+      for (const idx of sorted) {
+        placements.splice(idx, 1);
+      }
+      selectedPlacements.clear();
       drawRoom();
-      setStatus("Removed placement");
+      setStatus(`Removed ${sorted.length} placement${sorted.length > 1 ? "s" : ""}`);
     }
 
     if (e.key === "Escape") {
       e.preventDefault();
-      selectedPlacementIdx = null;
+      selectedPlacements.clear();
       selectedBrush = null;
       inspectedTile = null;
       roomPicker.clearSelection();
@@ -1575,7 +1689,7 @@ resizeBtn.addEventListener("click", () => {
     return p.gridX + size.w <= roomWidth && p.gridY + size.h <= roomHeight;
   });
 
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   inspectedTile = null;
   drawRoom();
   setStatus(`Room resized to ${w}\u00d7${h}`);
@@ -1657,7 +1771,7 @@ function clearRoom(): void {
   doors = [];
   doorIdCounter = 1;
   placements = [];
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   selectedBrush = null;
   selectedDoorId = null;
   inspectedTile = null;
@@ -1726,7 +1840,7 @@ function loadRoom(room: RoomDefinition): void {
   walkability = [...room.walkability];
   doors = (room.doors || []).map((d) => ({ ...d }));
   placements = room.placements.map((p) => ({ ...p }));
-  selectedPlacementIdx = null;
+  selectedPlacements.clear();
   selectedBrush = null;
   selectedDoorId = null;
   inspectedTile = null;
