@@ -22,7 +22,7 @@
  *   6. Click on avatar → opens character card, shows selection highlight
  */
 
-import { Application, Container, Graphics, Texture } from "pixi.js";
+import { Application, Container, Sprite, Texture } from "pixi.js";
 import {
   TILE_SIZE,
   type ProjectData,
@@ -62,9 +62,8 @@ const POSITION_SEND_INTERVAL = 66; // ~15/sec
 /** Click hit-test radius around avatar center in world pixels */
 const AVATAR_CLICK_RADIUS = TILE_SIZE * 0.75;
 
-/** Selection highlight color */
-const SELECTION_COLOR = 0x60a5fa; // blue
-const SELECTION_ALPHA = 0.3;
+/** Selection outline: how many extra pixels on each side for the white contour */
+const OUTLINE_PAD = 2;
 
 // ─── SceneManager ─────────────────────────────────────────────────
 
@@ -95,9 +94,12 @@ export class SceneManager {
   /** Currently selected avatar ID (for character card + highlight) */
   private selectedAvatarId: string | null = null;
 
-  /** Selection highlight graphics (ellipse aura under selected avatar) */
-  private selectionGfx: Graphics;
-  private selectionPulse = 0; // animation timer
+  /** Selection outline sprite (white silhouette drawn behind selected avatar) */
+  private outlineSprite: Sprite;
+  private outlineCanvas: HTMLCanvasElement;
+  private outlineCtx: CanvasRenderingContext2D;
+  /** The texture UID of the avatar frame last used to generate the outline */
+  private outlineLastTexUid: number = -1;
 
   /** Current room name */
   private currentRoomName = "";
@@ -130,9 +132,11 @@ export class SceneManager {
     this.worldContainer = new Container();
     app.stage.addChild(this.worldContainer);
 
-    // Create selection highlight graphics
-    this.selectionGfx = new Graphics();
-    this.selectionGfx.visible = false;
+    // Create selection outline sprite + offscreen canvas
+    this.outlineSprite = new Sprite();
+    this.outlineSprite.visible = false;
+    this.outlineCanvas = document.createElement("canvas");
+    this.outlineCtx = this.outlineCanvas.getContext("2d")!;
 
     // Set initial viewport
     this.camera.setViewport(app.screen.width, app.screen.height);
@@ -240,15 +244,15 @@ export class SceneManager {
       this.characterCard.open(avatar.id, avatar.name, avatar.characterId);
     }
 
-    // Show selection highlight
-    this.selectionGfx.visible = true;
-    this.selectionPulse = 0;
+    // Show selection outline
+    this.outlineSprite.visible = true;
+    this.outlineLastTexUid = -1; // force regeneration
   }
 
   /** Deselect the current avatar: close card + hide highlight */
   deselectAvatar(): void {
     this.selectedAvatarId = null;
-    this.selectionGfx.visible = false;
+    this.outlineSprite.visible = false;
 
     if (this.characterCard) {
       this.characterCard.close();
@@ -293,9 +297,9 @@ export class SceneManager {
     }
   }
 
-  /** Update the selection highlight ellipse */
-  private updateSelectionHighlight(dt: number): void {
-    if (!this.selectedAvatarId || !this.selectionGfx.visible) return;
+  /** Update the selection outline (white silhouette behind selected avatar) */
+  private updateSelectionHighlight(_dt: number): void {
+    if (!this.selectedAvatarId || !this.outlineSprite.visible) return;
 
     const avatar = this.avatars.get(this.selectedAvatarId);
     if (!avatar) {
@@ -303,24 +307,119 @@ export class SceneManager {
       return;
     }
 
-    // Pulse animation (gentle breathing)
-    this.selectionPulse += dt * 3;
-    const pulse = 0.7 + 0.3 * Math.sin(this.selectionPulse);
-    const alpha = SELECTION_ALPHA * pulse;
+    // Only regenerate the outline texture when the avatar's frame changes
+    const tex = avatar.sprite.texture;
+    const texUid = tex.uid;
+    if (texUid !== this.outlineLastTexUid) {
+      this.outlineLastTexUid = texUid;
+      this.generateOutlineTexture(tex);
+    }
 
-    // Draw ellipse at avatar feet
-    const rx = TILE_SIZE * 0.45;
-    const ry = TILE_SIZE * 0.2;
+    // Position: the outline is OUTLINE_PAD pixels larger on each side,
+    // so offset by -OUTLINE_PAD relative to the avatar sprite position.
+    this.outlineSprite.x = avatar.sprite.x - OUTLINE_PAD;
+    this.outlineSprite.y = avatar.sprite.y - OUTLINE_PAD;
 
-    this.selectionGfx.clear();
-    this.selectionGfx.ellipse(0, 0, rx, ry);
-    this.selectionGfx.fill({ color: SELECTION_COLOR, alpha });
-    this.selectionGfx.ellipse(0, 0, rx + 1, ry + 0.5);
-    this.selectionGfx.stroke({ color: SELECTION_COLOR, alpha: alpha * 1.5, width: 1.5 });
+    // Update z-sort anchorY to be just below the avatar's, so outline renders behind
+    if (this.roomScene) {
+      const entry = this.roomScene.objectEntries.find((e) => e.sprite === this.outlineSprite);
+      if (entry) {
+        entry.anchorY = avatar.anchorY - 0.001;
+      }
+    }
+  }
 
-    // Position at avatar's feet (bottom of walkability tile)
-    this.selectionGfx.x = avatar.x;
-    this.selectionGfx.y = avatar.y + TILE_SIZE * 0.3;
+  /**
+   * Generate a white silhouette outline texture from the given avatar frame.
+   *
+   * Algorithm:
+   *   1. Draw the source frame at rendered size onto an offscreen canvas
+   *   2. Read pixel data, turn all non-transparent pixels white
+   *   3. Expand the white area by OUTLINE_PAD pixels in every direction
+   *      (only into transparent pixels) to form a contour
+   *   4. Punch out the original opaque area so only the contour ring remains
+   *   5. Upload as a PixiJS texture on the outline sprite
+   */
+  private generateOutlineTexture(tex: Texture): void {
+    const srcW = TILE_SIZE;
+    const srcH = TILE_SIZE * 2;
+    const pad = OUTLINE_PAD;
+    const w = srcW + pad * 2;
+    const h = srcH + pad * 2;
+
+    const canvas = this.outlineCanvas;
+    const ctx = this.outlineCtx;
+    canvas.width = w;
+    canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw the avatar's current frame at rendered size, offset by pad
+    ctx.imageSmoothingEnabled = false;
+    const frame = tex.frame;
+    const source = tex.source;
+    const img = (source as any).resource as HTMLImageElement | undefined;
+    if (!img) return;
+
+    ctx.drawImage(
+      img,
+      frame.x, frame.y, frame.width, frame.height,
+      pad, pad, srcW, srcH,
+    );
+
+    // Read pixels
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    // Build alpha mask of original pixels (1 = opaque)
+    const origMask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      origMask[i] = data[i * 4 + 3] > 0 ? 1 : 0;
+    }
+
+    // Expand: any transparent pixel adjacent (within pad distance) to an opaque pixel becomes white
+    const outlineMask = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        if (origMask[idx]) continue; // skip already-opaque pixels
+
+        // Check if any opaque pixel is within pad distance (Chebyshev)
+        let near = false;
+        for (let dy = -pad; dy <= pad && !near; dy++) {
+          for (let dx = -pad; dx <= pad && !near; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+              if (origMask[ny * w + nx]) near = true;
+            }
+          }
+        }
+        if (near) outlineMask[idx] = 1;
+      }
+    }
+
+    // Write outline pixels (white, fully opaque) and clear original pixels
+    ctx.clearRect(0, 0, w, h);
+    const outData = ctx.createImageData(w, h);
+    const od = outData.data;
+    for (let i = 0; i < w * h; i++) {
+      if (outlineMask[i]) {
+        od[i * 4] = 255;     // R
+        od[i * 4 + 1] = 255; // G
+        od[i * 4 + 2] = 255; // B
+        od[i * 4 + 3] = 255; // A
+      }
+    }
+    ctx.putImageData(outData, 0, 0);
+
+    // Create texture from the canvas
+    const outlineTex = Texture.from(canvas);
+    outlineTex.source.scaleMode = "nearest";
+    // Force the source to update (canvas content changed)
+    outlineTex.source.update();
+    this.outlineSprite.texture = outlineTex;
+    this.outlineSprite.width = w;
+    this.outlineSprite.height = h;
   }
 
   private updateLocalPlayer(dt: number): void {
@@ -527,8 +626,8 @@ export class SceneManager {
     this.roomScene = new RoomScene(roomDef, this.gameData, this.textureCache);
     this.worldContainer.addChild(this.roomScene.root);
 
-    // Add selection highlight to the object container (so it z-sorts with objects)
-    this.roomScene.root.addChild(this.selectionGfx);
+    // Add selection outline sprite to the object container (so it z-sorts with objects)
+    this.roomScene.addAvatarSprite(this.outlineSprite, 0);
 
     // Set camera bounds
     this.camera.setWorldBounds(this.roomScene.pixelWidth, this.roomScene.pixelHeight);
