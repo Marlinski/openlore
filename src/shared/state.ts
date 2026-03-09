@@ -9,7 +9,7 @@
  */
 
 import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "./types.js";
-import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset } from "./types.js";
+import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId } from "./types.js";
 
 const STORAGE_KEY = "offisims_project_v4";
 const OLD_STORAGE_KEY = "offisims_project_v3";
@@ -280,56 +280,95 @@ export const appState = new AppState();
 // ─── Migration helper ─────────────────────────────────────────────
 
 /**
- * Migrate old-format CharacterDefinition (with idle/walk Records)
- * to new format (with animations[] array + familySpeeds).
- * If already in new format, returns as-is.
+ * Migrate old-format CharacterDefinition to current format.
+ *
+ * Handles two old formats:
+ * 1. Oldest: { idle: Record<dir, strip>, walk: Record<dir, strip>, idleSpeed, walkSpeed }
+ * 2. Intermediate (v4): animations[] with strip.sheet ("idle"|"walk") instead of strip.tilesetId
+ *
+ * Current format: animations[] with strip.tilesetId = "char_{sheetId}_{idle|walk}"
  */
 function migrateCharacter(c: any): CharacterDefinition {
-  // New format already has animations array
-  if (Array.isArray(c.animations)) return c as CharacterDefinition;
+  const sheetId: string = c.sheetId || "unknown";
 
-  // Old format: { idle: Record<dir, {row, startFrame, frameCount}>, walk: Record<dir, ...>, idleSpeed, walkSpeed }
-  const animations: CharacterAnimation[] = [];
+  // Oldest format: no animations array at all
+  if (!Array.isArray(c.animations)) {
+    const animations: CharacterAnimation[] = [];
 
-  if (c.idle) {
-    for (const dir of CHARACTER_DIRECTIONS) {
-      const strip = c.idle[dir];
-      if (strip) {
-        animations.push({
-          family: "idle",
-          direction: dir as CharacterDirection,
-          variant: 0,
-          strip: { sheet: "idle", row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
-        });
+    if (c.idle) {
+      for (const dir of CHARACTER_DIRECTIONS) {
+        const strip = c.idle[dir];
+        if (strip) {
+          animations.push({
+            family: "idle",
+            direction: dir as CharacterDirection,
+            variant: 0,
+            strip: { tilesetId: charTilesetId(sheetId, "idle"), row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
+          });
+        }
       }
     }
-  }
 
-  if (c.walk) {
-    for (const dir of CHARACTER_DIRECTIONS) {
-      const strip = c.walk[dir];
-      if (strip) {
-        animations.push({
-          family: "walk",
-          direction: dir as CharacterDirection,
-          variant: 0,
-          strip: { sheet: "walk", row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
-        });
+    if (c.walk) {
+      for (const dir of CHARACTER_DIRECTIONS) {
+        const strip = c.walk[dir];
+        if (strip) {
+          animations.push({
+            family: "walk",
+            direction: dir as CharacterDirection,
+            variant: 0,
+            strip: { tilesetId: charTilesetId(sheetId, "walk"), row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
+          });
+        }
       }
     }
+
+    const familySpeeds: Record<string, number> = {};
+    if (c.idleSpeed) familySpeeds["idle"] = c.idleSpeed;
+    if (c.walkSpeed) familySpeeds["walk"] = c.walkSpeed;
+
+    return {
+      id: c.id,
+      name: c.name,
+      sheetId,
+      frameWidth: c.frameWidth || 16,
+      frameHeight: c.frameHeight || 32,
+      animations,
+      familySpeeds,
+    };
   }
 
-  const familySpeeds: Record<string, number> = {};
-  if (c.idleSpeed) familySpeeds["idle"] = c.idleSpeed;
-  if (c.walkSpeed) familySpeeds["walk"] = c.walkSpeed;
+  // Intermediate format: animations[] exists but strips may have .sheet instead of .tilesetId
+  let needsMigration = false;
+  const animations: CharacterAnimation[] = c.animations.map((a: any) => {
+    const strip = a.strip;
+    if (strip && "sheet" in strip && !strip.tilesetId) {
+      needsMigration = true;
+      const sheet = strip.sheet as "idle" | "walk";
+      return {
+        ...a,
+        strip: {
+          tilesetId: charTilesetId(sheetId, sheet),
+          row: strip.row,
+          startFrame: strip.startFrame,
+          frameCount: strip.frameCount,
+        },
+      };
+    }
+    return a;
+  });
+
+  if (needsMigration) {
+    console.log(`Migrated character "${c.name}" strips from sheet to tilesetId`);
+  }
 
   return {
     id: c.id,
     name: c.name,
-    sheetId: c.sheetId,
+    sheetId,
     frameWidth: c.frameWidth || 16,
     frameHeight: c.frameHeight || 32,
     animations,
-    familySpeeds,
+    familySpeeds: c.familySpeeds || {},
   };
 }

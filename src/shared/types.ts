@@ -304,16 +304,24 @@ export interface RoomDefinition {
 export type CharacterDirection = "down" | "up" | "left" | "right";
 export const CHARACTER_DIRECTIONS: CharacterDirection[] = ["down", "up", "left", "right"];
 
-/** Which source PNG the strip comes from */
+/**
+ * Character sheet kind — used only as a convenience label for the two
+ * PNGs that ship per character (idle + walk). The actual data path is
+ * resolved via the TilesetDefinition referenced by tilesetId.
+ */
 export type CharacterSheet = "idle" | "walk";
 
 /**
  * Defines an animation strip within a sprite sheet.
  * A strip is a contiguous run of frames from a single row.
+ *
+ * The strip's source image is identified by `tilesetId`, which points
+ * to a TilesetDefinition registered in the project. This unifies
+ * character sheets with all other tilesets in the system.
  */
 export interface AnimationStrip {
-  /** Which source sheet ("idle" or "walk" PNG) */
-  sheet: CharacterSheet;
+  /** Tileset ID of the source sheet (e.g. "char_adam_idle", "char_adam_walk") */
+  tilesetId: string;
   /** Which row in the sprite sheet (0-indexed) */
   row: number;
   /** Starting frame column (0-indexed, default 0) */
@@ -418,8 +426,36 @@ export function findTileset(tilesets: TilesetDefinition[], id: TilesetId): Tiles
   return tilesets.find((t) => t.id === id);
 }
 
-export function getCharacterPath(name: string, type: "idle" | "walk"): string {
-  return `/data/characters/${name}_${type}.png`;
+/**
+ * Derive the tileset ID for a character sheet.
+ * Convention: "char_{sheetId}_{sheet}" e.g. "char_adam_idle", "char_adam_walk".
+ */
+export function charTilesetId(sheetId: string, sheet: CharacterSheet): string {
+  return `char_${sheetId}_${sheet}`;
+}
+
+/**
+ * Build a TilesetDefinition for a character sheet.
+ * The image dimensions (cols, rows) are unknown at definition time —
+ * they're filled in after the image loads.
+ */
+export function makeCharTileset(
+  sheetId: string,
+  sheet: CharacterSheet,
+  frameWidth: number,
+  frameHeight: number,
+  imgWidth: number,
+  imgHeight: number,
+): TilesetDefinition {
+  return {
+    id: charTilesetId(sheetId, sheet),
+    label: `${sheetId} (${sheet})`,
+    path: `/data/characters/${sheetId}_${sheet}.png`,
+    tileWidth: frameWidth,
+    tileHeight: frameHeight,
+    cols: Math.floor(imgWidth / frameWidth),
+    rows: Math.floor(imgHeight / frameHeight),
+  };
 }
 
 /** Generate a unique id */

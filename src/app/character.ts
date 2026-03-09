@@ -22,11 +22,13 @@ import {
   type AnimationStrip,
   CHARACTER_DIRECTIONS,
   BUILTIN_FAMILIES,
-  getCharacterPath,
+  charTilesetId,
+  makeCharTileset,
   generateId,
 } from "@shared/types.js";
 import { appState } from "@shared/state.js";
 import { setStatus } from "./main.js";
+import { loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
@@ -74,10 +76,6 @@ let showGrid = true;
 /** Mutable frame dimensions (configurable via UI) */
 let frameW = 16;
 let frameH = 32;
-
-/** Loaded sprite sheet images */
-let idleImage: HTMLImageElement | null = null;
-let walkImage: HTMLImageElement | null = null;
 
 /** Grid dimensions for each sheet */
 let idleCols = 0;
@@ -135,7 +133,7 @@ interface AnimPreview {
   label: string;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  frames: { sx: number; sy: number; sheet: CharacterSheet }[];
+  frames: { sx: number; sy: number; tilesetId: string }[];
   currentFrame: number;
 }
 
@@ -172,7 +170,7 @@ function getDirectionLabel(dir: CharacterDirection): string {
 }
 
 function getSheetImage(sheet: CharacterSheet): HTMLImageElement | null {
-  return sheet === "idle" ? idleImage : walkImage;
+  return getCachedTilesetImage(charTilesetId(currentSheetId, sheet)) ?? null;
 }
 
 function getSheetCols(sheet: CharacterSheet): number {
@@ -181,6 +179,16 @@ function getSheetCols(sheet: CharacterSheet): number {
 
 function getSheetRows(sheet: CharacterSheet): number {
   return sheet === "idle" ? idleRows : walkRows;
+}
+
+/** Get the image for a strip's tileset (via the tileset cache) */
+function getStripImage(strip: AnimationStrip): HTMLImageElement | null {
+  return getCachedTilesetImage(strip.tilesetId) ?? null;
+}
+
+/** Derive the CharacterSheet kind from a tileset ID (for UI routing) */
+function sheetFromTilesetId(tilesetId: string): CharacterSheet {
+  return tilesetId.endsWith("_walk") ? "walk" : "idle";
 }
 
 /** Compute next variant number for a given family+direction */
@@ -196,18 +204,31 @@ async function loadSheets(): Promise<void> {
   sheetInfo.textContent = "Loading...";
 
   try {
-    const [idle, walk] = await Promise.all([
-      loadImage(getCharacterPath(currentSheetId, "idle")),
-      loadImage(getCharacterPath(currentSheetId, "walk")),
-    ]);
+    // Build tileset IDs for this character's sheets
+    const idleId = charTilesetId(currentSheetId, "idle");
+    const walkId = charTilesetId(currentSheetId, "walk");
 
-    idleImage = idle;
-    walkImage = walk;
+    // Ensure tileset definitions exist (with placeholder cols/rows — updated after load)
+    if (!appState.getTileset(idleId)) {
+      appState.addTileset(makeCharTileset(currentSheetId, "idle", frameW, frameH, 0, 0));
+    }
+    if (!appState.getTileset(walkId)) {
+      appState.addTileset(makeCharTileset(currentSheetId, "walk", frameW, frameH, 0, 0));
+    }
+
+    const [idle, walk] = await Promise.all([
+      loadTilesetImage(idleId),
+      loadTilesetImage(walkId),
+    ]);
 
     idleCols = Math.floor(idle.width / frameW);
     idleRows = Math.floor(idle.height / frameH);
     walkCols = Math.floor(walk.width / frameW);
     walkRows = Math.floor(walk.height / frameH);
+
+    // Update tileset definitions with actual image dimensions
+    appState.addTileset(makeCharTileset(currentSheetId, "idle", frameW, frameH, idle.width, idle.height));
+    appState.addTileset(makeCharTileset(currentSheetId, "walk", frameW, frameH, walk.width, walk.height));
 
     sheetInfo.textContent =
       `Idle: ${idle.width}x${idle.height} (${idleCols}x${idleRows}) · ` +
@@ -221,18 +242,7 @@ async function loadSheets(): Promise<void> {
     updateSaveState();
   } catch (e) {
     sheetInfo.textContent = `Error: ${e}`;
-    idleImage = null;
-    walkImage = null;
   }
-}
-
-function loadImage(path: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load ${path}`));
-    img.src = path;
-  });
 }
 
 // ─── Sheet canvas rendering ──────────────────────────────────────
@@ -271,7 +281,7 @@ function drawSheet(sheet: CharacterSheet): void {
   // Draw assigned animation overlays
   const state = getAnimState(currentSheetId);
   for (const entry of state.entries) {
-    if (entry.strip.sheet !== sheet) continue;
+    if (sheetFromTilesetId(entry.strip.tilesetId) !== sheet) continue;
 
     const color = getFamilyColor(entry.family);
     const isSelected = entry.id === selectedAnimId;
@@ -462,7 +472,7 @@ function assignSelection(): void {
     direction,
     variant,
     strip: {
-      sheet: pendingSelection.sheet,
+      tilesetId: charTilesetId(currentSheetId, pendingSelection.sheet),
       row: pendingSelection.row,
       startFrame: pendingSelection.startFrame,
       frameCount: pendingSelection.frameCount,
@@ -556,7 +566,7 @@ function renderAnimList(): void {
       thumb.height = frameH * thumbScale;
       thumb.style.width = `${thumb.width}px`;
       thumb.style.height = `${thumb.height}px`;
-      const img = getSheetImage(entry.strip.sheet);
+      const img = getStripImage(entry.strip);
       if (img) {
         const tctx = thumb.getContext("2d")!;
         tctx.imageSmoothingEnabled = false;
@@ -574,7 +584,7 @@ function renderAnimList(): void {
       const varLabel = entry.variant > 0 ? ` #${entry.variant}` : "";
       info.innerHTML = `
         <div class="name" style="color: ${getFamilyColor(entry.family)}">${entry.direction}${varLabel}</div>
-        <div class="meta">${entry.strip.sheet} r${entry.strip.row} f${entry.strip.startFrame}–${entry.strip.startFrame + entry.strip.frameCount - 1}</div>
+        <div class="meta">${sheetFromTilesetId(entry.strip.tilesetId)} r${entry.strip.row} f${entry.strip.startFrame}–${entry.strip.startFrame + entry.strip.frameCount - 1}</div>
       `;
 
       const delBtn = document.createElement("button");
@@ -635,7 +645,7 @@ function updatePreviews(): void {
     if (entry.variant !== 0) continue;
     seen.add(key);
 
-    const img = getSheetImage(entry.strip.sheet);
+    const img = getStripImage(entry.strip);
     if (!img) continue;
 
     const box = document.createElement("div");
@@ -659,12 +669,12 @@ function updatePreviews(): void {
     const ctx = canvas.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
 
-    const frames: { sx: number; sy: number; sheet: CharacterSheet }[] = [];
+    const frames: { sx: number; sy: number; tilesetId: string }[] = [];
     for (let f = 0; f < entry.strip.frameCount; f++) {
       frames.push({
         sx: (entry.strip.startFrame + f) * frameW,
         sy: entry.strip.row * frameH,
-        sheet: entry.strip.sheet,
+        tilesetId: entry.strip.tilesetId,
       });
     }
 
@@ -681,7 +691,7 @@ function updatePreviews(): void {
     for (const preview of animPreviews) {
       if (preview.frames.length === 0) continue;
       const frame = preview.frames[preview.currentFrame];
-      const img = getSheetImage(frame.sheet);
+      const img = getCachedTilesetImage(frame.tilesetId);
       if (!img) continue;
       preview.ctx.clearRect(0, 0, preview.canvas.width, preview.canvas.height);
       preview.ctx.drawImage(
@@ -853,7 +863,7 @@ function setupCanvasClick(canvas: HTMLCanvasElement, sheet: CharacterSheet): voi
     const state = getAnimState(currentSheetId);
     const hit = state.entries.find(
       (a) =>
-        a.strip.sheet === sheet &&
+        sheetFromTilesetId(a.strip.tilesetId) === sheet &&
         a.strip.row === pos.row &&
         pos.col >= a.strip.startFrame &&
         pos.col < a.strip.startFrame + a.strip.frameCount,
@@ -901,19 +911,29 @@ frameHInput.addEventListener("change", () => {
 });
 
 function recalcGridAndRedraw(): void {
-  if (idleImage) {
-    idleCols = Math.floor(idleImage.width / frameW);
-    idleRows = Math.floor(idleImage.height / frameH);
+  const idleImg = getSheetImage("idle");
+  const walkImg = getSheetImage("walk");
+  if (idleImg) {
+    idleCols = Math.floor(idleImg.width / frameW);
+    idleRows = Math.floor(idleImg.height / frameH);
   }
-  if (walkImage) {
-    walkCols = Math.floor(walkImage.width / frameW);
-    walkRows = Math.floor(walkImage.height / frameH);
+  if (walkImg) {
+    walkCols = Math.floor(walkImg.width / frameW);
+    walkRows = Math.floor(walkImg.height / frameH);
   }
-  if (idleImage || walkImage) {
+  if (idleImg || walkImg) {
     sheetInfo.textContent =
-      `Idle: ${idleImage?.width ?? 0}x${idleImage?.height ?? 0} (${idleCols}x${idleRows}) · ` +
-      `Walk: ${walkImage?.width ?? 0}x${walkImage?.height ?? 0} (${walkCols}x${walkRows}) · ` +
+      `Idle: ${idleImg?.width ?? 0}x${idleImg?.height ?? 0} (${idleCols}x${idleRows}) · ` +
+      `Walk: ${walkImg?.width ?? 0}x${walkImg?.height ?? 0} (${walkCols}x${walkRows}) · ` +
       `Frame: ${frameW}x${frameH}`;
+
+    // Update tileset definitions with new frame dimensions
+    if (idleImg) {
+      appState.addTileset(makeCharTileset(currentSheetId, "idle", frameW, frameH, idleImg.width, idleImg.height));
+    }
+    if (walkImg) {
+      appState.addTileset(makeCharTileset(currentSheetId, "walk", frameW, frameH, walkImg.width, walkImg.height));
+    }
   }
   drawSheets();
   renderAnimList();

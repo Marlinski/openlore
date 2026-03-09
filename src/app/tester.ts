@@ -32,8 +32,6 @@ import {
   type TexturePlacement,
   type CharacterDefinition,
   type CharacterDirection,
-  type CharacterSheet,
-  getCharacterPath,
   getCharacterAnimation,
   getPlacementSize,
 } from "@shared/types.js";
@@ -62,12 +60,8 @@ let currentZoom = 2;
 let showGrid = false;
 let showWalkability = false;
 
-/** Tileset images loaded as HTMLImageElements (for creating PixiJS textures) */
+/** Tileset images loaded as PixiJS textures (room tilesets + character sheets) */
 const tilesetTextures: Map<string, Texture> = new Map();
-
-/** Character sheet textures (idle/walk BaseTextures) */
-let charIdleTexture: Texture | null = null;
-let charWalkTexture: Texture | null = null;
 
 // ─── Character state ─────────────────────────────────────────────
 
@@ -135,29 +129,6 @@ function loadTilesetTexture(tilesetId: TilesetId): Promise<Texture> {
   });
 }
 
-function loadCharacterTextures(sheetId: string): Promise<void> {
-  return Promise.all([
-    loadImageTexture(getCharacterPath(sheetId, "idle")),
-    loadImageTexture(getCharacterPath(sheetId, "walk")),
-  ]).then(([idle, walk]) => {
-    charIdleTexture = idle;
-    charWalkTexture = walk;
-  });
-}
-
-function loadImageTexture(path: string): Promise<Texture> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const texture = Texture.from(img);
-      texture.source.scaleMode = "nearest";
-      resolve(texture);
-    };
-    img.onerror = () => reject(new Error(`Failed to load ${path}`));
-    img.src = path;
-  });
-}
-
 // ─── Populate dropdowns ──────────────────────────────────────────
 
 function populateDropdowns(): void {
@@ -218,7 +189,7 @@ async function loadRoom(): Promise<void> {
   modeHint.textContent = "Loading...";
 
   try {
-    // Load all needed tileset textures
+    // Load all needed tileset textures (room tilesets + character sheet tilesets)
     const neededTilesets = new Set<TilesetId>();
     for (const p of room.placements) {
       if (p.region) neededTilesets.add(p.region.tilesetId);
@@ -232,8 +203,12 @@ async function loadRoom(): Promise<void> {
       }
     }
 
+    // Add character sheet tilesets
+    for (const anim of char.animations) {
+      neededTilesets.add(anim.strip.tilesetId);
+    }
+
     await Promise.all([...neededTilesets].map((id) => loadTilesetTexture(id)));
-    await loadCharacterTextures(char.sheetId);
 
     // Create or reset PixiJS app
     await initPixiApp(room, char);
@@ -484,12 +459,12 @@ function createCharacterSprite(char: CharacterDefinition, room: RoomDefinition):
 }
 
 function getCharacterFrameTexture(
-  sheet: CharacterSheet,
+  tilesetId: string,
   row: number,
   startFrame: number,
   frameIndex: number,
 ): Texture | null {
-  const baseTex = sheet === "idle" ? charIdleTexture : charWalkTexture;
+  const baseTex = tilesetTextures.get(tilesetId);
   if (!baseTex || !currentChar) return null;
 
   const fw = currentChar.frameWidth;
@@ -508,13 +483,13 @@ function updateCharacterTexture(): void {
     // Fallback: try idle
     const fallback = getCharacterAnimation(currentChar, "idle", charDir);
     if (!fallback) return;
-    const tex = getCharacterFrameTexture(fallback.strip.sheet, fallback.strip.row, fallback.strip.startFrame, 0);
+    const tex = getCharacterFrameTexture(fallback.strip.tilesetId, fallback.strip.row, fallback.strip.startFrame, 0);
     if (tex) charSprite.texture = tex;
     return;
   }
 
   const frameIdx = animFrame % anim.strip.frameCount;
-  const tex = getCharacterFrameTexture(anim.strip.sheet, anim.strip.row, anim.strip.startFrame, frameIdx);
+  const tex = getCharacterFrameTexture(anim.strip.tilesetId, anim.strip.row, anim.strip.startFrame, frameIdx);
   if (tex) charSprite.texture = tex;
 }
 
