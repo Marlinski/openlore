@@ -29,6 +29,7 @@ import {
   TILE_SIZE,
   type TilesetId,
   type RoomDefinition,
+  type DoorDefinition,
   type TexturePlacement,
   type CharacterDefinition,
   type CharacterDirection,
@@ -109,6 +110,15 @@ const selectedSequences: Map<string, string> = new Map();
 
 /** Key states */
 const keys: Record<string, boolean> = {};
+
+// ─── Door transition state ──────────────────────────────────────
+
+/** Cooldown after a door transition to prevent immediate re-trigger */
+let doorCooldown = 0;
+const DOOR_COOLDOWN_TIME = 0.5; // seconds
+
+/** True while a room transition is in progress (async) */
+let transitioning = false;
 
 // ─── PixiJS containers ──────────────────────────────────────────
 
@@ -241,7 +251,7 @@ async function loadRoom(): Promise<void> {
     // Create or reset PixiJS app
     await initPixiApp(room, char);
 
-    hintDiv.textContent = "WASD / Arrow keys to move";
+    hintDiv.textContent = "WASD / Arrow keys to move. Walk onto doors to transition.";
     modeHint.textContent = `${room.name} — ${room.width}×${room.height} — ${char.name}`;
     updateInfo();
     setStatus(`Room "${room.name}" loaded. Use WASD to move.`);
@@ -648,6 +658,105 @@ function syncSequencePlayback(): void {
   }
 }
 
+// ─── Door transitions ───────────────────────────────────────────
+
+/** Parse a door target string "roomName#doorId" into [roomName, doorId] */
+function parseDoorTarget(target: string): [string, string] {
+  if (!target || !target.includes("#")) return ["", ""];
+  const [room, doorId] = target.split("#", 2);
+  return [room, doorId];
+}
+
+/** Find the door the character is currently standing on (if any) */
+function getDoorAtPosition(room: RoomDefinition, x: number, y: number): DoorDefinition | undefined {
+  const col = Math.floor(x + 0.5); // use center of character
+  const row = Math.floor(y + 0.5);
+  return room.doors.find((d) => d.col === col && d.row === row);
+}
+
+/**
+ * Transition to a different room via a door.
+ * Loads the target room, rebuilds the scene, and places the character
+ * on the target door tile facing the same direction.
+ */
+async function transitionToRoom(targetRoomName: string, targetDoorId: string): Promise<void> {
+  if (transitioning || !currentChar) return;
+  transitioning = true;
+
+  const targetRoom = appState.rooms.find((r) => r.name === targetRoomName);
+  if (!targetRoom) {
+    setStatus(`Door target room "${targetRoomName}" not found`);
+    transitioning = false;
+    return;
+  }
+
+  const targetDoor = targetRoom.doors.find((d) => d.id === targetDoorId);
+  if (!targetDoor) {
+    setStatus(`Door "${targetDoorId}" not found in room "${targetRoomName}"`);
+    transitioning = false;
+    return;
+  }
+
+  setStatus(`Transitioning to "${targetRoomName}"...`);
+
+  try {
+    // Load any new tileset textures needed by the target room
+    const neededTilesets = new Set<TilesetId>();
+    for (const p of targetRoom.placements) {
+      if (p.region) neededTilesets.add(p.region.tilesetId);
+      if (p.compositeId) {
+        const comp = appState.getComposite(p.compositeId);
+        if (comp) {
+          for (const part of comp.parts) {
+            neededTilesets.add(part.region.tilesetId);
+          }
+        }
+      }
+    }
+    for (const anim of currentChar.animations) {
+      neededTilesets.add(anim.strip.tilesetId);
+    }
+    await Promise.all([...neededTilesets].map((id) => loadTilesetTexture(id)));
+
+    // Save character state we want to preserve across rooms
+    const preservedDir = charDir;
+
+    // Update current room reference
+    currentRoom = targetRoom;
+
+    // Rebuild the entire scene
+    await initPixiApp(targetRoom, currentChar);
+
+    // Override the spawn position to the target door (initPixiApp picked center)
+    charX = targetDoor.col;
+    charY = targetDoor.row;
+    charDir = preservedDir;
+    charMoving = false;
+    animFamily = "idle";
+    animFrame = 0;
+    animTimer = 0;
+    positionCharacterSprite();
+    syncSequencePlayback();
+
+    // Start door cooldown so we don't immediately re-trigger
+    doorCooldown = DOOR_COOLDOWN_TIME;
+
+    // Update the room dropdown to reflect current room
+    roomSelect.value = targetRoomName;
+
+    modeHint.textContent = `${targetRoom.name} — ${targetRoom.width}×${targetRoom.height} — ${currentChar.name}`;
+    hintDiv.textContent = "WASD / Arrow keys to move";
+    updateInfo();
+    setStatus(`Entered "${targetRoomName}" through ${targetDoorId}`);
+  } catch (e) {
+    setStatus(`Error transitioning: ${e}`);
+  } finally {
+    transitioning = false;
+  }
+}
+
+// ─── Character position / sprite ─────────────────────────────────
+
 function positionCharacterSprite(): void {
   if (!charSprite) return;
   // Character is 1×2 tiles. charX/charY is the walkability tile (bottom tile).
@@ -661,7 +770,12 @@ function positionCharacterSprite(): void {
 // ─── Character update (movement + animation) ────────────────────
 
 function updateCharacter(dt: number): void {
-  if (!currentRoom || !currentChar) return;
+  if (!currentRoom || !currentChar || transitioning) return;
+
+  // Tick down door cooldown
+  if (doorCooldown > 0) {
+    doorCooldown -= dt;
+  }
 
   // Determine movement direction from keys
   let dx = 0;
@@ -718,6 +832,19 @@ function updateCharacter(dt: number): void {
     }
     if (isWalkable(charX, newY, currentRoom)) {
       charY = newY;
+    }
+  }
+
+  // Check for door transition
+  if (doorCooldown <= 0 && currentRoom.doors.length > 0) {
+    const door = getDoorAtPosition(currentRoom, charX, charY);
+    if (door && door.target) {
+      const [targetRoomName, targetDoorId] = parseDoorTarget(door.target);
+      if (targetRoomName && targetDoorId) {
+        // Fire and forget — transitionToRoom rebuilds the scene
+        transitionToRoom(targetRoomName, targetDoorId);
+        return; // skip the rest of this frame
+      }
     }
   }
 
@@ -840,6 +967,31 @@ function drawOverlays(room: RoomDefinition): void {
     g.stroke();
     overlayContainer.addChild(g);
   }
+
+  // Draw door markers (always visible — purple tiles with link indicator)
+  if (room.doors.length > 0) {
+    const g = new Graphics();
+    for (const door of room.doors) {
+      const px = door.col * TILE_SIZE;
+      const py = door.row * TILE_SIZE;
+
+      // Purple semi-transparent fill
+      g.rect(px, py, TILE_SIZE, TILE_SIZE);
+      g.fill({ color: 0xa855f7, alpha: 0.3 });
+
+      // Border — brighter if linked
+      const linked = door.target !== "";
+      g.rect(px, py, TILE_SIZE, TILE_SIZE);
+      g.stroke({ width: 2, color: linked ? 0xa855f7 : 0x6b21a8, alpha: linked ? 0.8 : 0.4 });
+
+      // Small dot: green = linked, gray = unlinked
+      const dotX = px + TILE_SIZE - 8;
+      const dotY = py + 4;
+      g.circle(dotX, dotY, 3);
+      g.fill({ color: linked ? 0x4ade80 : 0x666666, alpha: 1 });
+    }
+    overlayContainer.addChild(g);
+  }
 }
 
 function updateInfo(): void {
@@ -851,12 +1003,25 @@ function updateInfo(): void {
   const col = Math.floor(charX);
   const row = Math.floor(charY);
   const walkable = currentRoom.walkability[row * currentRoom.width + col] ? "yes" : "no";
-  infoDiv.innerHTML = [
+  const lines = [
     `<strong>Position:</strong> (${charX.toFixed(1)}, ${charY.toFixed(1)})`,
     `<strong>Tile:</strong> (${col}, ${row}) walkable: ${walkable}`,
     `<strong>Direction:</strong> ${charDir}`,
     `<strong>Animation:</strong> ${animFamily} frame ${animFrame}`,
-  ].join("<br/>");
+  ];
+
+  // Show door info if standing on one
+  const door = getDoorAtPosition(currentRoom, charX, charY);
+  if (door) {
+    if (door.target) {
+      const [targetRoom, targetDoor] = parseDoorTarget(door.target);
+      lines.push(`<strong>Door:</strong> ${door.id} → ${targetRoom} (${targetDoor})`);
+    } else {
+      lines.push(`<strong>Door:</strong> ${door.id} (unlinked)`);
+    }
+  }
+
+  infoDiv.innerHTML = lines.join("<br/>");
 }
 
 // ─── Zoom / overlay toggles ─────────────────────────────────────
