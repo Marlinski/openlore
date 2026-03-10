@@ -6,8 +6,13 @@ dist/
 *.tsbuildinfo
 
 # Licensed assets (not redistributable)
+data/sprites/*.png
 data/sprites/**/*.png
+data/sprites/*.ase
 data/sprites/**/*.ase
+data/sprites/*.aseprite
 data/sprites/**/*.aseprite
+data/sprites/LICENSE.txt
 data/sprites/**/LICENSE.txt
+data/characters/*.png
 data/characters/**/*.png
