@@ -119,8 +119,8 @@ export class Avatar {
 
   /**
    * Apply a server position update.
-   * For local avatar: this is a snap correction.
-   * For remote avatars: sets the interpolation target.
+   * Sets the interpolation target — the update loop will smoothly
+   * move toward it. For snap corrections, also teleports immediately.
    */
   applyServerPosition(
     x: number,
@@ -128,19 +128,21 @@ export class Avatar {
     direction: CharacterDirection,
     moving: boolean,
   ): void {
-    if (this.isLocal) {
-      // Snap correction — teleport immediately
-      this.x = x;
-      this.y = y;
-      this.targetX = x;
-      this.targetY = y;
-    } else {
-      // Interpolation target for remote avatars
-      this.targetX = x;
-      this.targetY = y;
-    }
+    this.targetX = x;
+    this.targetY = y;
     this.direction = direction;
     this.setMoving(moving);
+  }
+
+  /**
+   * Apply a snap correction — teleport immediately with no interpolation.
+   * Used when the server rejects a position (collision, bounds).
+   */
+  applySnap(x: number, y: number): void {
+    this.x = x;
+    this.y = y;
+    this.targetX = x;
+    this.targetY = y;
   }
 
   /** Set the moving state and update animation family */
@@ -179,25 +181,26 @@ export class Avatar {
    * Handles interpolation (remote) and animation advancement.
    */
   update(dt: number): void {
-    // Interpolate remote avatars toward their target position
-    if (!this.isLocal) {
-      const dx = this.targetX - this.x;
-      const dy = this.targetY - this.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+    // Interpolate toward the target position.
+    // For locally-driven avatars, x/targetX stay in sync (setPosition sets both),
+    // so this is a no-op. It only kicks in when another tab sends position
+    // updates via the server (avatar-move routed to this session).
+    const dx = this.targetX - this.x;
+    const dy = this.targetY - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist > 1) {
-        const speed = this.interpSpeed * TILE_SIZE * dt;
-        if (speed >= dist) {
-          this.x = this.targetX;
-          this.y = this.targetY;
-        } else {
-          this.x += (dx / dist) * speed;
-          this.y += (dy / dist) * speed;
-        }
-      } else {
+    if (dist > 1) {
+      const speed = this.interpSpeed * TILE_SIZE * dt;
+      if (speed >= dist) {
         this.x = this.targetX;
         this.y = this.targetY;
+      } else {
+        this.x += (dx / dist) * speed;
+        this.y += (dy / dist) * speed;
       }
+    } else {
+      this.x = this.targetX;
+      this.y = this.targetY;
     }
 
     // Advance animation

@@ -207,6 +207,24 @@
       z-index: 1;
     }
 
+    /* PM variant: purple-tinted bubble */
+    .speech-bubble.pm {
+      background: #e8e0f0;
+      border-color: #4a2a6a;
+      color: #2a1a3a;
+      box-shadow:
+        3px 3px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 0 1px rgba(200, 180, 255, 0.4);
+    }
+
+    .speech-bubble.pm::after {
+      border-top-color: #4a2a6a;
+    }
+
+    .speech-bubble.pm::before {
+      border-top-color: #e8e0f0;
+    }
+
     /* ─── HUD container ──────────────────────────── */
 
     #hud-container {
@@ -236,6 +254,48 @@
     .hud-status.disconnected {
       background: rgba(239, 68, 68, 0.2);
       color: #ef4444;
+    }
+
+    .hud-zoom {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .hud-zoom-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      background: rgba(18, 18, 30, 0.7);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-zoom-btn:hover {
+      background: rgba(18, 18, 30, 0.9);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .hud-zoom-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      min-width: 32px;
+      text-align: center;
+      user-select: none;
     }
 
     /* ─── Character card (right panel) ──────────── */
@@ -297,11 +357,12 @@
 
     .character-card-body {
       flex: 1;
-      overflow-y: auto;
+      overflow: hidden;
       padding: 16px 20px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+      min-height: 0;
     }
 
     .character-card-info {
@@ -333,7 +394,8 @@
     .character-card-pm {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
 
     .character-card-pm-header {
@@ -341,6 +403,27 @@
       color: rgba(255, 255, 255, 0.4);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      flex-shrink: 0;
+      margin-bottom: 8px;
+    }
+
+    .character-card-pm-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+      padding-right: 4px;
+    }
+
+    .character-card-pm-messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .character-card-pm-messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
     }
 
     .character-card-pm-empty {
@@ -349,6 +432,73 @@
       text-align: center;
       padding: 24px 16px;
       font-style: italic;
+    }
+
+    .character-card-pm-msg {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .character-card-pm-msg.self {
+      background: rgba(160, 196, 255, 0.08);
+    }
+
+    .character-card-pm-msg-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .character-card-pm-msg-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #a0c4ff;
+    }
+
+    .character-card-pm-msg.self .character-card-pm-msg-name {
+      color: #c4b5fd;
+    }
+
+    .character-card-pm-msg-time {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    .character-card-pm-msg-text {
+      font-size: 13px;
+      color: #d0d0d0;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .character-card-pm-form {
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+
+    .character-card-pm-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+      box-sizing: border-box;
+    }
+
+    .character-card-pm-input:focus {
+      border-color: rgba(160, 196, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .character-card-pm-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
     }
 
     /* ─── Channel panel (left panel) ─────────────── */

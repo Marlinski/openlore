@@ -10,17 +10,16 @@
  */
 
 import type { CharacterDirection, AvatarSnapshot } from "@offisims/shared";
-import type { SessionId } from "../transport/interface.js";
 
 export interface AvatarState {
   /** Server-assigned unique ID */
   id: string;
+  /** Persistent reconnection token (UUID) */
+  token: string;
   /** Display name */
   name: string;
   /** Character definition ID (for appearance) */
   characterId: string;
-  /** Session that controls this avatar (null = AI-controlled in future) */
-  sessionId: SessionId;
   /** Current room name */
   room: string;
   /** Pixel X within the room */
@@ -41,7 +40,7 @@ let nextAvatarId = 1;
 
 /** Create a new avatar with a unique ID */
 export function createAvatar(
-  sessionId: SessionId,
+  token: string,
   name: string,
   characterId: string,
   room: string,
@@ -50,9 +49,9 @@ export function createAvatar(
 ): AvatarState {
   return {
     id: `avatar-${nextAvatarId++}`,
+    token,
     name,
     characterId,
-    sessionId,
     room,
     x: spawnX,
     y: spawnY,

@@ -18,6 +18,7 @@ import { createApp } from "./http.js";
 import { setupWebSocket } from "./websocket.js";
 import { World } from "./game/world.js";
 import { MemoryChatProvider } from "./chat/memory.js";
+import { MemoryPlayerStore } from "./player.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -58,13 +59,14 @@ async function main(): Promise<void> {
   // ─── Initialize game world ─────────────────────────────────
 
   const chat = new MemoryChatProvider();
+  const playerStore = new MemoryPlayerStore();
 
   // We need the sendToSession function from the WS layer,
   // but the WS layer needs the World. Break the cycle by
   // creating World with a placeholder, then wiring it up.
   let sendFn: ((sessionId: string, msg: any) => void) | null = null;
 
-  const world = new World(chat, (sessionId, msg) => {
+  const world = new World(chat, playerStore, (sessionId, msg) => {
     if (sendFn) sendFn(sessionId, msg);
   });
 
@@ -78,7 +80,7 @@ async function main(): Promise<void> {
 
   // ─── Start HTTP + WS server ────────────────────────────────
 
-  const app = createApp(world, config);
+  const app = createApp(world, playerStore, config);
   const httpServer = http.createServer(app);
 
   const ws = setupWebSocket(httpServer, world);

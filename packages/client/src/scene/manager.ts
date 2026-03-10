@@ -39,6 +39,7 @@ import type {
   ServerRoomChangeMessage,
   ServerSnapMessage,
   ServerChatMessageMessage,
+  ServerPrivateMessageMessage,
 } from "@offisims/shared";
 import { Connection } from "../connection.js";
 import { Input } from "../input.js";
@@ -48,7 +49,7 @@ import { RoomScene } from "./room.js";
 import { Avatar, loadCharacterTextures, type TextureCache } from "./avatar.js";
 import type { BubbleManager } from "../ui/bubble.js";
 import type { Hud } from "../ui/hud.js";
-import type { CharacterCard } from "../ui/panel.js";
+import type { CharacterCard, PmMessage } from "../ui/panel.js";
 import type { ChannelPanel } from "../ui/channel.js";
 
 // ─── Constants ────────────────────────────────────────────────────
@@ -64,6 +65,16 @@ const AVATAR_CLICK_RADIUS = TILE_SIZE * 0.75;
 
 /** Selection outline: how many extra pixels on each side for the white contour */
 const OUTLINE_PAD = 2;
+
+/** PM bubble replay: minimum time between successive PM bubbles (ms) */
+const PM_REPLAY_BASE_MS = 2500;
+/** Extra ms per character of text for PM bubble replay pacing */
+const PM_REPLAY_MS_PER_CHAR = 30;
+
+/** Badge size (diameter in screen pixels) */
+const BADGE_SIZE = 10;
+/** Badge border width */
+const BADGE_BORDER = 1.5;
 
 // ─── SceneManager ─────────────────────────────────────────────────
 
@@ -116,6 +127,26 @@ export class SceneManager {
   /** Room transition in progress */
   private transitioning = false;
 
+  /** PM history per avatar (avatarId → messages) */
+  private pmHistory = new Map<string, PmMessage[]>();
+
+  /** Unread PMs per avatar (avatarId → messages not yet seen) */
+  private pmUnread = new Map<string, PmMessage[]>();
+
+  /** Red badge sprites per avatar (unread PM indicator) */
+  private badgeSprites = new Map<string, Sprite>();
+  /** Shared badge texture (drawn once, reused) */
+  private badgeTexture: Texture | null = null;
+
+  /** PM replay queue (messages to play as bubbles after opening a card) */
+  private pmReplayQueue: PmMessage[] = [];
+  /** Avatar ID being replayed */
+  private pmReplayAvatarId: string | null = null;
+  /** Timestamp when the last PM replay bubble was shown */
+  private pmReplayLastShow = 0;
+  /** Delay before showing the next replay bubble */
+  private pmReplayNextDelay = 0;
+
   constructor(
     app: Application,
     connection: Connection,
@@ -149,6 +180,7 @@ export class SceneManager {
     this.connection.on<ServerRoomChangeMessage>("room-change", (msg) => this.onRoomChange(msg));
     this.connection.on<ServerSnapMessage>("snap", (msg) => this.onSnap(msg));
     this.connection.on<ServerChatMessageMessage>("chat-message", (msg) => this.onChatMessage(msg));
+    this.connection.on<ServerPrivateMessageMessage>("private-message", (msg) => this.onPrivateMessage(msg));
 
     // Wire up input handlers
     this.input.onDoorUse(() => this.tryUseDoor());
@@ -183,6 +215,11 @@ export class SceneManager {
   onResize(width: number, height: number): void {
     this.camera.setViewport(width, height);
     this.app.renderer.resize(width, height);
+  }
+
+  /** Set the camera zoom level */
+  setZoom(zoom: number): void {
+    this.camera.setZoom(zoom);
   }
 
   /** Get the camera (for bubble/hud positioning) */
@@ -242,7 +279,22 @@ export class SceneManager {
 
     if (this.characterCard) {
       this.characterCard.open(avatar.id, avatar.name, avatar.characterId);
+      // Load PM history for this avatar
+      const history = this.pmHistory.get(avatar.id) ?? [];
+      this.characterCard.loadHistory(history);
     }
+
+    // Drain unread PMs and start replay as bubbles
+    const unreads = this.pmUnread.get(avatar.id);
+    if (unreads && unreads.length > 0) {
+      this.pmReplayQueue = [...unreads];
+      this.pmReplayAvatarId = avatar.id;
+      this.pmReplayLastShow = 0; // show first one immediately
+      this.pmReplayNextDelay = 0;
+      unreads.length = 0;
+    }
+    this.pmUnread.delete(avatar.id);
+    this.hideBadge(avatar.id);
 
     // Show selection outline
     this.outlineSprite.visible = true;
@@ -253,6 +305,10 @@ export class SceneManager {
   deselectAvatar(): void {
     this.selectedAvatarId = null;
     this.outlineSprite.visible = false;
+
+    // Clear any ongoing PM replay (messages are already marked read)
+    this.pmReplayQueue = [];
+    this.pmReplayAvatarId = null;
 
     if (this.characterCard) {
       this.characterCard.close();
@@ -280,10 +336,16 @@ export class SceneManager {
     // 3. Update selection highlight
     this.updateSelectionHighlight(dt);
 
-    // 4. Z-sort
+    // 4. Update unread PM badges
+    this.updateBadges();
+
+    // 5. Tick PM replay queue
+    this.tickPmReplay();
+
+    // 6. Z-sort
     this.roomScene.zSort();
 
-    // 5. Update camera
+    // 7. Update camera
     const localAvatar = this.getLocalAvatar();
     if (localAvatar) {
       this.camera.setTarget(localAvatar.x, localAvatar.y);
@@ -291,7 +353,7 @@ export class SceneManager {
     this.camera.update(dt);
     this.camera.applyTo(this.worldContainer);
 
-    // 6. Update bubbles and name labels
+    // 8. Update bubbles and name labels
     if (this.bubbleManager) {
       this.bubbleManager.update();
     }
@@ -422,6 +484,123 @@ export class SceneManager {
     this.outlineSprite.height = h;
   }
 
+  // ─── Unread PM badges ──────────────────────────────────────
+
+  /** Create the shared badge texture (red circle with white border) */
+  private ensureBadgeTexture(): Texture {
+    if (this.badgeTexture) return this.badgeTexture;
+
+    const size = BADGE_SIZE * 2; // draw at 2x for crispness
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - BADGE_BORDER;
+
+    // White border
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + BADGE_BORDER, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+
+    // Red fill
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#ef4444";
+    ctx.fill();
+
+    this.badgeTexture = Texture.from(canvas);
+    this.badgeTexture.source.scaleMode = "nearest";
+    return this.badgeTexture;
+  }
+
+  /** Show the unread badge on an avatar */
+  private showBadge(avatarId: string): void {
+    if (this.badgeSprites.has(avatarId)) return; // already showing
+    if (!this.roomScene) return;
+
+    const tex = this.ensureBadgeTexture();
+    const badge = new Sprite(tex);
+    badge.width = BADGE_SIZE;
+    badge.height = BADGE_SIZE;
+    badge.visible = true;
+
+    // Add to the room's object container so it z-sorts with avatars
+    // Place it at a very high anchorY so it renders in front
+    this.roomScene.addAvatarSprite(badge, 999999);
+    this.badgeSprites.set(avatarId, badge);
+  }
+
+  /** Hide the unread badge from an avatar */
+  private hideBadge(avatarId: string): void {
+    const badge = this.badgeSprites.get(avatarId);
+    if (!badge) return;
+
+    if (this.roomScene) {
+      this.roomScene.removeAvatarSprite(badge);
+    }
+    this.badgeSprites.delete(avatarId);
+  }
+
+  /** Update badge positions each frame (track avatar head) */
+  private updateBadges(): void {
+    for (const [avatarId, badge] of this.badgeSprites) {
+      const avatar = this.avatars.get(avatarId);
+      if (!avatar) {
+        badge.visible = false;
+        continue;
+      }
+
+      badge.visible = true;
+      // Position at top-right of avatar sprite
+      // Avatar sprite: x = avatar.x - TILE_SIZE/2, y = avatar.y - TILE_SIZE/2 - TILE_SIZE
+      // Top-right corner: x + TILE_SIZE, y (sprite top)
+      badge.x = avatar.sprite.x + TILE_SIZE - BADGE_SIZE / 2;
+      badge.y = avatar.sprite.y - BADGE_SIZE / 2;
+    }
+  }
+
+  /** Remove all badge sprites (room change cleanup) */
+  private clearBadges(): void {
+    for (const [, badge] of this.badgeSprites) {
+      if (this.roomScene) {
+        this.roomScene.removeAvatarSprite(badge);
+      }
+    }
+    this.badgeSprites.clear();
+  }
+
+  // ─── PM replay queue ───────────────────────────────────────
+
+  /** Tick the PM replay queue — show next bubble when ready */
+  private tickPmReplay(): void {
+    if (this.pmReplayQueue.length === 0 || !this.pmReplayAvatarId) return;
+    if (!this.bubbleManager) return;
+
+    const now = Date.now();
+
+    // Wait for the delay before showing next bubble
+    if (this.pmReplayLastShow > 0 && now - this.pmReplayLastShow < this.pmReplayNextDelay) {
+      return;
+    }
+
+    // Show next message
+    const msg = this.pmReplayQueue.shift()!;
+    this.bubbleManager.showPm(this.pmReplayAvatarId, msg.name, msg.text);
+    this.pmReplayLastShow = now;
+
+    // Calculate delay for the next one (proportional to text length)
+    this.pmReplayNextDelay = PM_REPLAY_BASE_MS + msg.text.length * PM_REPLAY_MS_PER_CHAR;
+
+    // If queue is empty, we're done
+    if (this.pmReplayQueue.length === 0) {
+      this.pmReplayAvatarId = null;
+    }
+  }
+
   private updateLocalPlayer(dt: number): void {
     const avatar = this.getLocalAvatar();
     if (!avatar || !this.roomScene) return;
@@ -453,46 +632,51 @@ export class SceneManager {
 
       // Check for door (auto-trigger on walk-over)
       this.checkDoorTransition();
+
+      // Send position to server (throttled)
+      this.sendPositionThrottled(avatar);
+    } else if (wasMoving) {
+      // Keys just released — send one final stop, then done
+      avatar.setMoving(false);
+      this.sendStop(avatar);
     } else {
       avatar.setMoving(false);
     }
-
-    // Send position to server (throttled)
-    this.maybeSendPosition(avatar);
   }
 
-  private maybeSendPosition(avatar: Avatar): void {
+  /** Send a position update to the server, throttled to POSITION_SEND_INTERVAL */
+  private sendPositionThrottled(avatar: Avatar): void {
     const now = Date.now();
-    const moved = avatar.x !== this.lastSentX || avatar.y !== this.lastSentY;
     const timeSince = now - this.lastPositionSend;
 
-    // Send if moved and enough time has passed
-    if (moved && timeSince >= POSITION_SEND_INTERVAL) {
+    if (timeSince >= POSITION_SEND_INTERVAL) {
       this.connection.send({
         type: "position",
         x: avatar.x,
         y: avatar.y,
         direction: avatar.direction,
-        moving: avatar.moving,
+        moving: true,
       });
       this.lastPositionSend = now;
       this.lastSentX = avatar.x;
       this.lastSentY = avatar.y;
-      this.lastSentMoving = avatar.moving;
-    } else if (!avatar.moving && (moved || this.lastSentMoving)) {
-      // Send final stop: either position changed or moving state changed
-      this.connection.send({
-        type: "position",
-        x: avatar.x,
-        y: avatar.y,
-        direction: avatar.direction,
-        moving: false,
-      });
-      this.lastSentX = avatar.x;
-      this.lastSentY = avatar.y;
-      this.lastSentMoving = false;
-      this.lastPositionSend = now;
+      this.lastSentMoving = true;
     }
+  }
+
+  /** Send a single stop update (keys released) */
+  private sendStop(avatar: Avatar): void {
+    this.connection.send({
+      type: "position",
+      x: avatar.x,
+      y: avatar.y,
+      direction: avatar.direction,
+      moving: false,
+    });
+    this.lastSentX = avatar.x;
+    this.lastSentY = avatar.y;
+    this.lastSentMoving = false;
+    this.lastPositionSend = Date.now();
   }
 
   /** Check if the local player is standing on a door and trigger transition */
@@ -548,13 +732,28 @@ export class SceneManager {
     if (msg.avatarId === this.selectedAvatarId) {
       this.deselectAvatar();
     }
+    // Clean up unread badge
+    this.hideBadge(msg.avatarId);
+    this.pmUnread.delete(msg.avatarId);
     this.removeAvatar(msg.avatarId);
   }
 
   private onAvatarMove(msg: ServerAvatarMoveMessage): void {
     const avatar = this.avatars.get(msg.avatarId);
-    if (!avatar || avatar.isLocal) return;
+    if (!avatar) return;
+    // Note: we don't skip isLocal here. The server already excludes the
+    // sending session, so this tab only receives avatar-move for its own
+    // avatar when *another* tab sent the update. In that case we must
+    // apply the position so multi-tab stays in sync.
     avatar.applyServerPosition(msg.x, msg.y, msg.direction, msg.moving);
+
+    // Keep position tracking in sync so this tab doesn't send a stale
+    // "stop" correction when it regains focus.
+    if (avatar.id === this.localAvatarId) {
+      this.lastSentX = msg.x;
+      this.lastSentY = msg.y;
+      this.lastSentMoving = msg.moving;
+    }
   }
 
   private onRoomChange(msg: ServerRoomChangeMessage): void {
@@ -575,7 +774,7 @@ export class SceneManager {
   private onSnap(msg: ServerSnapMessage): void {
     const avatar = this.getLocalAvatar();
     if (!avatar) return;
-    avatar.applyServerPosition(msg.x, msg.y, avatar.direction, avatar.moving);
+    avatar.applySnap(msg.x, msg.y);
     this.lastSentX = msg.x;
     this.lastSentY = msg.y;
   }
@@ -590,6 +789,44 @@ export class SceneManager {
     if (this.channelPanel) {
       const isSelf = msg.avatarId === this.localAvatarId;
       this.channelPanel.addMessage(msg.name, msg.text, isSelf);
+    }
+  }
+
+  private onPrivateMessage(msg: ServerPrivateMessageMessage): void {
+    // Determine the "other" avatar for PM history keying
+    const isSelf = msg.fromAvatarId === this.localAvatarId;
+    const otherAvatarId = isSelf ? msg.toAvatarId : msg.fromAvatarId;
+
+    // Store in PM history
+    const entry: PmMessage = {
+      name: msg.fromName,
+      text: msg.text,
+      timestamp: Date.now(),
+      isSelf,
+    };
+
+    let history = this.pmHistory.get(otherAvatarId);
+    if (!history) {
+      history = [];
+      this.pmHistory.set(otherAvatarId, history);
+    }
+    history.push(entry);
+    while (history.length > 200) {
+      history.shift();
+    }
+
+    // If the character card is open for this avatar, append the message live
+    if (this.characterCard?.selectedAvatarId === otherAvatarId) {
+      this.characterCard.addPmMessage(msg.fromName, msg.text, isSelf);
+    } else if (!isSelf) {
+      // Card is NOT open for this avatar — track as unread + show badge
+      let unreads = this.pmUnread.get(otherAvatarId);
+      if (!unreads) {
+        unreads = [];
+        this.pmUnread.set(otherAvatarId, unreads);
+      }
+      unreads.push(entry);
+      this.showBadge(otherAvatarId);
     }
   }
 
@@ -608,6 +845,7 @@ export class SceneManager {
       this.roomScene = null;
     }
     this.avatars.clear();
+    this.clearBadges();
     if (this.bubbleManager) {
       this.bubbleManager.clearAll();
     }

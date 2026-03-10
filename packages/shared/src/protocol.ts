@@ -51,15 +51,17 @@ export interface RoomSnapshot {
 
 // ─── Client → Server messages ────────────────────────────────────
 
-/** Client requests to join the game with a new avatar */
+/**
+ * Client requests to join the game.
+ *
+ * The token is obtained via POST /api/register and identifies the
+ * player account (name, character, etc.). The server looks up the
+ * player record from the token.
+ */
 export interface ClientJoinMessage {
   type: "join";
-  /** Desired display name */
-  name: string;
-  /** Character definition ID to use for appearance */
-  characterId: string;
-  /** (Optional) Room to spawn in. If omitted, server picks default. */
-  room?: string;
+  /** Player session token (from registration / cookie) */
+  token: string;
 }
 
 /**
@@ -93,6 +95,15 @@ export interface ClientChatMessage {
   text: string;
 }
 
+/** Client sends a private message to a specific avatar */
+export interface ClientPrivateMessage {
+  type: "private-message";
+  /** Avatar ID of the recipient */
+  targetAvatarId: string;
+  /** Message text */
+  text: string;
+}
+
 /** Client requests to leave the game (disconnect gracefully) */
 export interface ClientLeaveMessage {
   type: "leave";
@@ -104,6 +115,7 @@ export type ClientMessage =
   | ClientPositionMessage
   | ClientUseDoorMessage
   | ClientChatMessage
+  | ClientPrivateMessage
   | ClientLeaveMessage;
 
 // ─── Server → Client messages ────────────────────────────────────
@@ -187,6 +199,19 @@ export interface ServerChatMessageMessage {
   text: string;
 }
 
+/** Private message between two avatars */
+export interface ServerPrivateMessageMessage {
+  type: "private-message";
+  /** Avatar ID of the sender */
+  fromAvatarId: string;
+  /** Sender's display name */
+  fromName: string;
+  /** Avatar ID of the recipient */
+  toAvatarId: string;
+  /** Message text */
+  text: string;
+}
+
 /**
  * Server corrects the client's avatar position.
  * Sent when the server detects the client reported an invalid position
@@ -215,6 +240,7 @@ export type ServerMessage =
   | ServerAvatarMoveMessage
   | ServerRoomChangeMessage
   | ServerChatMessageMessage
+  | ServerPrivateMessageMessage
   | ServerSnapMessage
   | ServerErrorMessage;
 
@@ -227,7 +253,7 @@ export function isClientMessage(msg: unknown): msg is ClientMessage {
     msg !== null &&
     "type" in msg &&
     typeof (msg as any).type === "string" &&
-    ["join", "position", "use-door", "chat", "leave"].includes(
+    ["join", "position", "use-door", "chat", "private-message", "leave"].includes(
       (msg as any).type,
     )
   );
@@ -247,6 +273,7 @@ export function isServerMessage(msg: unknown): msg is ServerMessage {
       "avatar-move",
       "room-change",
       "chat-message",
+      "private-message",
       "snap",
       "error",
     ].includes((msg as any).type)

@@ -237,7 +237,8 @@
             "h": 2
           },
           "offsetX": 5,
-          "offsetY": 2
+          "offsetY": 2,
+          "zBias": -1
         },
         {
           "region": {
@@ -248,7 +249,8 @@
             "h": 2
           },
           "offsetX": 2,
-          "offsetY": 2
+          "offsetY": 2,
+          "zBias": -1
         }
       ],
       "displaySize": {
@@ -966,30 +968,6 @@
             "tilesetId": "room_builder",
             "srcCol": 8,
             "srcRow": 3,
-            "w": 1,
-            "h": 1
-          }
-        },
-        {
-          "gridX": 5,
-          "gridY": 11,
-          "layer": "floor",
-          "region": {
-            "tilesetId": "room_builder",
-            "srcCol": 9,
-            "srcRow": 1,
-            "w": 1,
-            "h": 1
-          }
-        },
-        {
-          "gridX": 8,
-          "gridY": 11,
-          "layer": "floor",
-          "region": {
-            "tilesetId": "room_builder",
-            "srcCol": 7,
-            "srcRow": 1,
             "w": 1,
             "h": 1
           }
@@ -2754,6 +2732,54 @@
             "w": 1,
             "h": 1
           }
+        },
+        {
+          "gridX": 5,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 5,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 7,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 8,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
+        },
+        {
+          "gridX": 8,
+          "gridY": 11,
+          "layer": "floor",
+          "region": {
+            "tilesetId": "room_builder",
+            "srcCol": 9,
+            "srcRow": 1,
+            "w": 1,
+            "h": 1
+          }
         }
       ]
     },
@@ -4247,142 +4273,6 @@
   ],
   "characters": [
     {
-      "id": "mmf8d3gg3xrq6e",
-      "name": "Adam",
-      "sheetId": "adam",
-      "frameWidth": 16,
-      "frameHeight": 32,
-      "animations": [
-        {
-          "family": "idle",
-          "direction": "right",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_idle",
-            "row": 0,
-            "startFrame": 0,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "idle",
-          "direction": "up",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_idle",
-            "row": 0,
-            "startFrame": 6,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "idle",
-          "direction": "left",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_idle",
-            "row": 0,
-            "startFrame": 12,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "idle",
-          "direction": "down",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_idle",
-            "row": 0,
-            "startFrame": 18,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "idle",
-          "direction": "down",
-          "variant": 1,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 6,
-            "startFrame": 0,
-            "frameCount": 9
-          }
-        },
-        {
-          "family": "walk",
-          "direction": "right",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 2,
-            "startFrame": 0,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "walk",
-          "direction": "up",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 2,
-            "startFrame": 6,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "walk",
-          "direction": "left",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 2,
-            "startFrame": 12,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "walk",
-          "direction": "down",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 2,
-            "startFrame": 18,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "sit_office",
-          "direction": "right",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 5,
-            "startFrame": 0,
-            "frameCount": 6
-          }
-        },
-        {
-          "family": "sit_office",
-          "direction": "left",
-          "variant": 0,
-          "strip": {
-            "tilesetId": "char_adam_walk",
-            "row": 5,
-            "startFrame": 6,
-            "frameCount": 6
-          }
-        }
-      ],
-      "familySpeeds": {
-        "idle": 4,
-        "walk": 8,
-        "sit_office": 4
-      },
-      "variantSequences": []
-    },
-    {
       "id": "mmj9km2pwypwhf",
       "name": "Alex",
       "sheetId": "alex",
@@ -4789,6 +4679,158 @@
         "sit_office": 4
       },
       "variantSequences": []
+    },
+    {
+      "id": "mmf8d3gg3xrq6e",
+      "name": "Adam",
+      "sheetId": "adam",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "animations": [
+        {
+          "family": "idle",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_idle",
+            "row": 0,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "idle",
+          "direction": "down",
+          "variant": 1,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 6,
+            "startFrame": 0,
+            "frameCount": 9
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "up",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 12,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "walk",
+          "direction": "down",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 2,
+            "startFrame": 18,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "right",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 5,
+            "startFrame": 0,
+            "frameCount": 6
+          }
+        },
+        {
+          "family": "sit_office",
+          "direction": "left",
+          "variant": 0,
+          "strip": {
+            "tilesetId": "char_adam_walk",
+            "row": 5,
+            "startFrame": 6,
+            "frameCount": 6
+          }
+        }
+      ],
+      "familySpeeds": {
+        "idle": 4,
+        "walk": 8,
+        "sit_office": 4
+      },
+      "variantSequences": [
+        {
+          "name": "breathing_sipping",
+          "family": "idle",
+          "direction": "down",
+          "steps": [
+            {
+              "variant": 0,
+              "repeats": 5
+            },
+            {
+              "variant": 1,
+              "repeats": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

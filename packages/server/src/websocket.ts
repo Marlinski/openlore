@@ -101,12 +101,7 @@ export function setupWebSocket(
     transport.onMessage((msg) => {
       switch (msg.type) {
         case "join":
-          world.handleJoin(
-            transport.sessionId,
-            msg.name,
-            msg.characterId,
-            msg.room,
-          );
+          world.handleJoin(transport.sessionId, msg.token);
           break;
         case "position":
           world.handlePosition(
@@ -123,16 +118,23 @@ export function setupWebSocket(
         case "chat":
           world.handleChat(transport.sessionId, msg.text);
           break;
+        case "private-message":
+          world.handlePrivateMessage(
+            transport.sessionId,
+            msg.targetAvatarId,
+            msg.text,
+          );
+          break;
         case "leave":
           world.handleLeave(transport.sessionId);
           break;
       }
     });
 
-    // Handle disconnect
+    // Handle disconnect — starts grace period (avatar stays in world)
     transport.onClose(() => {
       console.log(`[WS] Client disconnected: ${transport.sessionId}`);
-      world.handleLeave(transport.sessionId);
+      world.handleDisconnect(transport.sessionId);
       transports.delete(transport.sessionId);
     });
   });

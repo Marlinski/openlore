@@ -84,12 +84,12 @@ export class BubbleManager {
   }
 
   /** Show a speech bubble above an avatar. Hides the name label while active. */
-  show(avatarId: string, name: string, text: string): void {
+  show(avatarId: string, name: string, text: string, pm = false): void {
     // Remove old bubbles for this avatar
     this.removeBubbles(avatarId);
 
     const el = document.createElement("div");
-    el.className = "speech-bubble";
+    el.className = pm ? "speech-bubble pm" : "speech-bubble";
 
     // Inner text div for line-clamping (clamp doesn't work with mixed children)
     const inner = document.createElement("div");
@@ -109,6 +109,11 @@ export class BubbleManager {
       createdAt: Date.now(),
     };
     this.bubbles.push(bubble);
+  }
+
+  /** Show a PM speech bubble (purple-tinted) */
+  showPm(avatarId: string, name: string, text: string): void {
+    this.show(avatarId, name, text, true);
   }
 
   /** Remove all bubbles for an avatar (restores name label) */

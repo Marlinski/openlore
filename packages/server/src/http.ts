@@ -13,15 +13,64 @@ import express from "express";
 import fs from "node:fs";
 import type { ProjectData } from "@offisims/shared";
 import type { World } from "./game/world.js";
+import type { PlayerStore } from "./player.js";
 import type { ServerConfig } from "./config.js";
 
-export function createApp(world: World, config: ServerConfig): express.Express {
+export function createApp(world: World, players: PlayerStore, config: ServerConfig): express.Express {
   const app = express();
 
   // Parse JSON request bodies (for PUT /api/game-data)
   app.use(express.json({ limit: "10mb" }));
 
   // ─── JSON API ──────────────────────────────────────────────
+
+  /**
+   * Register a new player. Works for both human (join form) and AI agents.
+   * Returns a session token that the client stores as a cookie.
+   */
+  app.post("/api/register", (req, res) => {
+    const { name, characterId } = req.body ?? {};
+
+    if (!name || typeof name !== "string" || !name.trim()) {
+      res.status(400).json({ error: "name is required" });
+      return;
+    }
+    if (!characterId || typeof characterId !== "string") {
+      res.status(400).json({ error: "characterId is required" });
+      return;
+    }
+
+    // Validate character exists in game data
+    const data = world.getProjectData();
+    if (data) {
+      const charDef = data.characters.find((c) => c.id === characterId);
+      if (!charDef) {
+        res.status(400).json({ error: `Character "${characterId}" not found` });
+        return;
+      }
+    }
+
+    const player = players.register(name.trim(), characterId);
+    res.json({ token: player.token });
+  });
+
+  /**
+   * Validate an existing token. Returns 200 if valid, 401 if not.
+   * Used by the client to check a cookie before starting the game.
+   */
+  app.get("/api/session", (req, res) => {
+    const token = req.query.token as string | undefined;
+    if (!token) {
+      res.status(400).json({ error: "token query parameter required" });
+      return;
+    }
+    const player = players.getByToken(token);
+    if (!player) {
+      res.status(401).json({ error: "Invalid or expired session" });
+      return;
+    }
+    res.json({ name: player.name, characterId: player.characterId });
+  });
 
   /** Full game data (tilesets, composites, rooms, characters) */
   app.get("/api/game-data", (_req, res) => {
