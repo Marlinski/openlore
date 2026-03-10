@@ -4,3 +4,10 @@ dist/
 *.local
 *.gif
 *.tsbuildinfo
+
+# Licensed assets (not redistributable)
+data/sprites/**/*.png
+data/sprites/**/*.ase
+data/sprites/**/*.aseprite
+data/sprites/**/LICENSE.txt
+data/characters/**/*.png
