@@ -1,12 +1,14 @@
 import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import solid from "vite-plugin-solid";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: __dirname,
   publicDir: false,
+  plugins: [solid()],
   server: {
     port: 3002,
     open: true,

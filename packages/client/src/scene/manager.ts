@@ -9,8 +9,7 @@
  *   - Sends position updates to the server via Connection
  *   - Responds to server messages (welcome, avatar-join/leave/move, room-change, snap, chat)
  *   - Coordinates with BubbleManager for speech bubbles and name labels
- *   - Manages CharacterCard (right panel) for avatar click interactions
- *   - Manages ChannelPanel (left panel) for room channel chat
+ *   - Pushes UI state changes to the Solid store via callbacks
  *   - Renders selection highlight (aura) on the selected avatar
  *
  * Flow:
@@ -47,10 +46,7 @@ import { getCachedImage } from "../assets.js";
 import { Camera } from "./camera.js";
 import { RoomScene } from "./room.js";
 import { Avatar, loadCharacterTextures, type TextureCache } from "./avatar.js";
-import type { BubbleManager } from "../ui/bubble.js";
-import type { Hud } from "../ui/hud.js";
-import type { CharacterCard, PmMessage } from "../ui/panel.js";
-import type { ChannelPanel } from "../ui/channel.js";
+import type { BubbleManager } from "../ui/components/BubbleOverlay.js";
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -76,6 +72,32 @@ const BADGE_SIZE = 10;
 /** Badge border width */
 const BADGE_BORDER = 1.5;
 
+// ─── UI Callbacks interface ───────────────────────────────────────
+
+export interface PmMessage {
+  name: string;
+  text: string;
+  timestamp: number;
+  isSelf: boolean;
+}
+
+/**
+ * Callbacks that push state from the imperative game engine into
+ * the SolidJS reactive store.
+ */
+export interface UICallbacks {
+  setRoomName: (name: string) => void;
+  addChannelMessage: (name: string, text: string, isSelf: boolean) => void;
+  clearChannelMessages: () => void;
+  openCharacterCard: (avatarId: string, name: string, characterId: string) => void;
+  closeCharacterCard: () => void;
+  setPmHistory: (messages: PmMessage[]) => void;
+  addPmMessage: (name: string, text: string, isSelf: boolean) => void;
+  clearPmMessages: () => void;
+  getSelectedAvatarId: () => string | null;
+  setChannelOpen: (open: boolean) => void;
+}
+
 // ─── SceneManager ─────────────────────────────────────────────────
 
 export class SceneManager {
@@ -86,9 +108,7 @@ export class SceneManager {
   private camera: Camera;
   private gameData: ProjectData;
   private bubbleManager: BubbleManager | null = null;
-  private hud: Hud | null = null;
-  private characterCard: CharacterCard | null = null;
-  private channelPanel: ChannelPanel | null = null;
+  private ui: UICallbacks;
 
   /** Shared PixiJS texture cache (tileset ID → base Texture) */
   private textureCache: TextureCache = new Map();
@@ -152,12 +172,14 @@ export class SceneManager {
     connection: Connection,
     input: Input,
     gameData: ProjectData,
+    ui: UICallbacks,
   ) {
     this.app = app;
     this.connection = connection;
     this.input = input;
     this.gameData = gameData;
     this.camera = new Camera();
+    this.ui = ui;
 
     // Create world container
     this.worldContainer = new Container();
@@ -196,21 +218,6 @@ export class SceneManager {
     this.bubbleManager = bm;
   }
 
-  /** Set the HUD (called after construction) */
-  setHud(hud: Hud): void {
-    this.hud = hud;
-  }
-
-  /** Set the character card (called after construction) */
-  setCharacterCard(card: CharacterCard): void {
-    this.characterCard = card;
-  }
-
-  /** Set the channel panel (called after construction) */
-  setChannelPanel(panel: ChannelPanel): void {
-    this.channelPanel = panel;
-  }
-
   /** Handle window resize */
   onResize(width: number, height: number): void {
     this.camera.setViewport(width, height);
@@ -244,7 +251,8 @@ export class SceneManager {
    */
   handleCanvasClick(screenX: number, screenY: number): void {
     // If character card is open, close it and deselect
-    if (this.characterCard?.isOpen()) {
+    const currentSelected = this.ui.getSelectedAvatarId();
+    if (currentSelected !== null) {
       this.deselectAvatar();
       return;
     }
@@ -277,12 +285,11 @@ export class SceneManager {
   private selectAvatar(avatar: Avatar): void {
     this.selectedAvatarId = avatar.id;
 
-    if (this.characterCard) {
-      this.characterCard.open(avatar.id, avatar.name, avatar.characterId);
-      // Load PM history for this avatar
-      const history = this.pmHistory.get(avatar.id) ?? [];
-      this.characterCard.loadHistory(history);
-    }
+    this.ui.openCharacterCard(avatar.id, avatar.name, avatar.characterId);
+
+    // Load PM history for this avatar
+    const history = this.pmHistory.get(avatar.id) ?? [];
+    this.ui.setPmHistory(history);
 
     // Drain unread PMs and start replay as bubbles
     const unreads = this.pmUnread.get(avatar.id);
@@ -310,9 +317,8 @@ export class SceneManager {
     this.pmReplayQueue = [];
     this.pmReplayAvatarId = null;
 
-    if (this.characterCard) {
-      this.characterCard.close();
-    }
+    this.ui.closeCharacterCard();
+    this.ui.clearPmMessages();
   }
 
   // ─── Game loop ──────────────────────────────────────────────
@@ -785,11 +791,9 @@ export class SceneManager {
       this.bubbleManager.show(msg.avatarId, msg.name, msg.text);
     }
 
-    // Add to channel panel
-    if (this.channelPanel) {
-      const isSelf = msg.avatarId === this.localAvatarId;
-      this.channelPanel.addMessage(msg.name, msg.text, isSelf);
-    }
+    // Add to channel panel via store
+    const isSelf = msg.avatarId === this.localAvatarId;
+    this.ui.addChannelMessage(msg.name, msg.text, isSelf);
   }
 
   private onPrivateMessage(msg: ServerPrivateMessageMessage): void {
@@ -816,8 +820,9 @@ export class SceneManager {
     }
 
     // If the character card is open for this avatar, append the message live
-    if (this.characterCard?.selectedAvatarId === otherAvatarId) {
-      this.characterCard.addPmMessage(msg.fromName, msg.text, isSelf);
+    const currentSelected = this.ui.getSelectedAvatarId();
+    if (currentSelected === otherAvatarId) {
+      this.ui.addPmMessage(msg.fromName, msg.text, isSelf);
     } else if (!isSelf) {
       // Card is NOT open for this avatar — track as unread + show badge
       let unreads = this.pmUnread.get(otherAvatarId);
@@ -849,16 +854,13 @@ export class SceneManager {
     if (this.bubbleManager) {
       this.bubbleManager.clearAll();
     }
-    if (this.characterCard) {
-      this.characterCard.clearPanel();
-    }
-    if (this.channelPanel) {
-      this.channelPanel.clearMessages();
-      this.channelPanel.setRoomName(roomDef.name);
-    }
 
     // Deselect any selected avatar
     this.deselectAvatar();
+
+    // Notify UI
+    this.ui.clearChannelMessages();
+    this.ui.setRoomName(roomDef.name);
 
     // Build new room scene
     this.roomScene = new RoomScene(roomDef, this.gameData, this.textureCache);
