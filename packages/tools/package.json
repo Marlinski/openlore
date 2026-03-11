@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@offisims/shared": "0.2.0",
+    "openai": "^4.85.4",
     "pixi.js": "^8.6.6"
   },
   "devDependencies": {

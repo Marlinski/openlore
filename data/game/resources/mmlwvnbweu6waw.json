@@ -1,0 +1,39 @@
+{
+  "id": "mmlwvnbweu6waw",
+  "name": "state:preview",
+  "tags": [
+    "entity:character",
+    "name:lisa",
+    "state:preview"
+  ],
+  "frames": [
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_06",
+      "srcCol": 0,
+      "srcRow": 0,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_06",
+      "srcCol": 1,
+      "srcRow": 0,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_06",
+      "srcCol": 2,
+      "srcRow": 0,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_06",
+      "srcCol": 3,
+      "srcRow": 0,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

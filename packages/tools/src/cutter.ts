@@ -29,6 +29,8 @@ import {
 import { appState } from "./state.js";
 import { setStatus } from "./main.js";
 import { populateTilesetList, loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
+import { registerTools, registerContextProvider, registerPresets, type AgentTool } from "./agent-tools.js";
+import { setTabSystemPrompt } from "./agent-panel.js";
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ const saveMaskBtn = document.getElementById("cut-save-mask-btn") as HTMLButtonEl
 
 const zoomSelect = document.getElementById("cut-zoom") as HTMLSelectElement;
 const gridToggle = document.getElementById("cut-grid-toggle") as HTMLInputElement;
-
+const showCutsCheckbox = document.getElementById("cut-show-overlays") as HTMLInputElement;
 const canvas = document.getElementById("cut-canvas") as HTMLCanvasElement;
 const dragOverlay = document.getElementById("cut-drag-overlay") as HTMLDivElement;
 const seqOverlay = document.getElementById("cut-seq-overlay") as HTMLDivElement;
@@ -58,6 +60,7 @@ const assignInfoDiv = document.getElementById("cut-assign-info") as HTMLDivEleme
 const pendingPreviewDiv = document.getElementById("cut-pending-preview") as HTMLDivElement;
 const assignBtn = document.getElementById("cut-assign-btn") as HTMLButtonElement;
 const assignCancelBtn = document.getElementById("cut-assign-cancel-btn") as HTMLButtonElement;
+const deleteBtn = document.getElementById("cut-delete-btn") as HTMLButtonElement;
 
 const saveResourcesBtn = document.getElementById("cut-save-resources-btn") as HTMLButtonElement;
 const saveStatusDiv = document.getElementById("cut-save-status") as HTMLDivElement;
@@ -82,6 +85,7 @@ const clearResourcesBtn = document.getElementById("cut-clear-resources-btn") as 
 let currentTilesetId = "";
 let currentZoom = 1;
 let showGrid = true;
+let showCuts = true;
 
 /** Current tileset image */
 let currentImg: HTMLImageElement | null = null;
@@ -263,6 +267,9 @@ interface PendingSelection {
 
 let pendingSelection: PendingSelection | null = null;
 
+/** Refresh function for conditional tool registration (set by registerCutterAgentTools) */
+let cutterToolRefresh: (() => void) | null = null;
+
 /**
  * Cut entries for the current working session.
  * Each cut will become a Resource when "Save Resources" is clicked.
@@ -291,6 +298,41 @@ let cuts: CutEntry[] = [];
 /** Currently selected cut entry (for highlighting) */
 let selectedCutId: string | null = null;
 
+/** Cut entry being edited in the assign form (null = new selection or none) */
+let editingCutId: string | null = null;
+
+/** Resize handle being dragged */
+type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+
+interface ResizeState {
+  /** The cut being resized */
+  cutId: string;
+  /** Which handle is being dragged */
+  handle: ResizeHandle;
+  /** Original cut geometry before resize started (for reference) */
+  originalCol: number;
+  originalRow: number;
+  originalFrameWidth: number;
+  originalFrameHeight: number;
+  originalFrameCount: number;
+}
+
+let resizing: ResizeState | null = null;
+
+/** State for dragging/moving a cut */
+interface MoveState {
+  cutId: string;
+  /** Tile offset from the cut's col/row to where the mouse grabbed */
+  offsetCol: number;
+  offsetRow: number;
+  /** Whether the cut actually moved during the drag */
+  didMove: boolean;
+}
+
+let moving: MoveState | null = null;
+
+const HANDLE_HIT = 8; // pixels, hit test radius
+
 /** Animation previews */
 interface AnimPreview {
   canvas: HTMLCanvasElement;
@@ -314,6 +356,185 @@ const CUT_COLORS = [
 
 function getCutColor(idx: number): string {
   return CUT_COLORS[idx % CUT_COLORS.length];
+}
+
+function hitTestHandle(
+  pixelX: number, pixelY: number,
+): { cutId: string; handle: ResizeHandle } | null {
+  if (!currentInfo) return null;
+  const z = currentZoom;
+  const tw = currentInfo.tileWidth * z;
+  const th = currentInfo.tileHeight * z;
+
+  let best: { cutId: string; handle: ResizeHandle; dist: number } | null = null;
+
+  for (let i = 0; i < cuts.length; i++) {
+    const cut = cuts[i];
+    const x = cut.col * tw;
+    const y = cut.row * th;
+    const w = cut.frameWidth * cut.frameCount * tw;
+    const h = cut.frameHeight * th;
+
+    const pad = HANDLE_HIT;
+    if (pixelX < x - pad || pixelX > x + w + pad || pixelY < y - pad || pixelY > y + h + pad) continue;
+
+    const dLeft = Math.abs(pixelX - x);
+    const dRight = Math.abs(pixelX - (x + w));
+    const dTop = Math.abs(pixelY - y);
+    const dBottom = Math.abs(pixelY - (y + h));
+
+    const nearLeft = dLeft < pad;
+    const nearRight = dRight < pad;
+    const nearTop = dTop < pad;
+    const nearBottom = dBottom < pad;
+
+    type Candidate = { handle: ResizeHandle; dist: number };
+    const candidates: Candidate[] = [];
+
+    // Corners (distance = max of the two edge distances)
+    if (nearLeft && nearTop) candidates.push({ handle: "nw", dist: Math.max(dLeft, dTop) });
+    if (nearRight && nearTop) candidates.push({ handle: "ne", dist: Math.max(dRight, dTop) });
+    if (nearLeft && nearBottom) candidates.push({ handle: "sw", dist: Math.max(dLeft, dBottom) });
+    if (nearRight && nearBottom) candidates.push({ handle: "se", dist: Math.max(dRight, dBottom) });
+
+    // Sides (must be within the cut's extent on the other axis, excluding corner zones)
+    if (nearTop && pixelX > x + pad && pixelX < x + w - pad) candidates.push({ handle: "n", dist: dTop });
+    if (nearBottom && pixelX > x + pad && pixelX < x + w - pad) candidates.push({ handle: "s", dist: dBottom });
+    if (nearLeft && pixelY > y + pad && pixelY < y + h - pad) candidates.push({ handle: "w", dist: dLeft });
+    if (nearRight && pixelY > y + pad && pixelY < y + h - pad) candidates.push({ handle: "e", dist: dRight });
+
+    // Pick the best candidate for this cut (closest)
+    for (const c of candidates) {
+      if (!best || c.dist < best.dist) {
+        best = { cutId: cut.id, handle: c.handle, dist: c.dist };
+      }
+    }
+  }
+
+  return best ? { cutId: best.cutId, handle: best.handle } : null;
+}
+
+function getResizeCursor(handle: ResizeHandle): string {
+  switch (handle) {
+    case "nw": case "se": return "nwse-resize";
+    case "ne": case "sw": return "nesw-resize";
+    case "n": case "s": return "ns-resize";
+    case "e": case "w": return "ew-resize";
+  }
+}
+
+function handleResizeDrag(col: number, row: number): void {
+  if (!resizing || !currentInfo) return;
+  const cut = cuts.find((c) => c.id === resizing!.cutId);
+  if (!cut) { resizing = null; return; }
+
+  const orig = resizing;
+  const origRight = orig.originalCol + orig.originalFrameWidth * orig.originalFrameCount;
+  const origBottom = orig.originalRow + orig.originalFrameHeight;
+
+  // Clamp to grid bounds
+  const clampCol = Math.max(0, Math.min(col, currentInfo.cols - 1));
+  const clampRow = Math.max(0, Math.min(row, currentInfo.rows - 1));
+
+  let newCol = cut.col;
+  let newRow = cut.row;
+  let newRight = origRight;
+  let newBottom = origBottom;
+
+  const handle = orig.handle;
+
+  // Adjust edges based on which handle is being dragged
+  if (handle === "nw" || handle === "n" || handle === "ne") {
+    newRow = Math.min(clampRow, origBottom - 1); // top edge, can't go past bottom
+  }
+  if (handle === "sw" || handle === "s" || handle === "se") {
+    newBottom = Math.max(clampRow + 1, orig.originalRow + 1); // bottom edge
+  }
+  if (handle === "nw" || handle === "w" || handle === "sw") {
+    newCol = Math.min(clampCol, origRight - 1); // left edge
+  }
+  if (handle === "ne" || handle === "e" || handle === "se") {
+    newRight = Math.max(clampCol + 1, orig.originalCol + 1); // right edge
+  }
+
+  // Keep top/bottom unchanged for pure horizontal handles
+  if (handle === "e" || handle === "w") {
+    newRow = orig.originalRow;
+    newBottom = origBottom;
+  }
+  // Keep left/right unchanged for pure vertical handles
+  if (handle === "n" || handle === "s") {
+    newCol = orig.originalCol;
+    newRight = origRight;
+  }
+
+  const totalWidth = newRight - newCol;
+  const totalHeight = newBottom - newRow;
+
+  // Minimum 1x1
+  if (totalWidth < 1 || totalHeight < 1) return;
+
+  // Update the cut
+  cut.col = newCol;
+  cut.row = newRow;
+  cut.frameHeight = totalHeight;
+
+  if (cut.frameCount > 1) {
+    // For sequences: keep frameWidth, adjust frameCount to fit
+    const fc = Math.max(1, Math.round(totalWidth / cut.frameWidth));
+    cut.frameCount = fc;
+  } else {
+    cut.frameWidth = totalWidth;
+    cut.frameCount = 1;
+  }
+
+  drawCanvas();
+
+  // If this cut is being edited, update the form
+  if (editingCutId === cut.id) {
+    pendingSelection = {
+      col: cut.col,
+      row: cut.row,
+      frameWidth: cut.frameWidth,
+      frameHeight: cut.frameHeight,
+      frameCount: cut.frameCount,
+    };
+    if (cut.frameCount === 1) {
+      assignInfoDiv.textContent = `Static ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+    } else {
+      assignInfoDiv.textContent = `${cut.frameCount} frames of ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+    }
+    showPendingOverlay(pendingSelection);
+  }
+}
+
+function handleMoveDrag(col: number, row: number): void {
+  if (!moving || !currentInfo) return;
+  const cut = cuts.find((c) => c.id === moving!.cutId);
+  if (!cut) { moving = null; return; }
+
+  const newCol = Math.max(0, Math.min(col - moving.offsetCol, currentInfo.cols - cut.frameWidth * cut.frameCount));
+  const newRow = Math.max(0, Math.min(row - moving.offsetRow, currentInfo.rows - cut.frameHeight));
+
+  if (newCol === cut.col && newRow === cut.row) return; // no change
+
+  moving.didMove = true;
+  cut.col = newCol;
+  cut.row = newRow;
+
+  // If this cut is being edited, update the form
+  if (editingCutId === cut.id && pendingSelection) {
+    pendingSelection.col = newCol;
+    pendingSelection.row = newRow;
+    if (cut.frameCount === 1) {
+      assignInfoDiv.textContent = `Static ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+    } else {
+      assignInfoDiv.textContent = `${cut.frameCount} frames of ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+    }
+    showPendingOverlay(pendingSelection);
+  }
+
+  drawCanvas();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -601,47 +822,49 @@ function drawCanvas(): void {
   ctx.drawImage(currentImg, 0, 0, w, h);
 
   // Draw cut overlays
-  for (let i = 0; i < cuts.length; i++) {
-    const cut = cuts[i];
-    const color = getCutColor(i);
-    const isSelected = cut.id === selectedCutId;
+  if (showCuts) {
+    for (let i = 0; i < cuts.length; i++) {
+      const cut = cuts[i];
+      const color = getCutColor(i);
+      const isSelected = cut.id === selectedCutId;
 
-    const x = cut.col * tw;
-    const y = cut.row * th;
-    const totalW = cut.frameWidth * cut.frameCount * tw;
-    const totalH = cut.frameHeight * th;
+      const x = cut.col * tw;
+      const y = cut.row * th;
+      const totalW = cut.frameWidth * cut.frameCount * tw;
+      const totalH = cut.frameHeight * th;
 
-    // Fill the full region
-    ctx.fillStyle = color + (isSelected ? "40" : "20");
-    ctx.fillRect(x, y, totalW, totalH);
+      // Fill the full region
+      ctx.fillStyle = color + (isSelected ? "40" : "20");
+      ctx.fillRect(x, y, totalW, totalH);
 
-    // Outer border
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isSelected ? 3 : 1.5;
-    ctx.strokeRect(x + 0.5, y + 0.5, totalW - 1, totalH - 1);
+      // Outer border
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 3 : 1.5;
+      ctx.strokeRect(x + 0.5, y + 0.5, totalW - 1, totalH - 1);
 
-    // Frame division lines (for sequences with frameCount > 1)
-    if (cut.frameCount > 1) {
-      ctx.strokeStyle = color + "80";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      for (let f = 1; f < cut.frameCount; f++) {
-        const fx = x + f * cut.frameWidth * tw;
-        ctx.beginPath();
-        ctx.moveTo(fx + 0.5, y);
-        ctx.lineTo(fx + 0.5, y + totalH);
-        ctx.stroke();
+      // Frame division lines (for sequences with frameCount > 1)
+      if (cut.frameCount > 1) {
+        ctx.strokeStyle = color + "80";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        for (let f = 1; f < cut.frameCount; f++) {
+          const fx = x + f * cut.frameWidth * tw;
+          ctx.beginPath();
+          ctx.moveTo(fx + 0.5, y);
+          ctx.lineTo(fx + 0.5, y + totalH);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
       }
-      ctx.setLineDash([]);
-    }
 
-    // Label
-    ctx.fillStyle = color;
-    ctx.font = `bold ${Math.max(10, z * 3)}px monospace`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    const label = cut.name || cut.tags.join(", ") || `cut ${i + 1}`;
-    ctx.fillText(label, x + 3, y + 2);
+      // Label
+      ctx.fillStyle = color;
+      ctx.font = `bold ${Math.max(10, z * 3)}px monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const label = cut.name || cut.tags.join(", ") || `cut ${i + 1}`;
+      ctx.fillText(label, x + 3, y + 2);
+    }
   }
 
   // Grid
@@ -683,8 +906,48 @@ canvas.addEventListener("mousedown", (e) => {
   if (e.button !== 0) return;
   if (drag.mode === "locked") return; // Don't start a new drag while in locked mode
   e.preventDefault();
+
+  // Check for resize handle hit first
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const hit = hitTestHandle(px, py);
+  if (hit) {
+    const cut = cuts.find((c) => c.id === hit.cutId);
+    if (cut) {
+      resizing = {
+        cutId: hit.cutId,
+        handle: hit.handle,
+        originalCol: cut.col,
+        originalRow: cut.row,
+        originalFrameWidth: cut.frameWidth,
+        originalFrameHeight: cut.frameHeight,
+        originalFrameCount: cut.frameCount,
+      };
+      selectedCutId = cut.id;
+      drawCanvas();
+      renderCutList();
+      return;
+    }
+  }
+
   const pos = getGridPos(e);
   if (!pos) return;
+
+  // Check if clicked tile belongs to an existing cut — start move
+  const clickedCut = findCutAtTile(pos.col, pos.row);
+  if (clickedCut) {
+    moving = {
+      cutId: clickedCut.id,
+      offsetCol: pos.col - clickedCut.col,
+      offsetRow: pos.row - clickedCut.row,
+      didMove: false,
+    };
+    selectedCutId = clickedCut.id;
+    drawCanvas();
+    renderCutList();
+    return;
+  }
 
   // Dismiss any pending selection
   if (pendingSelection) clearSelection();
@@ -703,6 +966,17 @@ canvas.addEventListener("mousemove", (e) => {
   const pos = getGridPos(e);
   if (!pos) return;
 
+  if (resizing) {
+    // Handle resize drag
+    handleResizeDrag(pos.col, pos.row);
+    return;
+  }
+
+  if (moving) {
+    handleMoveDrag(pos.col, pos.row);
+    return;
+  }
+
   if (drag.mode === "dragging") {
     drag.currentCol = pos.col;
     drag.currentRow = pos.row;
@@ -711,10 +985,62 @@ canvas.addEventListener("mousemove", (e) => {
     // In locked mode, mouse movement extends the sequence
     drag.frameCount = computeSequenceFrameCount(pos.col);
     updateDragOverlay();
+  } else {
+    // Update cursor based on handle hover or cut interior
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const hit = hitTestHandle(px, py);
+    if (hit) {
+      canvas.style.cursor = getResizeCursor(hit.handle);
+    } else if (findCutAtTile(pos.col, pos.row)) {
+      canvas.style.cursor = "grab";
+    } else {
+      canvas.style.cursor = "crosshair";
+    }
   }
 });
 
 window.addEventListener("mouseup", () => {
+  if (resizing) {
+    resizing = null;
+    canvas.style.cursor = "crosshair";
+    renderCutList();
+    updatePreviews();
+    updateSaveState();
+    return;
+  }
+  if (moving) {
+    const cutId = moving.cutId;
+    const didMove = moving.didMove;
+    moving = null;
+    canvas.style.cursor = "grab";
+
+    if (didMove) {
+      // Cut was moved — select for editing (don't toggle)
+      if (editingCutId === cutId) {
+        // Already editing this cut, just update the form info
+        const cut = cuts.find((c) => c.id === cutId);
+        if (cut) {
+          if (cut.frameCount === 1) {
+            assignInfoDiv.textContent = `Static ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+          } else {
+            assignInfoDiv.textContent = `${cut.frameCount} frames of ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+          }
+        }
+      } else {
+        selectCutForEditing(cutId);
+      }
+    } else {
+      // No move — treat as click, toggle selection
+      selectCutForEditing(cutId);
+    }
+
+    renderCutList();
+    updatePreviews();
+    updateSaveState();
+    return;
+  }
   if (drag.mode === "dragging") {
     // If Shift is not held, finalize as static rectangle
     // (If Shift IS held, the keydown handler will transition to locked)
@@ -731,6 +1057,7 @@ window.addEventListener("mouseup", () => {
       frameCount: 1,
     };
     showPendingOverlay(pendingSelection);
+    cutterToolRefresh?.();
     showAssignForm();
   }
   // In "locked" mode, mouseup does nothing — we wait for Shift release
@@ -769,6 +1096,7 @@ window.addEventListener("keyup", (e) => {
       frameCount,
     };
     showPendingOverlay(pendingSelection);
+    cutterToolRefresh?.();
     showAssignForm();
   }
 });
@@ -818,6 +1146,81 @@ function updateDragOverlay(): void {
 
 // ─── Selection / Assignment ──────────────────────────────────────
 
+function showDeleteBtn(show: boolean): void {
+  deleteBtn.style.display = show ? "inline-block" : "none";
+}
+
+/** Find the cut that contains a given tile coordinate, or null */
+function findCutAtTile(col: number, row: number): CutEntry | null {
+  for (let i = cuts.length - 1; i >= 0; i--) {
+    const cut = cuts[i];
+    const totalCols = cut.frameWidth * cut.frameCount;
+    if (col >= cut.col && col < cut.col + totalCols &&
+        row >= cut.row && row < cut.row + cut.frameHeight) {
+      return cut;
+    }
+  }
+  return null;
+}
+
+/** Select a cut and populate the assign form for editing */
+function selectCutForEditing(cutId: string): void {
+  const cut = cuts.find((c) => c.id === cutId);
+  if (!cut) return;
+
+  // If same cut clicked again, deselect
+  if (editingCutId === cutId) {
+    clearSelection();
+    drawCanvas();
+    renderCutList();
+    return;
+  }
+
+  // Clear any existing state without resetting the form
+  pendingSelection = null;
+  editingResourceId = null;
+  cutterToolRefresh?.();
+  resetDrag();
+  hidePendingOverlay();
+  hidePendingPreview();
+
+  editingCutId = cutId;
+  selectedCutId = cutId;
+
+  // Build pendingSelection from the cut for overlay + preview
+  pendingSelection = {
+    col: cut.col,
+    row: cut.row,
+    frameWidth: cut.frameWidth,
+    frameHeight: cut.frameHeight,
+    frameCount: cut.frameCount,
+  };
+  cutterToolRefresh?.();
+
+  // Populate the form
+  assignForm.style.display = "block";
+  assignHint.style.display = "none";
+  assignNameInput.value = cut.name;
+
+  // Show tags, but exclude shared tileset tags
+  const sharedTags = getSharedTilesetTags();
+  const perCutTags = cut.tags.filter((t: string) => !sharedTags.includes(t));
+  assignTagsInput.value = perCutTags.join(", ");
+
+  if (cut.frameCount === 1) {
+    assignInfoDiv.textContent = `Static ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+  } else {
+    assignInfoDiv.textContent = `${cut.frameCount} frames of ${cut.frameWidth}×${cut.frameHeight} at (${cut.col}, ${cut.row})`;
+  }
+
+  assignBtn.textContent = "Edit Cut";
+  showDeleteBtn(true);
+  showPendingOverlay(pendingSelection);
+  showPendingPreview(pendingSelection);
+  drawCanvas();
+  renderCutList();
+}
+
 function showAssignForm(): void {
   if (!pendingSelection) return;
   const sel = pendingSelection;
@@ -834,7 +1237,8 @@ function showAssignForm(): void {
   }
 
   // Button text changes depending on whether we're editing or adding
-  assignBtn.textContent = editingResourceId ? "Update" : "Add Cut";
+  assignBtn.textContent = editingResourceId ? "Update" : editingCutId ? "Edit Cut" : "Add Cut";
+  showDeleteBtn(!!editingCutId);
 
   // Auto-suggest name from tileset label (only for new cuts)
   if (!assignNameInput.value && !editingResourceId) {
@@ -848,8 +1252,11 @@ function showAssignForm(): void {
 
 function clearSelection(): void {
   pendingSelection = null;
+  cutterToolRefresh?.();
   selectedCutId = null;
   editingResourceId = null;
+  editingCutId = null;
+  showDeleteBtn(false);
   assignForm.style.display = "none";
   assignHint.style.display = "block";
   assignBtn.textContent = "Add Cut";
@@ -915,6 +1322,28 @@ function addCut(): void {
     syncGroupTagFromResources();
     setStatus(`Updated resource "${name}"`);
     return;
+  }
+
+  // If editing an existing cut, update it in place
+  if (editingCutId && pendingSelection) {
+    const cut = cuts.find((c) => c.id === editingCutId);
+    if (cut) {
+      cut.name = name;
+      cut.tags = tags;
+      cut.col = pendingSelection.col;
+      cut.row = pendingSelection.row;
+      cut.frameWidth = pendingSelection.frameWidth;
+      cut.frameHeight = pendingSelection.frameHeight;
+      cut.frameCount = pendingSelection.frameCount;
+
+      clearSelection();
+      drawCanvas();
+      renderCutList();
+      updatePreviews();
+      updateSaveState();
+      setStatus(`Updated cut "${name}"`);
+      return;
+    }
   }
 
   // Otherwise, add as a new cut entry
@@ -1004,7 +1433,9 @@ function renderCutList(): void {
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       cuts = cuts.filter((c) => c.id !== cut.id);
-      if (selectedCutId === cut.id) selectedCutId = null;
+      if (selectedCutId === cut.id || editingCutId === cut.id) {
+        clearSelection();
+      }
       drawCanvas();
       renderCutList();
       updatePreviews();
@@ -1014,9 +1445,7 @@ function renderCutList(): void {
     item.addEventListener("click", (e) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "BUTTON") return;
-      selectedCutId = selectedCutId === cut.id ? null : cut.id;
-      drawCanvas();
-      renderCutList();
+      selectCutForEditing(cut.id);
     });
 
     item.appendChild(thumb);
@@ -1407,6 +1836,7 @@ function editResource(resourceId: string): void {
   };
 
   pendingSelection = sel;
+  cutterToolRefresh?.();
 
   // Populate the assign form
   assignForm.style.display = "block";
@@ -1466,6 +1896,11 @@ gridToggle.addEventListener("change", () => {
   drawCanvas();
 });
 
+showCutsCheckbox.addEventListener("change", () => {
+  showCuts = showCutsCheckbox.checked;
+  drawCanvas();
+});
+
 previewSpeedRange.addEventListener("input", () => {
   const fps = parseInt(previewSpeedRange.value);
   previewSpeedLabel.textContent = `${fps} fps`;
@@ -1474,6 +1909,17 @@ previewSpeedRange.addEventListener("input", () => {
 
 assignBtn.addEventListener("click", addCut);
 assignCancelBtn.addEventListener("click", clearSelection);
+
+deleteBtn.addEventListener("click", () => {
+  if (editingCutId) {
+    cuts = cuts.filter((c) => c.id !== editingCutId);
+    clearSelection();
+    drawCanvas();
+    renderCutList();
+    updatePreviews();
+    updateSaveState();
+  }
+});
 
 saveResourcesBtn.addEventListener("click", saveResources);
 saveMaskBtn.addEventListener("click", saveMask);
@@ -1495,6 +1941,640 @@ appState.subscribe(() => {
   renderResourceList();
   renderMaskList();
 });
+
+// ─── Agent tools ─────────────────────────────────────────────────
+
+/** Build a data URL image of the current tileset with optional overlays */
+function buildTileImage(layers: string[]): string | null {
+  if (!currentImg || !currentInfo) return null;
+
+  const tw = currentInfo.tileWidth;
+  const th = currentInfo.tileHeight;
+  const cols = currentInfo.cols;
+  const rows = currentInfo.rows;
+  const w = cols * tw;
+  const h = rows * th;
+
+  const cvs = document.createElement("canvas");
+  cvs.width = w;
+  cvs.height = h;
+  const ctx = cvs.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+
+  // Base layer: raw tileset image
+  if (layers.includes("base")) {
+    ctx.drawImage(currentImg, 0, 0, w, h);
+  }
+
+  // Grid layer: grid lines with row/column coordinate numbers
+  if (layers.includes("grid")) {
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= cols; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * tw + 0.5, 0);
+      ctx.lineTo(c * tw + 0.5, h);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= rows; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * th + 0.5);
+      ctx.lineTo(w, r * th + 0.5);
+      ctx.stroke();
+    }
+    // Column numbers along top
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.font = `${Math.max(8, Math.floor(tw * 0.3))}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let c = 0; c < cols; c++) {
+      ctx.fillText(String(c), c * tw + tw / 2, 2);
+    }
+    // Row numbers along left
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    for (let r = 0; r < rows; r++) {
+      ctx.fillText(String(r), 2, r * th + th / 2);
+    }
+  }
+
+  // Coords layer: bake "col,row" into every tile cell
+  if (layers.includes("coords")) {
+    const fontSize = Math.max(7, Math.min(Math.floor(tw * 0.22), Math.floor(th * 0.22)));
+    ctx.font = `${fontSize}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cx = c * tw + tw / 2;
+        const cy = r * th + th / 2;
+        // Dark outline for readability
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillText(`${c},${r}`, cx + 1, cy + 1);
+        // Light text
+        ctx.fillStyle = "rgba(255, 255, 200, 0.8)";
+        ctx.fillText(`${c},${r}`, cx, cy);
+      }
+    }
+  }
+
+  // JSON layer: current cuts rendered as colored overlays
+  if (layers.includes("json")) {
+    for (let i = 0; i < cuts.length; i++) {
+      const cut = cuts[i];
+      const color = getCutColor(i);
+
+      const x = cut.col * tw;
+      const y = cut.row * th;
+      const totalW = cut.frameWidth * cut.frameCount * tw;
+      const totalH = cut.frameHeight * th;
+
+      ctx.fillStyle = color + "30";
+      ctx.fillRect(x, y, totalW, totalH);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 0.5, y + 0.5, totalW - 1, totalH - 1);
+
+      // Frame division lines
+      if (cut.frameCount > 1) {
+        ctx.strokeStyle = color + "80";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        for (let f = 1; f < cut.frameCount; f++) {
+          const fx = x + f * cut.frameWidth * tw;
+          ctx.beginPath();
+          ctx.moveTo(fx + 0.5, y);
+          ctx.lineTo(fx + 0.5, y + totalH);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+
+      // Label
+      ctx.fillStyle = color;
+      ctx.font = `bold ${Math.max(9, Math.floor(tw * 0.25))}px monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const label = cut.name || cut.tags.join(", ") || `cut ${i + 1}`;
+      ctx.fillText(label, x + 3, y + 2);
+    }
+
+    // Also render saved resources for this tileset
+    const tilesetResources = getTilesetResources();
+    for (let i = 0; i < tilesetResources.length; i++) {
+      const res = tilesetResources[i];
+      const color = "#4a9eff";
+      for (let fi = 0; fi < res.frames.length; fi++) {
+        const frame = res.frames[fi];
+        if (frame.tilesetId !== currentTilesetId) continue;
+        const x = frame.srcCol * tw;
+        const y = frame.srcRow * th;
+        const fw = frame.w * tw;
+        const fh = frame.h * th;
+
+        ctx.fillStyle = color + "20";
+        ctx.fillRect(x, y, fw, fh);
+        ctx.strokeStyle = color + "60";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, fw - 1, fh - 1);
+      }
+      // Label on first frame
+      if (res.frames.length > 0) {
+        const f0 = res.frames[0];
+        if (f0.tilesetId === currentTilesetId) {
+          ctx.fillStyle = color;
+          ctx.font = `${Math.max(8, Math.floor(tw * 0.22))}px monospace`;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(res.name, f0.srcCol * tw + 2, f0.srcRow * th + 2);
+        }
+      }
+    }
+  }
+
+  return cvs.toDataURL("image/png");
+}
+
+/** Build a data URL image cropped to a specific tile area with optional overlays */
+function buildAreaImage(
+  areaCol: number, areaRow: number, areaCols: number, areaRows: number,
+  layers: string[],
+): string | null {
+  if (!currentImg || !currentInfo) return null;
+
+  const tw = currentInfo.tileWidth;
+  const th = currentInfo.tileHeight;
+  const w = areaCols * tw;
+  const h = areaRows * th;
+  const ox = areaCol * tw;  // pixel offset into source
+  const oy = areaRow * th;
+
+  const cvs = document.createElement("canvas");
+  cvs.width = w;
+  cvs.height = h;
+  const ctx = cvs.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+
+  // Base layer: cropped tileset image
+  if (layers.includes("base")) {
+    ctx.drawImage(currentImg, ox, oy, w, h, 0, 0, w, h);
+  }
+
+  // Grid layer
+  if (layers.includes("grid")) {
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= areaCols; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * tw + 0.5, 0);
+      ctx.lineTo(c * tw + 0.5, h);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= areaRows; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * th + 0.5);
+      ctx.lineTo(w, r * th + 0.5);
+      ctx.stroke();
+    }
+    // Column numbers along top — ABSOLUTE coordinates
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.font = `${Math.max(8, Math.floor(tw * 0.3))}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let c = 0; c < areaCols; c++) {
+      ctx.fillText(String(areaCol + c), c * tw + tw / 2, 2);
+    }
+    // Row numbers along left — ABSOLUTE coordinates
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    for (let r = 0; r < areaRows; r++) {
+      ctx.fillText(String(areaRow + r), 2, r * th + th / 2);
+    }
+  }
+
+  // Coords layer: bake "col,row" (absolute) into every cell
+  if (layers.includes("coords")) {
+    const fontSize = Math.max(7, Math.min(Math.floor(tw * 0.22), Math.floor(th * 0.22)));
+    ctx.font = `${fontSize}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let r = 0; r < areaRows; r++) {
+      for (let c = 0; c < areaCols; c++) {
+        const cx = c * tw + tw / 2;
+        const cy = r * th + th / 2;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillText(`${areaCol + c},${areaRow + r}`, cx + 1, cy + 1);
+        ctx.fillStyle = "rgba(255, 255, 200, 0.8)";
+        ctx.fillText(`${areaCol + c},${areaRow + r}`, cx, cy);
+      }
+    }
+  }
+
+  // JSON layer: only render cuts/resources that overlap this area
+  if (layers.includes("json")) {
+    const areaRight = areaCol + areaCols;
+    const areaBottom = areaRow + areaRows;
+
+    for (let i = 0; i < cuts.length; i++) {
+      const cut = cuts[i];
+      const color = getCutColor(i);
+      const cutRight = cut.col + cut.frameWidth * cut.frameCount;
+      const cutBottom = cut.row + cut.frameHeight;
+
+      // Skip cuts that don't overlap
+      if (cut.col >= areaRight || cutRight <= areaCol || cut.row >= areaBottom || cutBottom <= areaRow) continue;
+
+      const x = (cut.col - areaCol) * tw;
+      const y = (cut.row - areaRow) * th;
+      const totalW = cut.frameWidth * cut.frameCount * tw;
+      const totalH = cut.frameHeight * th;
+
+      ctx.fillStyle = color + "30";
+      ctx.fillRect(x, y, totalW, totalH);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 0.5, y + 0.5, totalW - 1, totalH - 1);
+
+      if (cut.frameCount > 1) {
+        ctx.strokeStyle = color + "80";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        for (let f = 1; f < cut.frameCount; f++) {
+          const fx = x + f * cut.frameWidth * tw;
+          ctx.beginPath();
+          ctx.moveTo(fx + 0.5, y - areaRow * th + areaRow * th);
+          ctx.lineTo(fx + 0.5, y + totalH);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+
+      ctx.fillStyle = color;
+      ctx.font = `bold ${Math.max(9, Math.floor(tw * 0.25))}px monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const label = cut.name || cut.tags.join(", ") || `cut ${i + 1}`;
+      ctx.fillText(label, x + 3, y + 2);
+    }
+
+    // Saved resources
+    const tilesetResources = getTilesetResources();
+    for (const res of tilesetResources) {
+      const color = "#4a9eff";
+      for (const frame of res.frames) {
+        if (frame.tilesetId !== currentTilesetId) continue;
+        const fRight = frame.srcCol + frame.w;
+        const fBottom = frame.srcRow + frame.h;
+        if (frame.srcCol >= areaRight || fRight <= areaCol || frame.srcRow >= areaBottom || fBottom <= areaRow) continue;
+
+        const x = (frame.srcCol - areaCol) * tw;
+        const y = (frame.srcRow - areaRow) * th;
+        const fw = frame.w * tw;
+        const fh = frame.h * th;
+        ctx.fillStyle = color + "20";
+        ctx.fillRect(x, y, fw, fh);
+        ctx.strokeStyle = color + "60";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, fw - 1, fh - 1);
+      }
+      if (res.frames.length > 0) {
+        const f0 = res.frames[0];
+        if (f0.tilesetId === currentTilesetId) {
+          const fx = (f0.srcCol - areaCol) * tw;
+          const fy = (f0.srcRow - areaRow) * th;
+          ctx.fillStyle = color;
+          ctx.font = `${Math.max(8, Math.floor(tw * 0.22))}px monospace`;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(res.name, fx + 2, fy + 2);
+        }
+      }
+    }
+  }
+
+  return cvs.toDataURL("image/png");
+}
+
+/** Get the current cuts as a JSON-serializable array */
+function getCutsJSON(): object[] {
+  return cuts.map((c) => ({
+    name: c.name,
+    tags: c.tags,
+    col: c.col,
+    row: c.row,
+    frameWidth: c.frameWidth,
+    frameHeight: c.frameHeight,
+    frameCount: c.frameCount,
+  }));
+}
+
+/** Replace cuts from an array (from AI set_cuts tool) */
+function setCutsFromJSON(newCuts: Array<{
+  name: string;
+  tags: string[];
+  col: number;
+  row: number;
+  frameWidth: number;
+  frameHeight: number;
+  frameCount: number;
+}>): void {
+  cuts = newCuts.map((c) => ({
+    id: newEntryId(),
+    name: c.name,
+    tags: c.tags ?? [],
+    col: c.col,
+    row: c.row,
+    frameWidth: c.frameWidth,
+    frameHeight: c.frameHeight,
+    frameCount: c.frameCount,
+  }));
+
+  clearSelection();
+  drawCanvas();
+  renderCutList();
+  updatePreviews();
+  updateSaveState();
+}
+
+function registerCutterAgentTools(): void {
+  const CUTTER_SYSTEM_PROMPT = `You are an AI assistant for the Offisims Tile Cutter tool. You have tools to view and manipulate the tileset.
+
+IMPORTANT: You MUST use your tools. ALWAYS call fetch_tile FIRST to see the tileset before responding to ANY request about tiles, sprites, or cuts. Never ask the user what tile they mean — look at the tileset yourself with fetch_tile.
+
+## What is a cut?
+A cut defines a named rectangular region (or animation sequence) on a tileset sprite sheet grid.
+
+- name: descriptive (e.g. "table_large", "pumpkin_group", "tombstone")
+- tags: namespaced tags like "entity:furniture", "name:table", "variant:large"
+- col, row: top-left tile position (0-indexed)
+- frameWidth, frameHeight: size of each frame IN TILES (not pixels!)
+- frameCount: number of animation frames (1 = static)
+
+## CRITICAL: Multi-tile objects
+Most objects in tilesets span MULTIPLE tiles. A single visual object (table, bed, bookshelf, decoration) is drawn across several grid cells. You MUST group these into ONE cut with the correct frameWidth and frameHeight.
+
+Examples of typical cut sizes:
+- A table might be 3 tiles wide × 2 tiles tall → frameWidth: 3, frameHeight: 2
+- A tall tombstone might be 1 tile wide × 2 tiles tall → frameWidth: 1, frameHeight: 2
+- A large bed might be 2 tiles wide × 3 tiles tall → frameWidth: 2, frameHeight: 3
+- A small icon/item might be 1×1 → frameWidth: 1, frameHeight: 1
+
+Look at the IMAGE carefully. If adjacent tiles clearly form parts of the same visual object (e.g. the top and bottom of a tombstone, the left and right halves of a table), they MUST be a single cut with frameWidth/frameHeight > 1. Do NOT split a visual object into separate 1×1 cuts.
+
+For animation sequences: frames are laid out horizontally. E.g. a 2×2 character with 4 walk frames → frameWidth: 2, frameHeight: 2, frameCount: 4 (occupies 8 columns × 2 rows).
+
+## Workflow
+1. Check the injected context — if there is an ACTIVE AREA SELECTION, call fetch_selected to get a zoomed view of the user's selection
+2. If no area is selected, call fetch_tile to see the full tileset
+3. For large tilesets, you can call fetch_tile with an area parameter to zoom into specific regions for detailed analysis
+4. Call get_cuts to see any existing cuts
+5. Analyze the image carefully — identify each distinct visual object and its bounding box in tile coordinates
+6. Call set_cuts with properly-sized cuts (most will NOT be 1×1!)
+7. If the user says "cut this" or similar without specifying, cut ALL visible sprites/objects
+8. For large tilesets with many objects, work area-by-area: fetch a region, cut its objects, move to the next region
+
+## fetch_selected
+When the user has selected an area on the canvas, the context will say "ACTIVE AREA SELECTION". Use fetch_selected to get a zoomed-in cropped view of just that region. The coordinates shown in the image are ABSOLUTE (relative to the full tileset grid), so use them directly in set_cuts.
+
+## Sub-area analysis
+You can pass an optional \`area\` parameter to fetch_tile to crop to any sub-region: \`fetch_tile({ area: { col, row, width, height } })\`. This gives you a zoomed-in view with absolute coordinates. Use this for detailed analysis of specific regions, especially on large tilesets where the full view may be too small to see individual sprites clearly.
+
+Do NOT ask clarifying questions if you can answer by looking at the tileset.`;
+
+  setTabSystemPrompt("cutter", CUTTER_SYSTEM_PROMPT);
+
+  const baseTools: AgentTool[] = [
+    {
+      name: "fetch_tile",
+      description: "Get an image of the current tileset with overlay layers. Can optionally crop to a sub-area for detailed analysis. Layers: 'base' (raw image), 'grid' (column/row numbers on edges), 'json' (current cuts + saved resources as colored overlays), 'coords' (col,row label in every cell). Default layers: base+grid+json.",
+      parameters: {
+        type: "object",
+        properties: {
+          layers: {
+            type: "array",
+            items: { type: "string", enum: ["base", "grid", "json", "coords"] },
+            description: "Which layers to include. Defaults to ['base', 'grid', 'json']. Use 'coords' to show col,row in every cell.",
+          },
+          area: {
+            type: "object",
+            properties: {
+              col: { type: "number", description: "Top-left tile column (0-indexed)" },
+              row: { type: "number", description: "Top-left tile row (0-indexed)" },
+              width: { type: "number", description: "Width in tiles" },
+              height: { type: "number", description: "Height in tiles" },
+            },
+            required: ["col", "row", "width", "height"],
+            description: "Optional sub-area to crop. If omitted, returns the full tileset. Use this to zoom into a specific region for detailed analysis.",
+          },
+        },
+        required: [],
+      },
+      handler: async (args) => {
+        const layers = (args.layers as string[] | undefined) ?? ["base", "grid", "json"];
+        const area = args.area as { col: number; row: number; width: number; height: number } | undefined;
+
+        if (area) {
+          // Cropped sub-area
+          if (!currentInfo) return "Error: No tileset loaded. Select a tileset first.";
+          const { col, row, width, height } = area;
+          // Clamp to valid bounds
+          const clampedCol = Math.max(0, Math.min(col, currentInfo.cols - 1));
+          const clampedRow = Math.max(0, Math.min(row, currentInfo.rows - 1));
+          const clampedW = Math.min(width, currentInfo.cols - clampedCol);
+          const clampedH = Math.min(height, currentInfo.rows - clampedRow);
+          if (clampedW < 1 || clampedH < 1) return "Error: Invalid area dimensions.";
+
+          const dataURL = buildAreaImage(clampedCol, clampedRow, clampedW, clampedH, layers);
+          if (!dataURL) return "Error: No tileset loaded.";
+
+          const info = `Tileset: ${currentTilesetId}\nArea: cols ${clampedCol}–${clampedCol + clampedW - 1}, rows ${clampedRow}–${clampedRow + clampedH - 1} (${clampedW}x${clampedH} tiles)\nFull grid: ${currentInfo.cols}x${currentInfo.rows} tiles\nAll coordinates shown are ABSOLUTE (relative to the full tileset grid).\nLayers: ${layers.join(", ")}`;
+
+          return [
+            { type: "text", text: info },
+            { type: "image_url", image_url: { url: dataURL } },
+          ];
+        }
+
+        // Full tileset
+        const dataURL = buildTileImage(layers);
+        if (!dataURL) return "Error: No tileset loaded. Select a tileset first.";
+
+        const info = currentInfo
+          ? `Tileset: ${currentTilesetId}\nSize: ${currentInfo.cols}x${currentInfo.rows} tiles (${currentInfo.tileWidth}x${currentInfo.tileHeight}px per tile)\nLayers: ${layers.join(", ")}`
+          : "Tileset loaded.";
+
+        return [
+          { type: "text", text: info },
+          { type: "image_url", image_url: { url: dataURL } },
+        ];
+      },
+    },
+    {
+      name: "get_cuts",
+      description: "Get the current list of cuts (pending, not yet saved as resources) as JSON",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+      handler: async () => {
+        const cutsData = getCutsJSON();
+        if (cutsData.length === 0) return "No cuts defined yet.";
+        return JSON.stringify(cutsData, null, 2);
+      },
+    },
+    {
+      name: "set_cuts",
+      description: "Replace the current cut list with new cuts. Each cut must have: name (string), tags (string[]), col (number), row (number), frameWidth (number), frameHeight (number), frameCount (number).",
+      parameters: {
+        type: "object",
+        properties: {
+          cuts: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Descriptive name for the cut" },
+                tags: { type: "array", items: { type: "string" }, description: "Namespaced tags" },
+                col: { type: "number", description: "Top-left tile column (0-indexed)" },
+                row: { type: "number", description: "Top-left tile row (0-indexed)" },
+                frameWidth: { type: "number", description: "Width of each frame in tiles" },
+                frameHeight: { type: "number", description: "Height of each frame in tiles" },
+                frameCount: { type: "number", description: "Number of animation frames (1 = static)" },
+              },
+              required: ["name", "tags", "col", "row", "frameWidth", "frameHeight", "frameCount"],
+            },
+            description: "Array of cut definitions to set",
+          },
+        },
+        required: ["cuts"],
+      },
+      handler: async (args) => {
+        const newCuts = args.cuts as Array<{
+          name: string;
+          tags: string[];
+          col: number;
+          row: number;
+          frameWidth: number;
+          frameHeight: number;
+          frameCount: number;
+        }>;
+        setCutsFromJSON(newCuts);
+        return `Set ${newCuts.length} cut(s). Use fetch_tile with layers ["base", "json"] to verify.`;
+      },
+    },
+  ];
+
+  const fetchAreaTool: AgentTool = {
+    name: "fetch_selected",
+    description: "Get a cropped image of the user's currently selected area on the tileset. Only available when the user has drag-selected a region (the context will say ACTIVE AREA SELECTION). All coordinates in the image are absolute (matching the full tileset grid). Layers same as fetch_tile.",
+    parameters: {
+      type: "object",
+      properties: {
+        layers: {
+          type: "array",
+          items: { type: "string", enum: ["base", "grid", "json", "coords"] },
+          description: "Which layers to include. Defaults to ['base', 'grid', 'json'].",
+        },
+      },
+      required: [],
+    },
+    handler: async (args) => {
+      if (!pendingSelection) {
+        return "Error: No area selected. The user needs to drag-select a region on the tileset first. Use fetch_tile instead.";
+      }
+      const sel = pendingSelection;
+      const totalCols = sel.frameWidth * sel.frameCount;
+      const totalRows = sel.frameHeight;
+      const layers = (args.layers as string[] | undefined) ?? ["base", "grid", "json"];
+      const dataURL = buildAreaImage(sel.col, sel.row, totalCols, totalRows, layers);
+      if (!dataURL) return "Error: No tileset loaded.";
+
+      const info = `Selected area: cols ${sel.col}–${sel.col + totalCols - 1}, rows ${sel.row}–${sel.row + totalRows - 1} (${totalCols}x${totalRows} tiles)\nAll coordinates shown are ABSOLUTE (relative to the full ${currentInfo!.cols}x${currentInfo!.rows} tileset grid).\nUse these absolute coordinates in set_cuts.\nLayers: ${layers.join(", ")}`;
+
+      return [
+        { type: "text", text: info },
+        { type: "image_url", image_url: { url: dataURL } },
+      ];
+    },
+  };
+
+  // Register tools, conditionally including fetch_area
+  function refreshCutterTools(): void {
+    const tools = pendingSelection
+      ? [...baseTools, fetchAreaTool]
+      : [...baseTools];
+    registerTools("cutter", tools);
+  }
+
+  // Initial registration
+  refreshCutterTools();
+
+  // Store the refresh function so it can be called when selection changes
+  cutterToolRefresh = refreshCutterTools;
+
+  // Register preset queries
+  registerPresets("cutter", [
+    {
+      label: "Cut all",
+      prompt: "Look at the entire tileset and cut every distinct visual object/sprite you can find. Each cut must fully wrap around the entire item — be very careful not to leave small parts (shadows, handles, tops, bases, edges) outside the bounding box. Group multi-tile objects correctly (tables, chairs, decorations, etc. are often 2x2, 3x2, etc.). For large tilesets, work area-by-area: use fetch_tile with an area parameter to zoom into regions, cut the objects there, then move to the next region. Name each cut descriptively and add appropriate tags.",
+    },
+    {
+      label: "Cut selection",
+      prompt: "Look at my current area selection (use fetch_selected) and cut every distinct visual object/sprite within it. Each cut must fully wrap around the entire item — be very careful not to leave small parts (shadows, handles, tops, bases, edges) outside the bounding box. Group multi-tile objects correctly. Name each cut descriptively and add appropriate tags.",
+    },
+    {
+      label: "Review cuts",
+      prompt: "Fetch the tileset with the current cuts overlay and review them. Are there any issues? Are multi-tile objects split incorrectly? Are there sprites that were missed? Give me a summary and suggest fixes.",
+    },
+  ]);
+
+  // Register context provider — called before each user message
+  registerContextProvider("cutter", () => {
+    const lines: string[] = [];
+
+    if (currentTilesetId && currentInfo) {
+      lines.push(`Tileset: ${currentTilesetId}`);
+      lines.push(`Tile size: ${currentInfo.tileWidth}x${currentInfo.tileHeight}px`);
+      lines.push(`Grid: ${currentInfo.cols} cols x ${currentInfo.rows} rows`);
+      if (currentImg) {
+        lines.push(`Image: ${currentImg.width}x${currentImg.height}px`);
+      }
+    } else {
+      lines.push("No tileset loaded.");
+    }
+
+    // Active area selection
+    if (pendingSelection) {
+      const sel = pendingSelection;
+      const totalCols = sel.frameWidth * sel.frameCount;
+      lines.push(`\nACTIVE AREA SELECTION: cols ${sel.col}–${sel.col + totalCols - 1}, rows ${sel.row}–${sel.row + sel.frameHeight - 1} (${totalCols}x${sel.frameHeight} tiles)`);
+      lines.push(`>>> Use fetch_selected to see this region up close. Cuts should use ABSOLUTE tile coordinates.`);
+    }
+
+    lines.push(`Pending cuts: ${cuts.length}`);
+    if (cuts.length > 0) {
+      for (const cut of cuts) {
+        const framesStr = cut.frameCount === 1 ? "static" : `${cut.frameCount} frames`;
+        lines.push(`  - "${cut.name}" at (${cut.col},${cut.row}) ${cut.frameWidth}x${cut.frameHeight} ${framesStr} [${cut.tags.join(", ")}]`);
+      }
+    }
+
+    const savedRes = getTilesetResources();
+    lines.push(`Saved resources (this tileset): ${savedRes.length}`);
+    if (savedRes.length > 0 && savedRes.length <= 20) {
+      for (const res of savedRes) {
+        const framesStr = res.frames.length === 1 ? "static" : `${res.frames.length} frames`;
+        lines.push(`  - "${res.name}" ${framesStr} [${res.tags.join(", ")}]`);
+      }
+    }
+
+    lines.push(`Shared tags: ${lastSharedTags.length > 0 ? lastSharedTags.join(", ") : "(none)"}`);
+
+    return lines.join("\n");
+  });
+}
 
 // ─── Init ────────────────────────────────────────────────────────
 
@@ -1525,4 +2605,7 @@ export function initCutterTab(): void {
   // Wire tag autocomplete on both inputs
   wireAutocomplete(groupTagInput, groupTagAc);
   wireAutocomplete(assignTagsInput, assignTagsAc);
+
+  // ─── Register agent tools for this tab ──────────────────────
+  registerCutterAgentTools();
 }

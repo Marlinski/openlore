@@ -17,6 +17,7 @@ import { initBrowserTab } from "./browser.js";
 import { initCompositeTab } from "./composite.js";
 import { initRoomTab } from "./room.js";
 import { initTesterTab } from "./tester.js";
+import { initAgentPanel, onTabChange } from "./agent-panel.js";
 
 // ─── Tab switching ────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ function switchTab(tabId: string): void {
   tabPanels.forEach((panel) => {
     panel.classList.toggle("active", panel.id === `tab-${tabId}`);
   });
+  onTabChange(tabId);
 }
 
 tabButtons.forEach((btn) => {
@@ -165,6 +167,7 @@ async function init(): Promise<void> {
   initCompositeTab();
   initRoomTab();
   initTesterTab();
+  initAgentPanel();
 }
 
 init();

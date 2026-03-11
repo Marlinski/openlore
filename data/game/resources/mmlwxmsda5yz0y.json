@@ -1,0 +1,54 @@
+{
+  "id": "mmlwxmsda5yz0y",
+  "name": "state:walk_dir:down",
+  "tags": [
+    "entity:character",
+    "name:john",
+    "state:walk",
+    "dir:down"
+  ],
+  "frames": [
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 18,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 19,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 20,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 21,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 22,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_07",
+      "srcCol": 23,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

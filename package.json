@@ -15,5 +15,8 @@
     "shared:build": "yarn workspace @offisims/shared build",
     "build": "yarn shared:build && yarn tools:build && yarn server:build && yarn client:build",
     "dev": "echo 'Use tools:dev, server:dev, or client:dev'"
+  },
+  "dependencies": {
+    "openai": "^6.27.0"
   }
 }
