@@ -378,11 +378,6 @@ export interface ProjectData {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-/** Look up a tileset definition by ID from a tilesets array */
-export function findTileset(tilesets: TilesetDefinition[], id: TilesetId): TilesetDefinition | undefined {
-  return tilesets.find((t) => t.id === id);
-}
-
 /** Generate a unique id */
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

@@ -1663,7 +1663,7 @@
 
     #tester-canvas-wrap {
       flex: 1;
-      overflow: hidden;
+      overflow: auto;
       position: relative;
       display: flex;
       align-items: center;
@@ -1707,6 +1707,35 @@
     .filterable-list-input:focus {
       border-color: var(--accent);
     }
+    .filterable-list-area-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .filterable-list-area-slider {
+      flex: 1;
+      height: 14px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .filterable-list-area-value {
+      font-size: 10px;
+      font-family: monospace;
+      white-space: nowrap;
+      min-width: 60px;
+      text-align: center;
+    }
+    .filterable-list-cap-notice {
+      padding: 3px 8px;
+      font-size: 10px;
+      color: var(--text-dim);
+      text-align: center;
+      font-style: italic;
+      border-top: 1px solid var(--border);
+    }
     .filterable-list-items {
       max-height: 180px;
       overflow-y: auto;
@@ -1742,6 +1771,28 @@
       background: var(--border);
       border-radius: 3px;
     }
+    .filterable-list-semantic-header {
+      padding: 4px 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .filterable-list-semantic-items {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .filterable-list-semantic-item {
+      opacity: 0.85;
+    }
+    .semantic-distance {
+      float: right;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -1772,7 +1823,9 @@
         </div>
         <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
           <label>Zoom</label>
-          <select id="comp-tileset-zoom" style="width: 60px;">
+           <select id="comp-tileset-zoom" style="width: 60px;">
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
             <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>
@@ -1793,6 +1846,9 @@
         <div id="comp-toolbar">
           <label>Zoom</label>
           <select id="comp-zoom">
+            <option value="fit">Fit</option>
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
             <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>
@@ -1913,7 +1969,9 @@
           </div>
           <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
             <label>Zoom</label>
-            <select id="room-tileset-zoom" style="width: 60px;">
+             <select id="room-tileset-zoom" style="width: 60px;">
+              <option value="0.25">25%</option>
+              <option value="0.5">50%</option>
               <option value="1" selected>1x</option>
               <option value="2">2x</option>
               <option value="3">3x</option>
@@ -1948,6 +2006,9 @@
           </span>
           <label>Zoom</label>
           <select id="room-zoom">
+            <option value="fit">Fit</option>
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
             <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>
@@ -2107,12 +2168,13 @@
         <div id="cut-toolbar">
           <label>Zoom</label>
           <select id="cut-zoom">
+            <option value="fit">Fit</option>
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
             <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>
             <option value="4">4x</option>
-            <option value="6">6x</option>
-            <option value="8">8x</option>
           </select>
           <label><input type="checkbox" id="cut-grid-toggle" checked /> Grid</label>
           <label style="font-size: 11px; display: flex; align-items: center; gap: 3px;">
@@ -2204,6 +2266,7 @@
         <div id="tester-toolbar">
           <label>Zoom</label>
           <select id="tester-zoom">
+            <option value="0.5">50%</option>
             <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>

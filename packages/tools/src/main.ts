@@ -18,6 +18,7 @@ import { initCompositeTab } from "./composite.js";
 import { initRoomTab } from "./room.js";
 import { initTesterTab } from "./tester.js";
 import { initAgentPanel, onTabChange } from "./agent-panel.js";
+import { registerRagTools } from "./agent-tools.js";
 
 // ─── Tab switching ────────────────────────────────────────────────
 
@@ -159,7 +160,7 @@ document.querySelectorAll<HTMLDivElement>(".panel-resize-handle").forEach((handl
 async function init(): Promise<void> {
   setStatus("Loading project from disk...");
   await appState.ready;
-  setStatus(`Loaded: ${appState.tilesets.length} tilesets, ${appState.composites.length} composites, ${appState.rooms.length} rooms, ${appState.resources.length} resources, ${appState.masks.length} masks`);
+  setStatus(`Loaded: ${appState.composites.length} composites, ${appState.rooms.length} rooms, ${appState.resources.length} resources, ${appState.masks.length} masks`);
   updateStatusBar();
 
   initCutterTab();
@@ -168,6 +169,7 @@ async function init(): Promise<void> {
   initRoomTab();
   initTesterTab();
   initAgentPanel();
+  registerRagTools();
 }
 
 init();

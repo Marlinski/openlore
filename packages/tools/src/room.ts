@@ -314,7 +314,13 @@ const roomPicker = new TilesetPicker(roomTilesetContainer, (region) => {
 // roomTilesetList change is handled via onSelect callback (see initRoomTab)
 
 roomTilesetZoom.addEventListener("change", () => {
-  roomPicker.setZoom(parseInt(roomTilesetZoom.value));
+  roomPicker.setZoom(parseFloat(roomTilesetZoom.value));
+});
+roomPicker.setOnZoomChange(() => {
+  const z = roomPicker.getZoom();
+  const options = Array.from(roomTilesetZoom.options);
+  const match = options.find(o => Math.abs(parseFloat(o.value) - z) < 0.01);
+  roomTilesetZoom.value = match ? match.value : "";
 });
 
 roomTilesetGridToggle.addEventListener("change", () => {
@@ -709,6 +715,15 @@ function renderDoorList(): void {
     item.appendChild(delBtn);
     doorListDiv.appendChild(item);
   }
+}
+
+function computeRoomFitZoom(): number {
+  const wrap = document.getElementById("room-canvas-wrap");
+  if (!wrap || roomWidth <= 0) return 1;
+  const availableWidth = wrap.clientWidth - 24;
+  const naturalWidth = roomWidth * TILE_SIZE;
+  if (naturalWidth <= 0) return 1;
+  return Math.min(Math.max(availableWidth / naturalWidth, 0.05), 8);
 }
 
 // ─── Room canvas drawing ─────────────────────────────────────────
@@ -1863,9 +1878,24 @@ function loadRoom(room: RoomDefinition): void {
 // ─── Control listeners ───────────────────────────────────────────
 
 zoomSelect.addEventListener("change", () => {
-  currentZoom = parseInt(zoomSelect.value);
+  if (zoomSelect.value === "fit") {
+    currentZoom = computeRoomFitZoom();
+  } else {
+    currentZoom = parseFloat(zoomSelect.value);
+  }
   drawRoom();
 });
+
+canvasWrap.addEventListener("wheel", (e) => {
+  if (!e.metaKey && !e.ctrlKey) return;
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  currentZoom = Math.min(Math.max(currentZoom * (1 + delta), 0.05), 8);
+  const options = Array.from(zoomSelect.options);
+  const match = options.find(o => o.value !== "fit" && Math.abs(parseFloat(o.value) - currentZoom) < 0.01);
+  zoomSelect.value = match ? match.value : "";
+  drawRoom();
+}, { passive: false });
 
 gridToggle.addEventListener("change", () => {
   showGrid = gridToggle.checked;
@@ -1892,8 +1922,22 @@ export function initRoomTab(): void {
     roomSelectionInfo.textContent = "Click/drag on tileset to select brush.";
   });
 
-  // Preload all tileset images
-  const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
+  // Preload tileset images used by existing rooms (not all tilesets)
+  const usedIds = new Set<string>();
+  for (const room of appState.rooms) {
+    for (const p of room.placements) {
+      if (p.region?.tilesetId) usedIds.add(p.region.tilesetId);
+      if (p.compositeId) {
+        const comp = appState.getComposite(p.compositeId);
+        if (comp) {
+          for (const part of comp.parts) {
+            if (part.region?.tilesetId) usedIds.add(part.region.tilesetId);
+          }
+        }
+      }
+    }
+  }
+  const loadPromises = [...usedIds].map((id) => loadTilesetImage(id));
 
   Promise.all(loadPromises).then(() => {
     const selected = roomTilesetList.getValue();

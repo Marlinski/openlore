@@ -20,7 +20,7 @@
 import type { Resource, ResourceFrame } from "@offisims/shared";
 import { appState } from "./state.js";
 import { setStatus } from "./main.js";
-import { loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
+import { loadTilesetImage, getCachedTilesetImage, getTilesetDef } from "./tileset-picker.js";
 
 // ─── DOM refs ────────────────────────────────────────────────────
 
@@ -347,14 +347,19 @@ function renderCardCanvas(container: HTMLElement, resource: Resource): string | 
   if (resource.frames.length === 0) return null;
 
   const frame0 = resource.frames[0];
-  const tilesetDef = appState.tilesets.find(
-    (t) => t.id === frame0.tilesetId || t.path.includes(frame0.tilesetId),
-  );
-  if (!tilesetDef) return null;
+  const tilesetDef = getTilesetDef(frame0.tilesetId);
+
+  if (!tilesetDef) {
+    // Def not cached yet — show placeholder, tell caller to batch-load this tileset
+    const ph = document.createElement("div");
+    ph.className = "card-thumb-placeholder";
+    container.appendChild(ph);
+    return frame0.tilesetId;
+  }
 
   const img = getCachedTilesetImage(tilesetDef.id);
   if (!img) {
-    // Show placeholder, caller will batch-load
+    // Def cached but image not — show placeholder, caller will batch-load
     const ph = document.createElement("div");
     ph.className = "card-thumb-placeholder";
     container.appendChild(ph);

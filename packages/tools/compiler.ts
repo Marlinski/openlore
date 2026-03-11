@@ -37,7 +37,6 @@ import type {
   ResourceFrame,
   TexturePlacement,
 } from "@offisims/shared";
-import { findTileset } from "@offisims/shared";
 
 // ─── Region key (for deduplication) ────────────────────────────────
 
@@ -155,6 +154,8 @@ interface ScannedTileset {
   tileWidth: number;
   /** Tile height parsed from filename or default 48 */
   tileHeight: number;
+  /** SHA-256 content hash of the PNG file (hex, first 16 chars) */
+  contentHash: string;
 }
 
 const TILESET_SIZE_RE = /_(\d+)x(\d+)\.png$/i;
@@ -181,7 +182,9 @@ function scanPngFiles(dir: string, dataDir: string): ScannedTileset[] {
           tileWidth = parseInt(match[1], 10);
           tileHeight = parseInt(match[2], 10);
         }
-        results.push({ id, fsPath: full, tileWidth, tileHeight });
+        const fileBuffer = fs.readFileSync(full);
+        const contentHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+        results.push({ id, fsPath: full, tileWidth, tileHeight, contentHash });
       }
     }
   }
@@ -211,16 +214,20 @@ export async function compile(dataDir: string): Promise<CompileResult> {
   // We populate cols/rows lazily (set to 0), resolved on demand when building atlases
   const tilesetMap = new Map<string, TilesetDefinition & { fsPath: string }>();
   for (const s of scannedTilesets) {
-    tilesetMap.set(s.id, {
-      id: s.id,
-      label: s.id.split("/").pop() || s.id,
+    const entry = {
+      id: s.contentHash,
+      label: path.basename(s.fsPath, ".png"),
       path: `/data/${s.id}.png`,
       tileWidth: s.tileWidth,
       tileHeight: s.tileHeight,
       cols: 0,
       rows: 0,
       fsPath: s.fsPath,
-    });
+    };
+    // Key by content hash (new tilesetId format used in JSON data)
+    tilesetMap.set(s.contentHash, entry);
+    // Also key by old path-based ID for backward compat during transition
+    tilesetMap.set(s.id, entry);
   }
 
   // 2. Read per-file data

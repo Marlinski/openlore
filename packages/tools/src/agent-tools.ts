@@ -51,6 +51,9 @@ export interface AgentPreset {
 /** Map of tabId → tools registered for that tab */
 const registry = new Map<string, AgentTool[]>();
 
+/** Global tools available on every tab (e.g. RAG search) */
+let globalTools: AgentTool[] = [];
+
 /** Map of tabId → context provider function */
 const contextProviders = new Map<string, () => string>();
 
@@ -84,6 +87,15 @@ function notifyToolsChanged(): void {
 export function registerTools(tabId: string, tools: AgentTool[]): void {
   registry.set(tabId, tools);
   if (tabId === activeTab) notifyToolsChanged();
+}
+
+/**
+ * Register global tools available on every tab.
+ * Replaces any previously registered global tools.
+ */
+export function registerGlobalTools(tools: AgentTool[]): void {
+  globalTools = tools;
+  notifyToolsChanged();
 }
 
 /**
@@ -126,9 +138,10 @@ export function getActiveTab(): string {
   return activeTab;
 }
 
-/** Get tools for the currently active tab. */
+/** Get tools for the currently active tab (tab-specific + global). */
 export function getActiveTools(): AgentTool[] {
-  return registry.get(activeTab) ?? [];
+  const tabTools = registry.get(activeTab) ?? [];
+  return [...tabTools, ...globalTools];
 }
 
 /**
@@ -175,4 +188,115 @@ export function getToolSystemPromptSuffix(): string {
     (t) => `- ${t.name}: ${t.description}`,
   );
   return `\n\nYou have access to the following tools:\n${lines.join("\n")}`;
+}
+
+// ─── Global RAG tools ───────────────────────────────────────────
+
+/** Helper to fetch JSON from a RAG endpoint, returning null on failure. */
+async function ragFetch<T>(url: string): Promise<T | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** Register global RAG search tools (available on all tabs). */
+export function registerRagTools(): void {
+  registerGlobalTools([
+    {
+      name: "rag_search",
+      description:
+        "Semantic text search across all indexed items (tilesets, resources, composites, rooms). " +
+        "Returns the most similar items to the query string.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Natural language search query" },
+          kind: {
+            type: "string",
+            description: "Optional: filter by item kind",
+            enum: ["tileset", "resource", "resource_sprite", "composite", "room"],
+          },
+          limit: { type: "number", description: "Max results (default 10)" },
+        },
+        required: ["query"],
+      },
+      handler: async (args) => {
+        const q = args.query as string;
+        const params = new URLSearchParams({ q });
+        if (args.kind) params.set("kind", args.kind as string);
+        if (args.limit) params.set("limit", String(args.limit));
+        const data = await ragFetch<{ results: unknown[] }>(`/api/search?${params}`);
+        if (!data) return "RAG search unavailable (server may still be indexing).";
+        return JSON.stringify(data.results, null, 2);
+      },
+    },
+    {
+      name: "rag_similar",
+      description:
+        "Find items visually similar to a given tileset image. " +
+        "Pass the tileset path (relative, e.g. 'tilesets/3_office/Room_Builder_Office_48x48.png').",
+      parameters: {
+        type: "object",
+        properties: {
+          path: { type: "string", description: "Relative path to the tileset PNG" },
+          kind: {
+            type: "string",
+            description: "Optional: filter by item kind",
+            enum: ["tileset", "resource", "resource_sprite", "composite", "room"],
+          },
+          limit: { type: "number", description: "Max results (default 10)" },
+        },
+        required: ["path"],
+      },
+      handler: async (args) => {
+        const p = args.path as string;
+        const params = new URLSearchParams({ path: p });
+        if (args.kind) params.set("kind", args.kind as string);
+        if (args.limit) params.set("limit", String(args.limit));
+        const data = await ragFetch<{ results: unknown[] }>(`/api/similar?${params}`);
+        if (!data) return "RAG similar search unavailable (server may still be indexing).";
+        return JSON.stringify(data.results, null, 2);
+      },
+    },
+    {
+      name: "rag_tags",
+      description:
+        "Autocomplete/search tags across all resources. " +
+        "Returns tags matching the prefix, with usage counts.",
+      parameters: {
+        type: "object",
+        properties: {
+          prefix: { type: "string", description: "Tag prefix to search for (e.g. 'entity:' or 'name:am')" },
+          limit: { type: "number", description: "Max results (default 20)" },
+        },
+        required: ["prefix"],
+      },
+      handler: async (args) => {
+        const prefix = args.prefix as string;
+        const params = new URLSearchParams({ prefix });
+        if (args.limit) params.set("limit", String(args.limit));
+        const data = await ragFetch<{ tags: unknown[] }>(`/api/tags?${params}`);
+        if (!data) return "RAG tag search unavailable (server may still be indexing).";
+        return JSON.stringify(data.tags, null, 2);
+      },
+    },
+    {
+      name: "rag_status",
+      description:
+        "Check the current RAG indexing status — whether it's ready, still indexing, or has errors.",
+      parameters: {
+        type: "object",
+        properties: {},
+      },
+      handler: async () => {
+        const data = await ragFetch<Record<string, unknown>>("/api/status");
+        if (!data) return "RAG system unavailable.";
+        return JSON.stringify(data, null, 2);
+      },
+    },
+  ]);
 }

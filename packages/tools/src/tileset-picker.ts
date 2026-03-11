@@ -5,7 +5,7 @@
  * Supports click (1×1 tile) and drag (N×M region) selection.
  * Emits the selected TilesetRegion via a callback.
  *
- * Tileset metadata is resolved dynamically from appState.tilesets
+ * Tileset metadata is resolved from module-level definition cache
  * rather than a hardcoded TILESETS constant, so user-added tilesets
  * work automatically.
  *
@@ -16,18 +16,74 @@
  */
 
 import { type TilesetId, type TilesetRegion, type TilesetDefinition } from "@offisims/shared";
-import { appState } from "./state.js";
 
 /** Global tileset image cache shared across all pickers */
 const imageCache: Map<string, HTMLImageElement> = new Map();
 
-export function loadTilesetImage(tilesetId: string): Promise<HTMLImageElement> {
+/**
+ * Tileset definition cache — maps content hash → TilesetDefinition.
+ * Populated as a side-effect of loadTilesetImage(). Capped at 200 entries.
+ * External code can read via getTilesetDef() but only after the image has been loaded.
+ */
+const defCache: Map<string, TilesetDefinition> = new Map();
+const DEF_CACHE_MAX = 200;
+
+/** Get a tileset definition that was previously loaded via loadTilesetImage(). */
+export function getTilesetDef(id: string): TilesetDefinition | undefined {
+  return defCache.get(id);
+}
+
+/** Internal: fetch a tileset def from the RAG server, cache it, return it. */
+async function fetchDef(id: string): Promise<TilesetDefinition | undefined> {
+  const cached = defCache.get(id);
+  if (cached) return cached;
+
+  try {
+    const resp = await fetch(`/api/tileset/${encodeURIComponent(id)}`);
+    if (!resp.ok) return undefined;
+
+    const data = await resp.json() as {
+      externalId: string;
+      metadata: {
+        relPath: string;
+        tileWidth: number;
+        tileHeight: number;
+        cols: number;
+        rows: number;
+      };
+    };
+
+    const filename = data.metadata.relPath.split("/").pop() || data.metadata.relPath;
+    const ts: TilesetDefinition = {
+      id,
+      label: filename.replace(/\.png$/i, ""),
+      path: `/api/tileset/${encodeURIComponent(id)}/image`,
+      tileWidth: data.metadata.tileWidth,
+      tileHeight: data.metadata.tileHeight,
+      cols: data.metadata.cols,
+      rows: data.metadata.rows,
+    };
+
+    if (defCache.size >= DEF_CACHE_MAX) {
+      const firstKey = defCache.keys().next().value;
+      if (firstKey !== undefined) defCache.delete(firstKey);
+    }
+    defCache.set(id, ts);
+    return ts;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function loadTilesetImage(tilesetId: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(tilesetId);
-  if (cached) return Promise.resolve(cached);
+  if (cached) return cached;
+
+  // Fetch tileset definition on demand (populates cache if needed)
+  const info = await fetchDef(tilesetId);
+  if (!info) throw new Error(`Unknown tileset ${tilesetId}`);
 
   return new Promise((resolve, reject) => {
-    const info = appState.getTileset(tilesetId);
-    if (!info) { reject(new Error(`Unknown tileset ${tilesetId}`)); return; }
     const img = new Image();
     img.onload = () => {
       imageCache.set(tilesetId, img);
@@ -62,6 +118,7 @@ export class TilesetPicker {
 
   private tilesetId: TilesetId = "office_combined";
   private zoom = 1;
+  private onZoomChange: (() => void) | null = null;
   private showGrid = true;
   private img: HTMLImageElement | null = null;
 
@@ -99,11 +156,21 @@ export class TilesetPicker {
     this.canvas.addEventListener("mousedown", (e) => this.handleMouseDown(e));
     this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e));
     window.addEventListener("mouseup", () => this.handleMouseUp());
+
+    // Cmd/Ctrl + scroll to zoom
+    container.addEventListener("wheel", (e) => {
+      if (!e.metaKey && !e.ctrlKey) return;
+      e.preventDefault();
+      const delta = -e.deltaY * 0.001;
+      this.zoom = Math.min(Math.max(this.zoom * (1 + delta), 0.1), 8);
+      this.draw();
+      this.onZoomChange?.();
+    }, { passive: false });
   }
 
   /** Get the TilesetDefinition for the current tileset, or undefined */
   private getInfo(): TilesetDefinition | undefined {
-    return appState.getTileset(this.tilesetId);
+    return getTilesetDef(this.tilesetId);
   }
 
   setTileset(id: TilesetId): void {
@@ -119,6 +186,14 @@ export class TilesetPicker {
   setZoom(z: number): void {
     this.zoom = z;
     this.draw();
+  }
+
+  getZoom(): number {
+    return this.zoom;
+  }
+
+  setOnZoomChange(cb: () => void): void {
+    this.onZoomChange = cb;
   }
 
   setShowGrid(show: boolean): void {
@@ -282,17 +357,18 @@ export class TilesetPicker {
 
 import { FilterableList } from "./filterable-list.js";
 export { FilterableList } from "./filterable-list.js";
+export type { TilesetSearchResult } from "./filterable-list.js";
 
 /**
- * Create (or update) a FilterableList of tilesets inside a container element.
+ * Create (or reuse) a server-driven FilterableList of tilesets inside a
+ * container element.
  *
- * On first call, creates the FilterableList and populates it.
- * On subsequent calls with the same container, updates the item list
- * (preserving selection & filter text).
+ * On first call, creates the FilterableList and enables server mode so that
+ * search queries are sent to `/api/search?kind=tileset`. On subsequent calls with
+ * the same container, the existing instance is returned as-is.
  *
  * @param container The DOM element that will contain the filterable list.
  * @param defaultId Optional tileset id to select by default.
- * @param filter Optional predicate to include only matching tilesets.
  * @returns The FilterableList instance.
  */
 const listInstances = new Map<HTMLElement, FilterableList>();
@@ -300,7 +376,6 @@ const listInstances = new Map<HTMLElement, FilterableList>();
 export function populateTilesetList(
   container: HTMLElement,
   defaultId?: string,
-  filter?: (ts: TilesetDefinition) => boolean,
 ): FilterableList {
   let list = listInstances.get(container);
   if (!list) {
@@ -308,18 +383,11 @@ export function populateTilesetList(
     listInstances.set(container, list);
   }
 
-  const tilesets = filter ? appState.tilesets.filter(filter) : appState.tilesets;
-  const items = tilesets.map((ts) => ({
-    id: ts.id,
-    label: ts.label,
-    meta: ts.path, // include path for search matching
-  }));
-  list.setItems(items);
+  list.enableServerMode("/api/search?kind=tileset");
+  list.enableAreaFilter();
 
   if (defaultId) {
     list.setDefault(defaultId);
-  } else if (!list.getValue() && tilesets.length > 0) {
-    list.setDefault(tilesets[0].id);
   }
 
   return list;

@@ -83,7 +83,7 @@ export default defineConfig({
       },
     },
 
-    // ─── Filesystem API for /fs/* (read/write/list within data/) ───
+    // ─── Filesystem API for /fs/* (read/write/list within data/) ────
     {
       name: "fs-api",
       configureServer(server) {
@@ -343,6 +343,216 @@ export default defineConfig({
             res.end(JSON.stringify({ error: `Unknown FS route: ${route}` }));
           } catch (err: any) {
             console.error(`[FS] Error handling ${req.method} ${req.url}:`, err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message || "Internal server error" }));
+          }
+        });
+      },
+    },
+
+    // ─── RAG semantic search API for /api/* ──────────────────────────
+    {
+      name: "rag-api",
+      configureServer(server) {
+        let ragApi: import("./rag/index.js").RagApi | null = null;
+        let indexing = true;
+
+        // Initialize RAG in the background
+        (async () => {
+          try {
+            console.log("[rag] Initializing RAG system...");
+            const { initRag } = await import("./rag/index.js");
+            ragApi = await initRag(dataDir);
+            indexing = false;
+            console.log("[rag] RAG system ready.");
+          } catch (err) {
+            indexing = false;
+            console.error("[rag] Failed to initialize RAG system:", err);
+          }
+        })();
+
+        server.middlewares.use(async (req, res, next) => {
+          if (!req.url || !req.url.startsWith("/api/")) return next();
+
+          const url = new URL(req.url, "http://localhost");
+          const route = url.pathname;
+
+          res.setHeader("Content-Type", "application/json");
+
+          try {
+            // ── GET /api/status ─────────────────────────────────
+            if (req.method === "GET" && route === "/api/status") {
+              res.end(
+                JSON.stringify({
+                  ready: ragApi !== null,
+                  stats: ragApi ? ragApi.getStats() : null,
+                  indexing,
+                }),
+              );
+              return;
+            }
+
+            // ── GET /api/tileset/<id>/image — stream the tileset PNG ──
+            if (req.method === "GET" && route.startsWith("/api/tileset/") && route.endsWith("/image")) {
+              if (!ragApi) {
+                res.statusCode = 503;
+                res.end("RAG system is still initializing");
+                return;
+              }
+              const hash = decodeURIComponent(route.slice("/api/tileset/".length, -"/image".length));
+              if (!hash) {
+                res.statusCode = 400;
+                res.end("tileset id required");
+                return;
+              }
+              const result = ragApi.resolveHash(hash);
+              if (!result) {
+                res.statusCode = 404;
+                res.end("Hash not found");
+                return;
+              }
+              const relPath = (result.metadata as Record<string, unknown>).relPath as string | undefined;
+              if (!relPath) {
+                res.statusCode = 404;
+                res.end("No file path for this tileset");
+                return;
+              }
+              const filePath = safeResolve(relPath);
+              if (!filePath || !fs.existsSync(filePath)) {
+                res.statusCode = 404;
+                res.end("Tileset file not found");
+                return;
+              }
+              res.setHeader("Content-Type", "image/png");
+              res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+              fs.createReadStream(filePath).pipe(res);
+              return;
+            }
+
+            // ── GET /api/tileset/<id> — tileset metadata JSON ────────
+            if (req.method === "GET" && route.startsWith("/api/tileset/")) {
+              if (!ragApi) {
+                res.statusCode = 503;
+                res.end(JSON.stringify({ error: "RAG system is still initializing" }));
+                return;
+              }
+              const hash = decodeURIComponent(route.slice("/api/tileset/".length));
+              if (!hash) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "tileset id required" }));
+                return;
+              }
+              const result = ragApi.resolveHash(hash);
+              if (!result) {
+                res.statusCode = 404;
+                res.end(JSON.stringify({ error: "Hash not found" }));
+                return;
+              }
+              res.end(JSON.stringify(result));
+              return;
+            }
+
+            // All other endpoints require RAG to be initialized
+            if (!ragApi) {
+              res.statusCode = 503;
+              res.end(JSON.stringify({ error: "RAG system is still initializing", ready: false }));
+              return;
+            }
+
+            // ── GET /api/search?q=<text>&kind=<optional>&limit=<optional>&minArea=<optional> ──
+            if (req.method === "GET" && route === "/api/search") {
+              const q = url.searchParams.get("q") || undefined;
+              const kind = url.searchParams.get("kind") || undefined;
+              const limit = url.searchParams.has("limit")
+                ? parseInt(url.searchParams.get("limit")!, 10)
+                : undefined;
+
+              // Tileset search: supports empty q, minArea filter, returns rich metadata
+              if (kind === "tileset") {
+                const minArea = url.searchParams.has("minArea")
+                  ? parseInt(url.searchParams.get("minArea")!, 10)
+                  : undefined;
+                const data = await ragApi.searchTilesets({ q, minArea, limit });
+                const areaRange = ragApi.getTilesetAreaRange();
+                res.end(JSON.stringify({ ...data, areaRange }));
+                return;
+              }
+
+              // General search: requires q
+              if (!q) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "q parameter required" }));
+                return;
+              }
+              const results = await ragApi.search(q, { kind, limit });
+              res.end(JSON.stringify({ results }));
+              return;
+            }
+
+            // ── GET /api/similar?path=<relative>&kind=<optional>&limit=<optional> ──
+            if (req.method === "GET" && route === "/api/similar") {
+              const relPath = url.searchParams.get("path");
+              if (!relPath) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "path parameter required" }));
+                return;
+              }
+              const filePath = path.resolve(dataDir, relPath);
+              if (!filePath.startsWith(dataDir)) {
+                res.statusCode = 403;
+                res.end(JSON.stringify({ error: "Path outside data directory" }));
+                return;
+              }
+              if (!fs.existsSync(filePath)) {
+                res.statusCode = 404;
+                res.end(JSON.stringify({ error: "File not found" }));
+                return;
+              }
+
+              const kind = url.searchParams.get("kind") || undefined;
+              const limit = url.searchParams.get("limit")
+                ? parseInt(url.searchParams.get("limit")!, 10)
+                : undefined;
+
+              const results = await ragApi.searchByImage(filePath, { kind, limit });
+              res.end(JSON.stringify({ results }));
+              return;
+            }
+
+            // ── GET /api/tags?prefix=<prefix>&limit=<optional> ──
+            if (req.method === "GET" && route === "/api/tags") {
+              const prefix = url.searchParams.get("prefix");
+              if (!prefix) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "prefix parameter required" }));
+                return;
+              }
+              const limit = url.searchParams.get("limit")
+                ? parseInt(url.searchParams.get("limit")!, 10)
+                : undefined;
+
+              const tags = ragApi.tagAutocomplete(prefix, limit);
+              res.end(JSON.stringify({ tags }));
+              return;
+            }
+
+            // ── POST /api/reindex ───────────────────────────────
+            if (req.method === "POST" && route === "/api/reindex") {
+              indexing = true;
+              try {
+                const result = await ragApi.reindex();
+                res.end(JSON.stringify({ result }));
+              } finally {
+                indexing = false;
+              }
+              return;
+            }
+
+            // Unknown /api/ route
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: `Unknown API route: ${route}` }));
+          } catch (err: any) {
+            console.error(`[rag] Error handling ${req.method} ${req.url}:`, err);
             res.statusCode = 500;
             res.end(JSON.stringify({ error: err.message || "Internal server error" }));
           }

@@ -28,7 +28,7 @@ import {
 } from "@offisims/shared";
 import { appState } from "./state.js";
 import { setStatus } from "./main.js";
-import { populateTilesetList, loadTilesetImage, getCachedTilesetImage } from "./tileset-picker.js";
+import { populateTilesetList, loadTilesetImage, getCachedTilesetImage, getTilesetDef } from "./tileset-picker.js";
 import { registerTools, registerContextProvider, registerPresets, type AgentTool } from "./agent-tools.js";
 import { setTabSystemPrompt } from "./agent-panel.js";
 
@@ -760,16 +760,16 @@ async function loadTileset(): Promise<void> {
   }
 
   sheetInfo.textContent = "Loading...";
-  currentInfo = appState.getTileset(currentTilesetId) ?? null;
-
-  if (!currentInfo) {
-    sheetInfo.textContent = `Unknown tileset: ${currentTilesetId}`;
-    currentImg = null;
-    return;
-  }
 
   try {
     currentImg = await loadTilesetImage(currentTilesetId);
+    currentInfo = getTilesetDef(currentTilesetId) ?? null;
+
+    if (!currentInfo) {
+      sheetInfo.textContent = `Unknown tileset (id: ${currentTilesetId.slice(0, 12)}…)`;
+      currentImg = null;
+      return;
+    }
 
     // Update tileset dimensions if they were placeholders
     if (currentInfo.cols === 0 || currentInfo.rows === 0) {
@@ -785,6 +785,18 @@ async function loadTileset(): Promise<void> {
       `${currentInfo.tileWidth}x${currentInfo.tileHeight}px/tile`;
 
     clearSelection();
+
+    // Auto-fit: if tileset is wider than container, zoom to fit
+    const naturalWidth = currentInfo.cols * currentInfo.tileWidth;
+    const wrap = document.getElementById("cut-sheet-wrap");
+    if (wrap && naturalWidth > wrap.clientWidth - 24) {
+      currentZoom = computeFitZoom();
+      zoomSelect.value = "fit";
+    } else {
+      currentZoom = 1;
+      zoomSelect.value = "1";
+    }
+
     drawCanvas();
     renderCutList();
     updatePreviews();
@@ -792,7 +804,22 @@ async function loadTileset(): Promise<void> {
   } catch (e) {
     sheetInfo.textContent = `Error: ${e}`;
     currentImg = null;
+    currentInfo = null;
   }
+}
+
+// ─── Zoom helpers ────────────────────────────────────────────────
+
+function computeFitZoom(): number {
+  if (!currentInfo) return 1;
+  const wrap = document.getElementById("cut-sheet-wrap");
+  if (!wrap) return 1;
+  const availableWidth = wrap.clientWidth - 24; // subtract padding
+  const naturalWidth = currentInfo.cols * currentInfo.tileWidth;
+  if (naturalWidth <= 0) return 1;
+  const fit = availableWidth / naturalWidth;
+  // Clamp to reasonable range
+  return Math.min(Math.max(fit, 0.05), 8);
 }
 
 // ─── Canvas rendering ────────────────────────────────────────────
@@ -1242,7 +1269,7 @@ function showAssignForm(): void {
 
   // Auto-suggest name from tileset label (only for new cuts)
   if (!assignNameInput.value && !editingResourceId) {
-    const tsLabel = currentInfo?.label ?? currentTilesetId;
+    const tsLabel = currentInfo?.label ?? "tileset";
     const shortLabel = tsLabel.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase().slice(0, 20);
     assignNameInput.value = `${shortLabel}_r${sel.row}_c${sel.col}`;
   }
@@ -1336,9 +1363,9 @@ function addCut(): void {
       cut.frameHeight = pendingSelection.frameHeight;
       cut.frameCount = pendingSelection.frameCount;
 
-      clearSelection();
-      drawCanvas();
-      renderCutList();
+    clearSelection();
+    drawCanvas();
+    renderCutList();
       updatePreviews();
       updateSaveState();
       setStatus(`Updated cut "${name}"`);
@@ -1887,9 +1914,35 @@ function clearTilesetResources(): void {
 let cutTilesetList: ReturnType<typeof populateTilesetList>;
 
 zoomSelect.addEventListener("change", () => {
-  currentZoom = parseInt(zoomSelect.value);
+  if (zoomSelect.value === "fit") {
+    currentZoom = computeFitZoom();
+  } else {
+    currentZoom = parseFloat(zoomSelect.value);
+  }
   drawCanvas();
 });
+
+// Cmd+scroll (macOS) / Ctrl+scroll (Windows/Linux) to zoom
+const sheetWrap = document.getElementById("cut-sheet-wrap")!;
+sheetWrap.addEventListener("wheel", (e) => {
+  if (!e.metaKey && !e.ctrlKey) return;
+  e.preventDefault();
+
+  const delta = -e.deltaY * 0.001;
+  const newZoom = Math.min(Math.max(currentZoom * (1 + delta), 0.05), 8);
+  currentZoom = newZoom;
+
+  // Update dropdown to closest match or clear it
+  const options = Array.from(zoomSelect.options);
+  const match = options.find(o => o.value !== "fit" && Math.abs(parseFloat(o.value) - newZoom) < 0.01);
+  if (match) {
+    zoomSelect.value = match.value;
+  } else {
+    zoomSelect.value = "";
+  }
+
+  drawCanvas();
+}, { passive: false });
 
 gridToggle.addEventListener("change", () => {
   showGrid = gridToggle.checked;
@@ -2388,7 +2441,7 @@ Do NOT ask clarifying questions if you can answer by looking at the tileset.`;
           const dataURL = buildAreaImage(clampedCol, clampedRow, clampedW, clampedH, layers);
           if (!dataURL) return "Error: No tileset loaded.";
 
-          const info = `Tileset: ${currentTilesetId}\nArea: cols ${clampedCol}–${clampedCol + clampedW - 1}, rows ${clampedRow}–${clampedRow + clampedH - 1} (${clampedW}x${clampedH} tiles)\nFull grid: ${currentInfo.cols}x${currentInfo.rows} tiles\nAll coordinates shown are ABSOLUTE (relative to the full tileset grid).\nLayers: ${layers.join(", ")}`;
+          const info = `Tileset: ${currentInfo.label}\nArea: cols ${clampedCol}–${clampedCol + clampedW - 1}, rows ${clampedRow}–${clampedRow + clampedH - 1} (${clampedW}x${clampedH} tiles)\nFull grid: ${currentInfo.cols}x${currentInfo.rows} tiles\nAll coordinates shown are ABSOLUTE (relative to the full tileset grid).\nLayers: ${layers.join(", ")}`;
 
           return [
             { type: "text", text: info },
@@ -2401,7 +2454,7 @@ Do NOT ask clarifying questions if you can answer by looking at the tileset.`;
         if (!dataURL) return "Error: No tileset loaded. Select a tileset first.";
 
         const info = currentInfo
-          ? `Tileset: ${currentTilesetId}\nSize: ${currentInfo.cols}x${currentInfo.rows} tiles (${currentInfo.tileWidth}x${currentInfo.tileHeight}px per tile)\nLayers: ${layers.join(", ")}`
+          ? `Tileset: ${currentInfo.label}\nSize: ${currentInfo.cols}x${currentInfo.rows} tiles (${currentInfo.tileWidth}x${currentInfo.tileHeight}px per tile)\nLayers: ${layers.join(", ")}`
           : "Tileset loaded.";
 
         return [
@@ -2535,7 +2588,7 @@ Do NOT ask clarifying questions if you can answer by looking at the tileset.`;
     const lines: string[] = [];
 
     if (currentTilesetId && currentInfo) {
-      lines.push(`Tileset: ${currentTilesetId}`);
+      lines.push(`Tileset: ${currentInfo?.label ?? currentTilesetId}`);
       lines.push(`Tile size: ${currentInfo.tileWidth}x${currentInfo.tileHeight}px`);
       lines.push(`Grid: ${currentInfo.cols} cols x ${currentInfo.rows} rows`);
       if (currentImg) {

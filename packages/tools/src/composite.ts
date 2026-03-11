@@ -106,12 +106,29 @@ const picker = new TilesetPicker(tilesetContainer, (region) => {
 // tilesetList change is handled via onSelect callback (see initCompositeTab)
 
 tilesetZoom.addEventListener("change", () => {
-  picker.setZoom(parseInt(tilesetZoom.value));
+  picker.setZoom(parseFloat(tilesetZoom.value));
+});
+picker.setOnZoomChange(() => {
+  const z = picker.getZoom();
+  const options = Array.from(tilesetZoom.options);
+  const match = options.find(o => Math.abs(parseFloat(o.value) - z) < 0.01);
+  tilesetZoom.value = match ? match.value : "";
 });
 
 tilesetGridToggle.addEventListener("change", () => {
   picker.setShowGrid(tilesetGridToggle.checked);
 });
+
+// ─── Fit-zoom helper ──────────────────────────────────────────────
+
+function computeCompFitZoom(): number {
+  const wrap = document.getElementById("comp-canvas-wrap");
+  if (!wrap) return 1;
+  const availableWidth = wrap.clientWidth - 24;
+  const naturalWidth = WORKSPACE_COLS * TILE_SIZE;
+  if (naturalWidth <= 0) return 1;
+  return Math.min(Math.max(availableWidth / naturalWidth, 0.05), 8);
+}
 
 // ─── Workspace canvas drawing ─────────────────────────────────────
 
@@ -719,9 +736,24 @@ function loadCompositeIntoWorkspace(comp: CompositeObject): void {
 // ─── Control listeners ────────────────────────────────────────────
 
 zoomSelect.addEventListener("change", () => {
-  currentZoom = parseInt(zoomSelect.value);
+  if (zoomSelect.value === "fit") {
+    currentZoom = computeCompFitZoom();
+  } else {
+    currentZoom = parseFloat(zoomSelect.value);
+  }
   drawWorkspace();
 });
+
+canvasWrap.addEventListener("wheel", (e) => {
+  if (!e.metaKey && !e.ctrlKey) return;
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  currentZoom = Math.min(Math.max(currentZoom * (1 + delta), 0.05), 8);
+  const options = Array.from(zoomSelect.options);
+  const match = options.find(o => o.value !== "fit" && Math.abs(parseFloat(o.value) - currentZoom) < 0.01);
+  zoomSelect.value = match ? match.value : "";
+  drawWorkspace();
+}, { passive: false });
 
 gridToggle.addEventListener("change", () => {
   showGrid = gridToggle.checked;
@@ -748,8 +780,14 @@ export function initCompositeTab(): void {
     selectionInfo.textContent = "Click/drag on the tileset to select a region.";
   });
 
-  // Preload all tileset images
-  const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
+  // Preload tileset images used by existing composites (not all tilesets)
+  const usedIds = new Set<string>();
+  for (const comp of appState.composites) {
+    for (const part of comp.parts) {
+      if (part.region?.tilesetId) usedIds.add(part.region.tilesetId);
+    }
+  }
+  const loadPromises = [...usedIds].map((id) => loadTilesetImage(id));
 
   Promise.all(loadPromises).then(() => {
     const selected = tilesetList.getValue();

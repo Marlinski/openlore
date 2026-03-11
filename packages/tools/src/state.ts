@@ -12,8 +12,7 @@
  * No localStorage, no server sync — the files on disk are the single source of truth.
  */
 
-import type { CompositeObject, RoomDefinition, TilesetDefinition, Resource, Mask } from "@offisims/shared";
-import { findTileset } from "@offisims/shared";
+import type { CompositeObject, RoomDefinition, Resource, Mask } from "@offisims/shared";
 
 /** Base path for all game data, relative to data/ */
 const BASE = "game";
@@ -90,7 +89,6 @@ async function fsReadDir<T>(relDir: string): Promise<Record<string, T>> {
 // ─── AppState ────────────────────────────────────────────────────
 
 class AppState {
-  tilesets: TilesetDefinition[] = [];
   composites: CompositeObject[] = [];
   rooms: RoomDefinition[] = [];
   resources: Resource[] = [];
@@ -129,13 +127,6 @@ class AppState {
   /** Notify all listeners of a state change (does NOT trigger a save — saves are per-mutation) */
   private notify(): void {
     for (const fn of this.listeners) fn();
-  }
-
-  // ─── Tilesets ────────────────────────────────────────────────
-
-  /** Get a tileset by ID */
-  getTileset(id: string): TilesetDefinition | undefined {
-    return findTileset(this.tilesets, id);
   }
 
   // ─── Composites ─────────────────────────────────────────────
@@ -238,8 +229,6 @@ class AppState {
    *   game/composites/*.json    → this.composites
    *   game/rooms/*.json         → this.rooms
    *   game/masks/*.json         → this.masks
-   *
-   * Then merges in scanned tilesets from data/tilesets/.
    */
   private async loadFromDisk(): Promise<void> {
     try {
@@ -281,69 +270,10 @@ class AppState {
       console.error("[AppState] Failed to load from disk:", err);
     }
 
-    // Scan filesystem for all available tilesets and merge them in
-    await this.scanAndMergeTilesets();
-
     this._ready = true;
     this._resolveReady();
     // Notify listeners that data is loaded
     for (const fn of this.listeners) fn();
-  }
-
-  /**
-   * Fetch all PNGs from /fs/scan-tilesets and merge into this.tilesets.
-   * Saved tilesets (already in this.tilesets) take precedence.
-   * Scanned tilesets get cols=0, rows=0 — resolved lazily when the image loads.
-   */
-  private async scanAndMergeTilesets(): Promise<void> {
-    try {
-      const resp = await fetch("/fs/scan-tilesets");
-      if (!resp.ok) {
-        console.warn("[AppState] Failed to scan tilesets:", resp.statusText);
-        return;
-      }
-      const { tilesets: scanned } = await resp.json() as {
-        tilesets: { relPath: string; tileWidth: number; tileHeight: number }[];
-      };
-
-      // Build a set of existing tileset paths for dedup
-      const existingByPath = new Map<string, TilesetDefinition>();
-      for (const ts of this.tilesets) {
-        existingByPath.set(ts.path, ts);
-      }
-
-      let added = 0;
-      for (const s of scanned) {
-        const path = `/data/${s.relPath}`;
-
-        // Skip if already present (saved override takes precedence)
-        if (existingByPath.has(path)) continue;
-
-        // Derive an id from the relative path:
-        //   "tilesets/3_office/Room_Builder_48x48.png" → "tilesets/3_office/Room_Builder_48x48"
-        const id = s.relPath.replace(/\.png$/i, "");
-
-        // Label: just the filename without extension and size suffix
-        const filename = s.relPath.split("/").pop() || s.relPath;
-        const label = filename.replace(/\.png$/i, "");
-
-        const ts: TilesetDefinition = {
-          id,
-          label,
-          path,
-          tileWidth: s.tileWidth,
-          tileHeight: s.tileHeight,
-          cols: 0, // resolved lazily when image loads
-          rows: 0,
-        };
-        this.tilesets.push(ts);
-        added++;
-      }
-
-      console.log(`[AppState] Scanned ${scanned.length} tilesets, added ${added} new (${this.tilesets.length} total)`);
-    } catch (err) {
-      console.warn("[AppState] Failed to scan tilesets:", err);
-    }
   }
 }
 

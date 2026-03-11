@@ -978,9 +978,20 @@ function applyZoom(): void {
 }
 
 zoomSelect.addEventListener("change", () => {
-  currentZoom = parseInt(zoomSelect.value);
+  currentZoom = parseFloat(zoomSelect.value);
   applyZoom();
 });
+
+canvasWrap.addEventListener("wheel", (e) => {
+  if (!e.metaKey && !e.ctrlKey) return;
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  currentZoom = Math.min(Math.max(currentZoom * (1 + delta), 0.1), 8);
+  const options = Array.from(zoomSelect.options);
+  const match = options.find(o => Math.abs(parseFloat(o.value) - currentZoom) < 0.01);
+  zoomSelect.value = match ? match.value : "";
+  applyZoom();
+}, { passive: false });
 
 gridToggle.addEventListener("change", () => {
   showGrid = gridToggle.checked;

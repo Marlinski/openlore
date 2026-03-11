@@ -5,6 +5,5 @@ dist/
 *.gif
 *.tsbuildinfo
 
-# Data — only data/game/ is tracked
-data/*
-!data/game/
+# Data
+data/
