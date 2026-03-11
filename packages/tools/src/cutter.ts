@@ -554,12 +554,8 @@ async function loadTileset(): Promise<void> {
     if (currentInfo.cols === 0 || currentInfo.rows === 0) {
       const newCols = Math.floor(currentImg.width / currentInfo.tileWidth);
       const newRows = Math.floor(currentImg.height / currentInfo.tileHeight);
-      appState.addTileset({
-        ...currentInfo,
-        cols: newCols,
-        rows: newRows,
-      });
-      currentInfo = appState.getTileset(currentTilesetId) ?? currentInfo;
+      currentInfo.cols = newCols;
+      currentInfo.rows = newRows;
     }
 
     sheetInfo.textContent =

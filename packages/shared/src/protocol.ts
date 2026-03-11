@@ -13,7 +13,8 @@
  * Each message has a `type` discriminator field.
  */
 
-import type { CharacterDirection } from "./types.js";
+/** Character facing direction */
+type CharacterDirection = "down" | "up" | "left" | "right";
 
 // ─── Avatar snapshot (shared between server and client) ──────────
 

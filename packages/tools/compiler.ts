@@ -1,21 +1,27 @@
 /**
  * Asset compiler — builds optimized, cache-friendly game assets from raw project data.
  *
- * Input:  data/game/game-data.json + source tileset PNGs in data/
- * Output: data/resources/
- *           atlas/atlas_<content_hash>.png   — one per source tileset, only used regions
- *           rooms/<room_name>.json           — placements remapped to atlas coords
- *           characters/base/<char_name>.json — animation strips remapped to atlas coords
- *           manifest.json                    — index of all compiled assets
+ * Input:
+ *   data/game/resources/*.json  — individual Resource files
+ *   data/game/composites/*.json — individual CompositeObject files
+ *   data/game/rooms/*.json      — individual RoomDefinition files
+ *   data/tilesets/**\/*.png      — source tileset images (scanned)
+ *
+ * Output: data/pack/
+ *   atlas/atlas_<content_hash>.png  — one per source tileset that has used regions
+ *   rooms/<room_name>.json          — one per room (placements remapped to atlas coords)
+ *   resources/<resource_id>.json    — one compiled resource per source resource
+ *   manifest.json                   — index of all compiled assets
  *
  * The compiler:
- * 1. Reads project data from disk
- * 2. Collects every unique tile region referenced by rooms, composites, and characters
- * 3. Groups regions by source tileset
- * 4. For each tileset: extracts used regions with sharp, packs into a minimal atlas PNG
- * 5. Content-hashes each atlas for cache-busting filenames
- * 6. Writes room/character JSONs with remapped coordinates pointing to atlas files
- * 7. Writes a manifest.json listing everything
+ * 1. Scans tileset PNGs from data/tilesets/ to build tileset definitions
+ * 2. Reads resources, composites, and rooms from per-file JSON
+ * 3. Collects every unique pixel region referenced by resources, rooms, and composites
+ * 4. Groups regions by source tileset
+ * 5. For each tileset: extracts used regions with sharp, packs into a minimal atlas PNG
+ * 6. Content-hashes each atlas for cache-busting filenames
+ * 7. Writes resource/room JSONs with remapped coordinates pointing to atlas files
+ * 8. Writes a manifest.json listing everything
  */
 
 import fs from "node:fs";
@@ -23,97 +29,15 @@ import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
 
-// ─── Types (inline to avoid import issues in Vite plugin context) ──
-
-interface TilesetDefinition {
-  id: string;
-  label: string;
-  path: string;
-  tileWidth: number;
-  tileHeight: number;
-  cols: number;
-  rows: number;
-}
-
-interface TilesetRegion {
-  tilesetId: string;
-  srcCol: number;
-  srcRow: number;
-  w: number;
-  h: number;
-}
-
-interface CompositePart {
-  region: TilesetRegion;
-  offsetX: number;
-  offsetY: number;
-  zBias?: number;
-}
-
-interface CompositeObject {
-  id: string;
-  name: string;
-  category: string;
-  parts: CompositePart[];
-  displaySize: { w: number; h: number };
-}
-
-interface TexturePlacement {
-  gridX: number;
-  gridY: number;
-  layer: "floor" | "object";
-  region?: TilesetRegion;
-  compositeId?: string;
-  zBias?: number;
-}
-
-interface DoorDefinition {
-  id: string;
-  col: number;
-  row: number;
-  target: string;
-}
-
-interface RoomDefinition {
-  name: string;
-  width: number;
-  height: number;
-  walkability: boolean[];
-  doors: DoorDefinition[];
-  placements: TexturePlacement[];
-}
-
-interface AnimationStrip {
-  tilesetId: string;
-  row: number;
-  startFrame: number;
-  frameCount: number;
-}
-
-interface CharacterAnimation {
-  family: string;
-  direction: string;
-  variant: number;
-  strip: AnimationStrip;
-}
-
-interface CharacterDefinition {
-  id: string;
-  name: string;
-  sheetId: string;
-  frameWidth: number;
-  frameHeight: number;
-  animations: CharacterAnimation[];
-  familySpeeds: Record<string, number>;
-  variantSequences: any[];
-}
-
-interface ProjectData {
-  tilesets: TilesetDefinition[];
-  composites: CompositeObject[];
-  rooms: RoomDefinition[];
-  characters: CharacterDefinition[];
-}
+import type {
+  TilesetDefinition,
+  CompositeObject,
+  RoomDefinition,
+  Resource,
+  ResourceFrame,
+  TexturePlacement,
+} from "@offisims/shared";
+import { findTileset } from "@offisims/shared";
 
 // ─── Region key (for deduplication) ────────────────────────────────
 
@@ -177,43 +101,17 @@ interface CompiledRoom {
   width: number;
   height: number;
   walkability: boolean[];
-  doors: DoorDefinition[];
+  doors: { id: string; col: number; row: number; target: string }[];
   placements: CompiledPlacement[];
   /** Atlas files this room depends on */
   atlases: string[];
 }
 
-interface CompiledAnimationStrip {
-  /** Frame width in pixels */
-  frameWidth: number;
-  /** Frame height in pixels */
-  frameHeight: number;
-  /**
-   * Per-frame atlas coordinates.
-   * Each entry is [atlas, x, y] — atlas filename + pixel position.
-   * Frames may come from different atlases (if the source tileset changed)
-   * and may not be contiguous (due to deduplication).
-   */
-  frames: { atlas: string; x: number; y: number }[];
-}
-
-interface CompiledCharacterAnimation {
-  family: string;
-  direction: string;
-  variant: number;
-  strip: CompiledAnimationStrip;
-}
-
-interface CompiledCharacter {
+interface CompiledResource {
   id: string;
   name: string;
-  frameWidth: number;
-  frameHeight: number;
-  animations: CompiledCharacterAnimation[];
-  familySpeeds: Record<string, number>;
-  variantSequences: any[];
-  /** Atlas files this character depends on */
-  atlases: string[];
+  tags: string[];
+  frames: { atlas: string; x: number; y: number; w: number; h: number }[];
 }
 
 interface CompiledManifest {
@@ -223,8 +121,73 @@ interface CompiledManifest {
   atlases: { file: string; tilesetId: string; regions: number; sizeBytes: number }[];
   /** All compiled rooms */
   rooms: { name: string; file: string }[];
-  /** All compiled characters */
-  characters: { name: string; file: string }[];
+  /** All compiled resources */
+  resources: { id: string; name: string; tags: string[]; file: string }[];
+}
+
+// ─── Helpers: read per-file directories ────────────────────────────
+
+/** Read all .json files from a directory, returning parsed objects. Returns [] if dir missing. */
+function readJsonDir<T>(dirPath: string): T[] {
+  if (!fs.existsSync(dirPath)) return [];
+  const items: T[] = [];
+  for (const entry of fs.readdirSync(dirPath)) {
+    if (!entry.endsWith(".json")) continue;
+    try {
+      const content = fs.readFileSync(path.join(dirPath, entry), "utf-8");
+      items.push(JSON.parse(content) as T);
+    } catch (err) {
+      console.warn(`[Compile] Failed to read ${path.join(dirPath, entry)}:`, err);
+    }
+  }
+  return items;
+}
+
+// ─── Helpers: scan tilesets from filesystem ─────────────────────────
+
+/** Tileset info derived from scanning data/tilesets/ */
+interface ScannedTileset {
+  /** ID: relative path without .png (e.g. "tilesets/3_office/Room_Builder_48x48") */
+  id: string;
+  /** Full filesystem path to the PNG */
+  fsPath: string;
+  /** Tile width parsed from filename or default 48 */
+  tileWidth: number;
+  /** Tile height parsed from filename or default 48 */
+  tileHeight: number;
+}
+
+const TILESET_SIZE_RE = /_(\d+)x(\d+)\.png$/i;
+
+/** Recursively scan a directory for PNG files */
+function scanPngFiles(dir: string, dataDir: string): ScannedTileset[] {
+  if (!fs.existsSync(dir)) return [];
+  const results: ScannedTileset[] = [];
+
+  function walk(current: string): void {
+    const items = fs.readdirSync(current, { withFileTypes: true });
+    for (const item of items) {
+      if (item.name.startsWith(".")) continue;
+      const full = path.join(current, item.name);
+      if (item.isDirectory()) {
+        walk(full);
+      } else if (item.isFile() && item.name.toLowerCase().endsWith(".png")) {
+        const relPath = path.relative(dataDir, full);
+        const id = relPath.replace(/\.png$/i, "");
+        const match = item.name.match(TILESET_SIZE_RE);
+        let tileWidth = 48;
+        let tileHeight = 48;
+        if (match) {
+          tileWidth = parseInt(match[1], 10);
+          tileHeight = parseInt(match[2], 10);
+        }
+        results.push({ id, fsPath: full, tileWidth, tileHeight });
+      }
+    }
+  }
+
+  walk(dir);
+  return results;
 }
 
 // ─── Main compiler ─────────────────────────────────────────────────
@@ -234,38 +197,49 @@ export interface CompileResult {
   message: string;
   atlasCount?: number;
   roomCount?: number;
-  characterCount?: number;
+  resourceCount?: number;
 }
 
 export async function compile(dataDir: string): Promise<CompileResult> {
-  const projectPath = path.join(dataDir, "game", "game-data.json");
-  const compiledDir = path.join(dataDir, "resources");
+  const outDir = path.join(dataDir, "pack");
 
-  // 1. Read project data
-  if (!fs.existsSync(projectPath)) {
-    return { ok: false, message: "No game-data.json found" };
+  // 1. Scan tilesets from data/tilesets/**/*.png
+  const tilesetsDir = path.join(dataDir, "tilesets");
+  const scannedTilesets = scanPngFiles(tilesetsDir, dataDir);
+
+  // Build tileset lookup: ID → TilesetDefinition
+  // We populate cols/rows lazily (set to 0), resolved on demand when building atlases
+  const tilesetMap = new Map<string, TilesetDefinition & { fsPath: string }>();
+  for (const s of scannedTilesets) {
+    tilesetMap.set(s.id, {
+      id: s.id,
+      label: s.id.split("/").pop() || s.id,
+      path: `/data/${s.id}.png`,
+      tileWidth: s.tileWidth,
+      tileHeight: s.tileHeight,
+      cols: 0,
+      rows: 0,
+      fsPath: s.fsPath,
+    });
   }
 
-  const project: ProjectData = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
+  // 2. Read per-file data
+  const resources = readJsonDir<Resource>(path.join(dataDir, "game", "resources"));
+  const composites = readJsonDir<CompositeObject>(path.join(dataDir, "game", "composites"));
+  const rooms = readJsonDir<RoomDefinition>(path.join(dataDir, "game", "rooms"));
+
   console.log(
-    `[Compile] Project: ${project.tilesets.length} tilesets, ` +
-    `${project.composites.length} composites, ${project.rooms.length} rooms, ` +
-    `${project.characters.length} characters`
+    `[Compile] Scanned ${tilesetMap.size} tilesets, ` +
+    `${resources.length} resources, ${composites.length} composites, ${rooms.length} rooms`
   );
 
-  // 2. Build composite lookup
+  // 3. Build composite lookup
   const compositeMap = new Map<string, CompositeObject>();
-  for (const comp of project.composites) {
+  for (const comp of composites) {
     compositeMap.set(comp.id, comp);
   }
 
-  // Build tileset lookup
-  const tilesetMap = new Map<string, TilesetDefinition>();
-  for (const ts of project.tilesets) {
-    tilesetMap.set(ts.id, ts);
-  }
-
-  // 3. Collect all used regions, grouped by tilesetId
+  // 4. Collect all used regions, grouped by tilesetId
   //    Key: regionKey → PixelRegion
   const allRegions = new Map<string, PixelRegion>();
   //    tilesetId → Set<regionKey>
@@ -282,93 +256,83 @@ export async function compile(dataDir: string): Promise<CompileResult> {
     }
   }
 
-  function addTilesetRegion(region: TilesetRegion): void {
-    const ts = tilesetMap.get(region.tilesetId);
+  /** Convert a tile-coordinate region to pixel coords and register it */
+  function addTileRegion(tilesetId: string, srcCol: number, srcRow: number, w: number, h: number): void {
+    const ts = tilesetMap.get(tilesetId);
     if (!ts) {
-      console.warn(`[Compile] Unknown tileset: ${region.tilesetId}`);
+      console.warn(`[Compile] Unknown tileset: ${tilesetId}`);
       return;
     }
-    const x = region.srcCol * ts.tileWidth;
-    const y = region.srcRow * ts.tileHeight;
-    const w = region.w * ts.tileWidth;
-    const h = region.h * ts.tileHeight;
-    addRegion(region.tilesetId, x, y, w, h);
+    const px = srcCol * ts.tileWidth;
+    const py = srcRow * ts.tileHeight;
+    const pw = w * ts.tileWidth;
+    const ph = h * ts.tileHeight;
+    addRegion(tilesetId, px, py, pw, ph);
   }
 
-  // 3a. Collect from rooms
-  for (const room of project.rooms) {
+  // 4a. Collect from resources
+  for (const res of resources) {
+    for (const frame of res.frames) {
+      addTileRegion(frame.tilesetId, frame.srcCol, frame.srcRow, frame.w, frame.h);
+    }
+  }
+
+  // 4b. Collect from rooms (direct regions and composites)
+  for (const room of rooms) {
     for (const p of room.placements) {
       if (p.region) {
-        addTilesetRegion(p.region);
+        addTileRegion(p.region.tilesetId, p.region.srcCol, p.region.srcRow, p.region.w, p.region.h);
       }
       if (p.compositeId) {
         const comp = compositeMap.get(p.compositeId);
         if (comp) {
           for (const part of comp.parts) {
-            addTilesetRegion(part.region);
+            addTileRegion(
+              part.region.tilesetId,
+              part.region.srcCol,
+              part.region.srcRow,
+              part.region.w,
+              part.region.h,
+            );
           }
         }
       }
     }
   }
 
-  // 3b. Collect from characters
-  for (const char of project.characters) {
-    for (const anim of char.animations) {
-      const strip = anim.strip;
-      const ts = tilesetMap.get(strip.tilesetId);
-      const fw = char.frameWidth;
-      const fh = char.frameHeight;
-      // Each frame is a separate region in the atlas
-      for (let f = 0; f < strip.frameCount; f++) {
-        const x = (strip.startFrame + f) * fw;
-        const y = strip.row * fh;
-        addRegion(strip.tilesetId, x, y, fw, fh);
-      }
-    }
-  }
-
   console.log(`[Compile] Collected ${allRegions.size} unique regions from ${regionsByTileset.size} tilesets`);
 
-  // 4. Clean compiled directory
-  if (fs.existsSync(compiledDir)) {
-    fs.rmSync(compiledDir, { recursive: true });
-  }
-  fs.mkdirSync(path.join(compiledDir, "atlas"), { recursive: true });
-  fs.mkdirSync(path.join(compiledDir, "rooms"), { recursive: true });
-  fs.mkdirSync(path.join(compiledDir, "characters", "base"), { recursive: true });
+  // 5. Clean and create output directory
+  fs.rmSync(outDir, { recursive: true, force: true });
+  fs.mkdirSync(path.join(outDir, "atlas"), { recursive: true });
+  fs.mkdirSync(path.join(outDir, "rooms"), { recursive: true });
+  fs.mkdirSync(path.join(outDir, "resources"), { recursive: true });
 
-  // 5. Build atlas for each tileset
+  // 6. Build atlas for each tileset
   //    regionKey → AtlasEntry (populated as we build atlases)
   const atlasLookup = new Map<string, AtlasEntry>();
   const manifestAtlases: CompiledManifest["atlases"] = [];
 
-  for (const [tilesetId, regionKeys] of regionsByTileset) {
+  for (const [tilesetId, regKeys] of regionsByTileset) {
     const ts = tilesetMap.get(tilesetId);
     if (!ts) continue;
 
-    // Resolve source image path
-    // ts.path is like "/data/sprites/foo.png" — strip the "/data/" prefix
-    const imgRelPath = ts.path.startsWith("/data/") ? ts.path.slice("/data/".length) : ts.path;
-    const imgPath = path.join(dataDir, imgRelPath);
-
+    const imgPath = ts.fsPath;
     if (!fs.existsSync(imgPath)) {
       console.warn(`[Compile] Source image not found: ${imgPath} (tileset ${tilesetId})`);
       continue;
     }
 
     // Gather regions for this tileset, sorted for determinism
-    const regions = [...regionKeys]
+    const regions = [...regKeys]
       .map((k) => allRegions.get(k)!)
       .sort((a, b) => a.y - b.y || a.x - b.x || a.w - b.w || a.h - b.h);
 
     // Pack regions into rows using a simple shelf packer
-    // Since tiles are mostly uniform size, this works well
     const MAX_ATLAS_WIDTH = 4096;
     let atlasWidth = 0;
     let atlasHeight = 0;
 
-    // First pass: compute layout
     interface PackedSlot { region: PixelRegion; ax: number; ay: number }
     const slots: PackedSlot[] = [];
     let curX = 0;
@@ -377,7 +341,6 @@ export async function compile(dataDir: string): Promise<CompileResult> {
 
     for (const region of regions) {
       if (curX + region.w > MAX_ATLAS_WIDTH && curX > 0) {
-        // New row
         curY += rowHeight;
         curX = 0;
         rowHeight = 0;
@@ -391,11 +354,9 @@ export async function compile(dataDir: string): Promise<CompileResult> {
 
     if (atlasWidth === 0 || atlasHeight === 0) continue;
 
-    // Second pass: extract regions and composite into atlas
-    const sourceImage = sharp(imgPath);
-    const sourceMetadata = await sourceImage.metadata();
+    // Extract regions and composite into atlas
+    const sourceMetadata = await sharp(imgPath).metadata();
 
-    // Create atlas by compositing extracted regions
     const compositeOps: sharp.OverlayOptions[] = [];
     for (const slot of slots) {
       const { region, ax, ay } = slot;
@@ -427,7 +388,7 @@ export async function compile(dataDir: string): Promise<CompileResult> {
     // Content hash for filename
     const hash = crypto.createHash("sha256").update(atlasBuffer).digest("hex").slice(0, 10);
     const atlasFile = `atlas_${hash}.png`;
-    const atlasPath = path.join(compiledDir, "atlas", atlasFile);
+    const atlasPath = path.join(outDir, "atlas", atlasFile);
     fs.writeFileSync(atlasPath, atlasBuffer);
 
     console.log(
@@ -454,30 +415,68 @@ export async function compile(dataDir: string): Promise<CompileResult> {
     });
   }
 
-  // 6. Helper: resolve a TilesetRegion to a CompiledRegionRef
-  function resolveRegion(region: TilesetRegion): CompiledRegionRef | null {
-    const ts = tilesetMap.get(region.tilesetId);
+  // 7. Helper: resolve a tile-coordinate region to a CompiledRegionRef
+  function resolveRegion(tilesetId: string, srcCol: number, srcRow: number, w: number, h: number): CompiledRegionRef | null {
+    const ts = tilesetMap.get(tilesetId);
     if (!ts) return null;
-    const x = region.srcCol * ts.tileWidth;
-    const y = region.srcRow * ts.tileHeight;
-    const w = region.w * ts.tileWidth;
-    const h = region.h * ts.tileHeight;
-    const key = regionKey(region.tilesetId, x, y, w, h);
+    const px = srcCol * ts.tileWidth;
+    const py = srcRow * ts.tileHeight;
+    const pw = w * ts.tileWidth;
+    const ph = h * ts.tileHeight;
+    const key = regionKey(tilesetId, px, py, pw, ph);
     const entry = atlasLookup.get(key);
     if (!entry) return null;
     return { atlas: entry.atlasFile, x: entry.x, y: entry.y, w: entry.w, h: entry.h };
   }
 
-  // 7. Write compiled room JSONs
+  // 8. Write compiled resource JSONs
+  const manifestResources: CompiledManifest["resources"] = [];
+
+  for (const res of resources) {
+    const compiledFrames: CompiledResource["frames"] = [];
+
+    for (const frame of res.frames) {
+      const ref = resolveRegion(frame.tilesetId, frame.srcCol, frame.srcRow, frame.w, frame.h);
+      if (ref) {
+        compiledFrames.push({
+          atlas: ref.atlas,
+          x: ref.x,
+          y: ref.y,
+          w: ref.w,
+          h: ref.h,
+        });
+      } else {
+        console.warn(`[Compile] Missing frame for resource ${res.id} (${res.name}): tileset=${frame.tilesetId}`);
+      }
+    }
+
+    const compiled: CompiledResource = {
+      id: res.id,
+      name: res.name,
+      tags: res.tags,
+      frames: compiledFrames,
+    };
+
+    const resPath = path.join(outDir, "resources", `${res.id}.json`);
+    fs.writeFileSync(resPath, JSON.stringify(compiled, null, 2));
+    manifestResources.push({
+      id: res.id,
+      name: res.name,
+      tags: res.tags,
+      file: `${res.id}.json`,
+    });
+  }
+
+  // 9. Write compiled room JSONs
   const manifestRooms: CompiledManifest["rooms"] = [];
 
-  for (const room of project.rooms) {
+  for (const room of rooms) {
     const atlasesUsed = new Set<string>();
     const compiledPlacements: CompiledPlacement[] = [];
 
     for (const p of room.placements) {
       if (p.region) {
-        const ref = resolveRegion(p.region);
+        const ref = resolveRegion(p.region.tilesetId, p.region.srcCol, p.region.srcRow, p.region.w, p.region.h);
         if (ref) {
           atlasesUsed.add(ref.atlas);
           compiledPlacements.push({
@@ -493,7 +492,13 @@ export async function compile(dataDir: string): Promise<CompileResult> {
         if (comp) {
           const compiledParts: CompiledPlacement["parts"] = [];
           for (const part of comp.parts) {
-            const ref = resolveRegion(part.region);
+            const ref = resolveRegion(
+              part.region.tilesetId,
+              part.region.srcCol,
+              part.region.srcRow,
+              part.region.w,
+              part.region.h,
+            );
             if (ref) {
               atlasesUsed.add(ref.atlas);
               compiledParts.push({
@@ -527,85 +532,25 @@ export async function compile(dataDir: string): Promise<CompileResult> {
       atlases: [...atlasesUsed],
     };
 
-    const roomPath = path.join(compiledDir, "rooms", `${room.name}.json`);
+    const roomPath = path.join(outDir, "rooms", `${room.name}.json`);
     fs.writeFileSync(roomPath, JSON.stringify(compiledRoom, null, 2));
     manifestRooms.push({ name: room.name, file: `${room.name}.json` });
   }
 
-  // 8. Write compiled character JSONs
-  const manifestCharacters: CompiledManifest["characters"] = [];
-
-  for (const char of project.characters) {
-    const atlasesUsed = new Set<string>();
-    const compiledAnimations: CompiledCharacterAnimation[] = [];
-
-    for (const anim of char.animations) {
-      const strip = anim.strip;
-      const fw = char.frameWidth;
-      const fh = char.frameHeight;
-
-      // Resolve each frame individually — frames may not be contiguous in the atlas
-      const frames: { atlas: string; x: number; y: number }[] = [];
-      let allResolved = true;
-
-      for (let f = 0; f < strip.frameCount; f++) {
-        const frameX = (strip.startFrame + f) * fw;
-        const frameY = strip.row * fh;
-        const key = regionKey(strip.tilesetId, frameX, frameY, fw, fh);
-        const entry = atlasLookup.get(key);
-        if (entry) {
-          atlasesUsed.add(entry.atlasFile);
-          frames.push({ atlas: entry.atlasFile, x: entry.x, y: entry.y });
-        } else {
-          allResolved = false;
-          console.warn(`[Compile] Missing frame ${f} for ${char.name}/${anim.family}/${anim.direction}`);
-        }
-      }
-
-      if (frames.length > 0) {
-        compiledAnimations.push({
-          family: anim.family,
-          direction: anim.direction,
-          variant: anim.variant,
-          strip: {
-            frameWidth: fw,
-            frameHeight: fh,
-            frames,
-          },
-        });
-      }
-    }
-
-    const compiledChar: CompiledCharacter = {
-      id: char.id,
-      name: char.name,
-      frameWidth: char.frameWidth,
-      frameHeight: char.frameHeight,
-      animations: compiledAnimations,
-      familySpeeds: char.familySpeeds,
-      variantSequences: char.variantSequences,
-      atlases: [...atlasesUsed],
-    };
-
-    const charPath = path.join(compiledDir, "characters", "base", `${char.name.toLowerCase()}.json`);
-    fs.writeFileSync(charPath, JSON.stringify(compiledChar, null, 2));
-    manifestCharacters.push({ name: char.name, file: `base/${char.name.toLowerCase()}.json` });
-  }
-
-  // 9. Write manifest
+  // 10. Write manifest
   const manifest: CompiledManifest = {
     compiledAt: new Date().toISOString(),
     atlases: manifestAtlases,
     rooms: manifestRooms,
-    characters: manifestCharacters,
+    resources: manifestResources,
   };
 
-  fs.writeFileSync(path.join(compiledDir, "manifest.json"), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2));
 
   const totalAtlasKB = manifestAtlases.reduce((sum, a) => sum + a.sizeBytes, 0) / 1024;
   const message =
     `Compiled: ${manifestAtlases.length} atlases (${totalAtlasKB.toFixed(0)} KB), ` +
-    `${manifestRooms.length} rooms, ${manifestCharacters.length} characters`;
+    `${manifestRooms.length} rooms, ${manifestResources.length} resources`;
   console.log(`[Compile] ${message}`);
 
   return {
@@ -613,6 +558,6 @@ export async function compile(dataDir: string): Promise<CompileResult> {
     message,
     atlasCount: manifestAtlases.length,
     roomCount: manifestRooms.length,
-    characterCount: manifestCharacters.length,
+    resourceCount: manifestResources.length,
   };
 }

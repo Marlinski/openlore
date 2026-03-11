@@ -2,7 +2,7 @@
  * Tab 4: Room Tester
  *
  * PixiJS-based interactive room tester. Loads compiled resources from
- * data/resources/ (atlas PNGs + room/character JSONs) and renders the
+ * data/pack/ (atlas PNGs + room/resource JSONs) and renders the
  * room with proper z-sorting, allowing the player to walk around with
  * WASD/arrow keys.
  *
@@ -26,8 +26,11 @@ import {
   Graphics,
   Rectangle,
 } from "pixi.js";
-import { TILE_SIZE, type CharacterDirection, type VariantSequence } from "@offisims/shared";
+import { TILE_SIZE } from "@offisims/shared";
 import { setStatus } from "./main.js";
+
+/** Local character direction type */
+type CharacterDirection = "down" | "up" | "left" | "right";
 
 // ─── Compiled resource types (mirrors compiler.ts output) ────────
 
@@ -65,40 +68,47 @@ interface CompiledRoom {
   atlases: string[];
 }
 
-interface CompiledAnimationStrip {
-  frameWidth: number;
-  frameHeight: number;
-  frames: { atlas: string; x: number; y: number }[];
+/** A compiled resource frame — points into an atlas */
+interface CompiledFrame {
+  atlas: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
-interface CompiledCharacterAnimation {
-  family: string;
-  direction: string;
-  variant: number;
-  strip: CompiledAnimationStrip;
-}
-
-interface CompiledCharacter {
+/** A compiled resource — the output of the compiler for any resource */
+interface CompiledResource {
   id: string;
   name: string;
-  frameWidth: number;
-  frameHeight: number;
-  animations: CompiledCharacterAnimation[];
-  familySpeeds: Record<string, number>;
-  variantSequences: VariantSequence[];
-  atlases: string[];
+  tags: string[];
+  frames: CompiledFrame[];
 }
 
 interface CompiledManifest {
   compiledAt: string;
   atlases: { file: string; tilesetId: string; regions: number; sizeBytes: number }[];
   rooms: { name: string; file: string }[];
-  characters: { name: string; file: string }[];
+  resources: { id: string; name: string; tags: string[]; file: string }[];
 }
 
 // ─── Resource base path ──────────────────────────────────────────
 
-const RESOURCES_BASE = "/data/resources";
+const PACK_BASE = "/data/pack";
+
+// ─── Tag parsing helpers ─────────────────────────────────────────
+
+/** Extract the value for a namespaced tag key (e.g. "name" from "name:amanda") */
+function getTagValue(tags: string[], key: string): string | undefined {
+  const prefix = key + ":";
+  const tag = tags.find(t => t.startsWith(prefix));
+  return tag ? tag.slice(prefix.length) : undefined;
+}
+
+/** Check if tags contain a specific tag */
+function hasTag(tags: string[], tag: string): boolean {
+  return tags.includes(tag);
+}
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
@@ -112,15 +122,14 @@ const walkToggle = document.getElementById("tester-walk-toggle") as HTMLInputEle
 const modeHint = document.getElementById("tester-mode-hint") as HTMLDivElement;
 const canvasWrap = document.getElementById("tester-canvas-wrap") as HTMLDivElement;
 const hintDiv = document.getElementById("tester-hint") as HTMLDivElement;
-const seqPanel = document.getElementById("tester-seq-panel") as HTMLDivElement;
-const seqListDiv = document.getElementById("tester-seq-list") as HTMLDivElement;
 
 // ─── State ────────────────────────────────────────────────────────
 
 let pixiApp: Application | null = null;
 let manifest: CompiledManifest | null = null;
 let currentRoom: CompiledRoom | null = null;
-let currentChar: CompiledCharacter | null = null;
+let currentCharResources: CompiledResource[] = [];
+let currentCharName = "";
 let currentZoom = 1;
 let showGrid = false;
 let showWalkability = false;
@@ -143,28 +152,6 @@ const MOVE_SPEED = 4;
 let animFamily = "idle";
 let animFrame = 0;
 let animTimer = 0;
-
-/**
- * Variant sequence playback state.
- * When a sequence is active for the current family+direction, we cycle
- * through its steps. Each step plays its variant's full strip `repeats` times.
- */
-interface SeqPlaybackState {
-  /** The active sequence (null = use variant 0 only) */
-  sequence: VariantSequence | null;
-  /** Current step index in the sequence */
-  stepIndex: number;
-  /** How many full-strip repeats we've done for the current step */
-  repeatsDone: number;
-}
-
-let seqPlayback: SeqPlaybackState = { sequence: null, stepIndex: 0, repeatsDone: 0 };
-
-/**
- * Selected sequence name per family+direction key ("family:direction").
- * Empty string or missing = use variant 0 only.
- */
-const selectedSequences: Map<string, string> = new Map();
 
 /** Key states */
 const keys: Record<string, boolean> = {};
@@ -208,7 +195,7 @@ let objectEntries: ObjectEntry[] = [];
 /** Fetch the compiled manifest */
 async function loadManifest(): Promise<CompiledManifest | null> {
   try {
-    const res = await fetch(`${RESOURCES_BASE}/manifest.json`);
+    const res = await fetch(`${PACK_BASE}/manifest.json`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -218,15 +205,8 @@ async function loadManifest(): Promise<CompiledManifest | null> {
 
 /** Fetch a compiled room JSON */
 async function loadCompiledRoom(roomFile: string): Promise<CompiledRoom> {
-  const res = await fetch(`${RESOURCES_BASE}/rooms/${roomFile}`);
+  const res = await fetch(`${PACK_BASE}/rooms/${roomFile}`);
   if (!res.ok) throw new Error(`Failed to load room: ${roomFile}`);
-  return await res.json();
-}
-
-/** Fetch a compiled character JSON */
-async function loadCompiledCharacter(charFile: string): Promise<CompiledCharacter> {
-  const res = await fetch(`${RESOURCES_BASE}/characters/${charFile}`);
-  if (!res.ok) throw new Error(`Failed to load character: ${charFile}`);
   return await res.json();
 }
 
@@ -244,7 +224,7 @@ function loadAtlasTexture(atlasFile: string): Promise<Texture> {
       resolve(texture);
     };
     img.onerror = () => reject(new Error(`Failed to load atlas ${atlasFile}`));
-    img.src = `${RESOURCES_BASE}/atlas/${atlasFile}`;
+    img.src = `${PACK_BASE}/atlas/${atlasFile}`;
   });
 }
 
@@ -266,16 +246,27 @@ async function populateDropdowns(): Promise<void> {
     }
   }
 
-  // Characters
+  // Characters: group entity:character resources by name
   charSelect.innerHTML = "";
-  if (!manifest || manifest.characters.length === 0) {
-    charSelect.innerHTML = '<option value="">(no compiled characters)</option>';
+  if (!manifest || manifest.resources.length === 0) {
+    charSelect.innerHTML = '<option value="">(no characters)</option>';
   } else {
-    for (const char of manifest.characters) {
-      const opt = document.createElement("option");
-      opt.value = char.file;
-      opt.textContent = char.name;
-      charSelect.appendChild(opt);
+    const charNames = new Set<string>();
+    for (const r of manifest.resources) {
+      if (hasTag(r.tags, "entity:character")) {
+        const name = getTagValue(r.tags, "name");
+        if (name) charNames.add(name);
+      }
+    }
+    if (charNames.size === 0) {
+      charSelect.innerHTML = '<option value="">(no characters)</option>';
+    } else {
+      for (const name of [...charNames].sort()) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        charSelect.appendChild(opt);
+      }
     }
   }
 
@@ -283,40 +274,53 @@ async function populateDropdowns(): Promise<void> {
 }
 
 function updateLoadButton(): void {
-  loadBtn.disabled = !roomSelect.value || !charSelect.value ||
-    !manifest || manifest.rooms.length === 0 || manifest.characters.length === 0;
+  loadBtn.disabled = !roomSelect.value || !charSelect.value || !manifest || manifest.rooms.length === 0;
 }
 
 // ─── Load room into PixiJS ──────────────────────────────────────
 
 async function loadRoom(): Promise<void> {
   const roomFile = roomSelect.value;
-  const charFile = charSelect.value;
+  const charName = charSelect.value;
 
-  if (!roomFile || !charFile) return;
+  if (!roomFile || !charName || !manifest) return;
 
   setStatus("Loading compiled room...");
   modeHint.textContent = "Loading...";
 
   try {
-    // Load room and character JSONs
-    const [room, char] = await Promise.all([
-      loadCompiledRoom(roomFile),
-      loadCompiledCharacter(charFile),
-    ]);
+    // Load room JSON
+    const room = await loadCompiledRoom(roomFile);
+
+    // Find all resource entries for this character
+    const charResourceEntries = manifest.resources.filter(r =>
+      hasTag(r.tags, "entity:character") && getTagValue(r.tags, "name") === charName
+    );
+
+    // Load all resource JSONs in parallel
+    const charResources = await Promise.all(
+      charResourceEntries.map(async (entry) => {
+        const resp = await fetch(`${PACK_BASE}/resources/${entry.file}`);
+        return await resp.json() as CompiledResource;
+      })
+    );
 
     currentRoom = room;
-    currentChar = char;
+    currentCharResources = charResources;
+    currentCharName = charName;
 
-    // Load all needed atlas textures
-    const neededAtlases = new Set<string>([...room.atlases, ...char.atlases]);
+    // Load all needed atlas textures (room + character resources)
+    const neededAtlases = new Set<string>(room.atlases);
+    for (const r of charResources) {
+      for (const f of r.frames) neededAtlases.add(f.atlas);
+    }
     await Promise.all([...neededAtlases].map((a) => loadAtlasTexture(a)));
 
     // Create or reset PixiJS app
-    await initPixiApp(room, char);
+    await initPixiApp(room);
 
     hintDiv.textContent = "WASD / Arrow keys to move. Walk onto doors to transition.";
-    modeHint.textContent = `${room.name} — ${room.width}×${room.height} — ${char.name}`;
+    modeHint.textContent = `${room.name} — ${room.width}×${room.height} — ${currentCharName}`;
     updateInfo();
     setStatus(`Room "${room.name}" loaded. Use WASD to move.`);
   } catch (e) {
@@ -325,7 +329,7 @@ async function loadRoom(): Promise<void> {
   }
 }
 
-async function initPixiApp(room: CompiledRoom, char: CompiledCharacter): Promise<void> {
+async function initPixiApp(room: CompiledRoom): Promise<void> {
   // Destroy old app if exists
   if (pixiApp) {
     pixiApp.destroy(true, { children: true });
@@ -382,17 +386,14 @@ async function initPixiApp(room: CompiledRoom, char: CompiledCharacter): Promise
   buildRoomSprites(room);
 
   // Create character sprite
-  createCharacterSprite(char, room);
-
-  // Populate variant sequence selectors
-  populateSequenceSelectors();
+  createCharacterSprite(room);
 
   // Draw overlays (grid, walkability)
   drawOverlays(room);
 
   // Start game loop
   app.ticker.add((ticker) => {
-    if (currentRoom && currentChar) {
+    if (currentRoom && currentCharResources.length > 0) {
       updateCharacter(ticker.deltaMS / 1000);
       zSortObjects();
     }
@@ -500,7 +501,7 @@ function addObjectPlacement(p: CompiledPlacement): void {
 
 // ─── Character sprite ───────────────────────────────────────────
 
-function createCharacterSprite(char: CompiledCharacter, room: CompiledRoom): void {
+function createCharacterSprite(room: CompiledRoom): void {
   if (!objectContainer) return;
 
   // Find a walkable tile to start on
@@ -530,11 +531,17 @@ function createCharacterSprite(char: CompiledCharacter, room: CompiledRoom): voi
   animFrame = 0;
   animTimer = 0;
 
-  // Create sprite with initial frame
-  charSprite = new Sprite();
+  const anim = getCurrentAnimResource();
+  if (!anim || anim.frames.length === 0) {
+    // Create sprite with empty texture — will update once we have frames
+    charSprite = new Sprite();
+  } else {
+    const tex = getResourceFrameTexture(anim, 0);
+    charSprite = new Sprite(tex ?? undefined);
+  }
+
   charSprite.width = TILE_SIZE; // 1 tile wide
   charSprite.height = TILE_SIZE * 2; // 2 tiles tall
-  updateCharacterTexture();
   positionCharacterSprite();
 
   objectContainer.addChild(charSprite);
@@ -547,175 +554,55 @@ function createCharacterSprite(char: CompiledCharacter, room: CompiledRoom): voi
   });
 }
 
+/** Find a character resource matching the current animation state */
+function getCurrentAnimResource(): CompiledResource | undefined {
+  // Look for resource with matching state and dir tags
+  const stateTag = `state:${animFamily}`;
+  const dirTag = `dir:${charDir}`;
+
+  let match = currentCharResources.find(r =>
+    hasTag(r.tags, stateTag) && hasTag(r.tags, dirTag)
+  );
+
+  // Fallback: try "down" direction if requested direction not found
+  if (!match && charDir !== "down") {
+    match = currentCharResources.find(r =>
+      hasTag(r.tags, stateTag) && hasTag(r.tags, "dir:down")
+    );
+  }
+
+  // Fallback: try idle if walk not found
+  if (!match && animFamily === "walk") {
+    match = currentCharResources.find(r =>
+      hasTag(r.tags, "state:idle") && hasTag(r.tags, dirTag)
+    );
+  }
+
+  return match;
+}
+
 /**
- * Get a PixiJS texture for a specific frame from the compiled character data.
- * Each frame has its own atlas + pixel coords (frames may not be contiguous).
+ * Get a PixiJS texture for a specific frame from a compiled resource.
+ * Each frame has its own atlas + pixel coords.
  */
-function getCharacterFrameTexture(
-  anim: CompiledCharacterAnimation,
-  frameIndex: number,
-): Texture | null {
-  if (!currentChar) return null;
-
-  const frame = anim.strip.frames[frameIndex];
-  if (!frame) return null;
-
-  const baseTex = atlasTextures.get(frame.atlas);
-  if (!baseTex) return null;
-
-  const rect = new Rectangle(frame.x, frame.y, anim.strip.frameWidth, anim.strip.frameHeight);
-  return new Texture({ source: baseTex.source, frame: rect });
+function getResourceFrameTexture(resource: CompiledResource, frameIndex: number): Texture | null {
+  if (frameIndex < 0 || frameIndex >= resource.frames.length) return null;
+  const frame = resource.frames[frameIndex];
+  const atlasTex = atlasTextures.get(frame.atlas);
+  if (!atlasTex) return null;
+  const rect = new Rectangle(frame.x, frame.y, frame.w, frame.h);
+  return new Texture({ source: atlasTex.source, frame: rect });
 }
 
 function updateCharacterTexture(): void {
-  if (!charSprite || !currentChar) return;
+  if (!charSprite) return;
 
-  const anim = getCurrentAnimation();
-  if (!anim) {
-    // Fallback: try idle variant 0
-    const fallback = currentChar.animations.find(
-      (a) => a.family === "idle" && a.direction === charDir && a.variant === 0,
-    );
-    if (!fallback) return;
-    const tex = getCharacterFrameTexture(fallback, 0);
-    if (tex) charSprite.texture = tex;
-    return;
-  }
+  const anim = getCurrentAnimResource();
+  if (!anim || anim.frames.length === 0) return;
 
-  const frameIdx = animFrame % anim.strip.frames.length;
-  const tex = getCharacterFrameTexture(anim, frameIdx);
+  const frameIdx = animFrame % anim.frames.length;
+  const tex = getResourceFrameTexture(anim, frameIdx);
   if (tex) charSprite.texture = tex;
-}
-
-/**
- * Get the current animation to play, taking variant sequences into account.
- * If a sequence is active, returns the animation for the current step's variant.
- * Otherwise returns variant 0.
- */
-function getCurrentAnimation(): CompiledCharacterAnimation | undefined {
-  if (!currentChar) return undefined;
-
-  if (seqPlayback.sequence) {
-    const seq = seqPlayback.sequence;
-    if (seq.steps.length > 0) {
-      const step = seq.steps[seqPlayback.stepIndex % seq.steps.length];
-      // Find the animation for this variant
-      const anims = currentChar.animations.filter(
-        (a) => a.family === animFamily && a.direction === charDir,
-      );
-      return anims.find((a) => a.variant === step.variant) ?? anims[0];
-    }
-  }
-
-  // Default: variant 0
-  return currentChar.animations.find(
-    (a) => a.family === animFamily && a.direction === charDir && a.variant === 0,
-  );
-}
-
-/**
- * Build sequence selector UI in seqListDiv.
- * For each family+direction that has >=1 variant sequence defined,
- * show a <select> dropdown with "(variant 0 only)" + all sequence names.
- * Also shows/hides the seqPanel based on whether any sequences exist.
- */
-function populateSequenceSelectors(): void {
-  seqListDiv.innerHTML = "";
-  selectedSequences.clear();
-  seqPlayback = { sequence: null, stepIndex: 0, repeatsDone: 0 };
-
-  if (!currentChar) {
-    seqPanel.style.display = "none";
-    return;
-  }
-
-  const seqs = currentChar.variantSequences || [];
-  if (seqs.length === 0) {
-    seqPanel.style.display = "none";
-    return;
-  }
-
-  // Group sequences by family+direction
-  const grouped = new Map<string, VariantSequence[]>();
-  for (const s of seqs) {
-    const key = `${s.family}:${s.direction}`;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(s);
-  }
-
-  seqPanel.style.display = "";
-
-  for (const [key, keySeqs] of grouped) {
-    const [family, direction] = key.split(":");
-
-    const row = document.createElement("div");
-    row.style.marginBottom = "4px";
-    row.style.display = "flex";
-    row.style.alignItems = "center";
-    row.style.gap = "6px";
-
-    const label = document.createElement("span");
-    label.style.fontSize = "11px";
-    label.style.color = "var(--text-dim)";
-    label.style.minWidth = "80px";
-    label.textContent = `${family} ${direction}`;
-    row.appendChild(label);
-
-    const select = document.createElement("select");
-    select.style.flex = "1";
-    select.style.fontSize = "11px";
-
-    // Default option — no sequence
-    const defaultOpt = document.createElement("option");
-    defaultOpt.value = "";
-    defaultOpt.textContent = "(variant 0 only)";
-    select.appendChild(defaultOpt);
-
-    for (const s of keySeqs) {
-      const opt = document.createElement("option");
-      opt.value = s.name;
-      opt.textContent = s.name;
-      select.appendChild(opt);
-    }
-
-    select.addEventListener("change", () => {
-      selectedSequences.set(key, select.value);
-      syncSequencePlayback();
-    });
-
-    row.appendChild(select);
-    seqListDiv.appendChild(row);
-  }
-}
-
-/**
- * Look up and activate the appropriate sequence for the current family+direction.
- */
-function syncSequencePlayback(): void {
-  if (!currentChar) {
-    seqPlayback.sequence = null;
-    return;
-  }
-
-  const key = `${animFamily}:${charDir}`;
-  const seqName = selectedSequences.get(key);
-
-  if (!seqName) {
-    seqPlayback.sequence = null;
-    return;
-  }
-
-  const sequences = (currentChar.variantSequences || []).filter(
-    (s) => s.family === animFamily && s.direction === charDir,
-  );
-  const seq = sequences.find((s) => s.name === seqName) ?? null;
-
-  // Only reset playback if the sequence actually changed
-  if (seq !== seqPlayback.sequence) {
-    seqPlayback.sequence = seq;
-    seqPlayback.stepIndex = 0;
-    seqPlayback.repeatsDone = 0;
-  }
 }
 
 // ─── Door transitions ───────────────────────────────────────────
@@ -740,7 +627,7 @@ function getDoorAtPosition(room: CompiledRoom, x: number, y: number): CompiledDo
  * and places the character on the target door tile.
  */
 async function transitionToRoom(targetRoomName: string, targetDoorId: string): Promise<void> {
-  if (transitioning || !currentChar || !manifest) return;
+  if (transitioning || currentCharResources.length === 0 || !manifest) return;
   transitioning = true;
 
   // Find the room file in the manifest
@@ -772,7 +659,6 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
       animFrame = 0;
       animTimer = 0;
       positionCharacterSprite();
-      syncSequencePlayback();
       currentDoorId = targetDoorId;
       updateInfo();
       setStatus(`Teleported to ${targetDoorId}`);
@@ -781,7 +667,10 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
     }
 
     // Different room — load needed atlases and rebuild
-    const neededAtlases = new Set<string>([...targetRoom.atlases, ...currentChar.atlases]);
+    const neededAtlases = new Set<string>(targetRoom.atlases);
+    for (const r of currentCharResources) {
+      for (const f of r.frames) neededAtlases.add(f.atlas);
+    }
     await Promise.all([...neededAtlases].map((a) => loadAtlasTexture(a)));
 
     // Save character state we want to preserve across rooms
@@ -791,7 +680,7 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
     currentRoom = targetRoom;
 
     // Rebuild the entire scene
-    await initPixiApp(targetRoom, currentChar);
+    await initPixiApp(targetRoom);
 
     // Override the spawn position to the target door (initPixiApp picked center)
     charX = targetDoor.col;
@@ -802,7 +691,6 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
     animFrame = 0;
     animTimer = 0;
     positionCharacterSprite();
-    syncSequencePlayback();
 
     // Mark the destination door as "already on it" so we don't re-trigger
     currentDoorId = targetDoorId;
@@ -817,7 +705,7 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
       }
     }
 
-    modeHint.textContent = `${targetRoom.name} — ${targetRoom.width}×${targetRoom.height} — ${currentChar.name}`;
+    modeHint.textContent = `${targetRoom.name} — ${targetRoom.width}×${targetRoom.height} — ${currentCharName}`;
     hintDiv.textContent = "WASD / Arrow keys to move";
     updateInfo();
     setStatus(`Entered "${targetRoomName}" through ${targetDoorId}`);
@@ -843,7 +731,7 @@ function positionCharacterSprite(): void {
 // ─── Character update (movement + animation) ────────────────────
 
 function updateCharacter(dt: number): void {
-  if (!currentRoom || !currentChar || transitioning) return;
+  if (!currentRoom || currentCharResources.length === 0 || transitioning) return;
 
   // Determine movement direction from keys
   let dx = 0;
@@ -873,18 +761,11 @@ function updateCharacter(dt: number): void {
   }
 
   // Switch animation family
-  const prevFamily = animFamily;
-  const prevDir = charDir;
   const newFamily = charMoving ? "walk" : "idle";
   if (newFamily !== animFamily) {
     animFamily = newFamily;
     animFrame = 0;
     animTimer = 0;
-  }
-
-  // If family or direction changed, sync sequence playback
-  if (prevFamily !== animFamily || prevDir !== charDir) {
-    syncSequencePlayback();
   }
 
   // Move with collision
@@ -920,29 +801,18 @@ function updateCharacter(dt: number): void {
     currentDoorId = doorId;
   }
 
-  // Advance animation with sequence awareness
-  const fps = currentChar.familySpeeds[animFamily] ?? (animFamily === "walk" ? 8 : 4);
+  // Advance animation — convention: walk=8fps, idle=4fps, everything else=4fps
+  const fps = animFamily === "walk" ? 8 : 4;
   animTimer += dt;
   const frameDuration = 1 / fps;
   while (animTimer >= frameDuration) {
     animTimer -= frameDuration;
     animFrame++;
 
-    // Check if we wrapped past the current animation's frame count
-    const currentAnim = getCurrentAnimation();
-    if (currentAnim && animFrame >= currentAnim.strip.frames.length) {
+    // Wrap frame within current resource's frame count
+    const currentAnim = getCurrentAnimResource();
+    if (currentAnim && animFrame >= currentAnim.frames.length) {
       animFrame = 0;
-
-      // If a sequence is active, advance the sequence step
-      if (seqPlayback.sequence && seqPlayback.sequence.steps.length > 0) {
-        seqPlayback.repeatsDone++;
-        const step = seqPlayback.sequence.steps[seqPlayback.stepIndex % seqPlayback.sequence.steps.length];
-        if (seqPlayback.repeatsDone >= step.repeats) {
-          // Advance to next step
-          seqPlayback.stepIndex = (seqPlayback.stepIndex + 1) % seqPlayback.sequence.steps.length;
-          seqPlayback.repeatsDone = 0;
-        }
-      }
     }
   }
 
@@ -1067,7 +937,7 @@ function drawOverlays(room: CompiledRoom): void {
 }
 
 function updateInfo(): void {
-  if (!currentRoom || !currentChar) {
+  if (!currentRoom || currentCharResources.length === 0) {
     infoDiv.textContent = "Select a room and character, then click \"Load Room\".";
     return;
   }

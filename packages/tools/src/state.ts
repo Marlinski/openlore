@@ -3,8 +3,6 @@
  * Persists to disk via the FS API (Vite plugin middleware).
  *
  * Data layout on disk (under data/game/):
- *   tilesets.json        — array of TilesetDefinition (user overrides only)
- *   characters.json      — array of CharacterDefinition
  *   resources/<id>.json  — one Resource per file
  *   composites/<id>.json — one CompositeObject per file
  *   rooms/<name>.json    — one RoomDefinition per file (keyed by name)
@@ -14,8 +12,8 @@
  * No localStorage, no server sync — the files on disk are the single source of truth.
  */
 
-import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, TilesetDefinition, Resource, Mask } from "@offisims/shared";
-import { CHARACTER_DIRECTIONS, findTileset, charTilesetId, makeCharTileset } from "@offisims/shared";
+import type { CompositeObject, RoomDefinition, TilesetDefinition, Resource, Mask } from "@offisims/shared";
+import { findTileset } from "@offisims/shared";
 
 /** Base path for all game data, relative to data/ */
 const BASE = "game";
@@ -95,16 +93,9 @@ class AppState {
   tilesets: TilesetDefinition[] = [];
   composites: CompositeObject[] = [];
   rooms: RoomDefinition[] = [];
-  characters: CharacterDefinition[] = [];
   resources: Resource[] = [];
   masks: Mask[] = [];
   private listeners: Listener[] = [];
-
-  /**
-   * IDs of tilesets that were explicitly saved (user overrides).
-   * Only these get serialized to tilesets.json — scanned tilesets are ephemeral.
-   */
-  private _savedTilesetIds = new Set<string>();
 
   /** Whether initial load from disk has completed */
   private _ready = false;
@@ -147,30 +138,6 @@ class AppState {
     return findTileset(this.tilesets, id);
   }
 
-  /** Add or update a tileset and persist tilesets.json */
-  addTileset(tileset: TilesetDefinition): void {
-    const idx = this.tilesets.findIndex((t) => t.id === tileset.id);
-    if (idx >= 0) this.tilesets[idx] = tileset;
-    else this.tilesets.push(tileset);
-    this._savedTilesetIds.add(tileset.id);
-    this.saveTilesets();
-    this.notify();
-  }
-
-  /** Remove a tileset by ID and persist tilesets.json */
-  removeTileset(id: string): void {
-    this.tilesets = this.tilesets.filter((t) => t.id !== id);
-    this._savedTilesetIds.delete(id);
-    this.saveTilesets();
-    this.notify();
-  }
-
-  /** Write tilesets.json (only user-saved tilesets, not scanned) */
-  private saveTilesets(): void {
-    const saved = this.tilesets.filter((t) => this._savedTilesetIds.has(t.id));
-    fsWrite(`${BASE}/tilesets.json`, saved);
-  }
-
   // ─── Composites ─────────────────────────────────────────────
 
   addComposite(composite: CompositeObject): void {
@@ -207,41 +174,6 @@ class AppState {
     this.rooms = this.rooms.filter((r) => r.name !== name);
     fsDelete(`${BASE}/rooms/${name}.json`);
     this.notify();
-  }
-
-  // ─── Characters ─────────────────────────────────────────────
-
-  addCharacter(char: CharacterDefinition): void {
-    this.characters = this.characters.filter((c) => c.id !== char.id);
-    this.characters.push(char);
-    // Ensure character sheet tilesets are registered
-    const fw = char.frameWidth || 16;
-    const fh = char.frameHeight || 32;
-    for (const sheet of ["idle", "walk"] as const) {
-      const tsId = charTilesetId(char.sheetId, sheet);
-      if (!findTileset(this.tilesets, tsId)) {
-        this.tilesets.push(makeCharTileset(char.sheetId, sheet, fw, fh, 0, 0));
-        this._savedTilesetIds.add(tsId);
-      }
-    }
-    this.saveCharacters();
-    this.saveTilesets();
-    this.notify();
-  }
-
-  removeCharacter(id: string): void {
-    this.characters = this.characters.filter((c) => c.id !== id);
-    this.saveCharacters();
-    this.notify();
-  }
-
-  getCharacter(id: string): CharacterDefinition | undefined {
-    return this.characters.find((c) => c.id === id);
-  }
-
-  /** Write characters.json */
-  private saveCharacters(): void {
-    fsWrite(`${BASE}/characters.json`, this.characters);
   }
 
   // ─── Resources ──────────────────────────────────────────────
@@ -296,36 +228,12 @@ class AppState {
     return this.masks.find((m) => m.id === id);
   }
 
-  // ─── Character tileset registration ─────────────────────────
-
-  /**
-   * Scan all characters and ensure their referenced char_* tilesets exist.
-   * Creates tilesets with cols=0, rows=0 as placeholders — they get updated
-   * after the actual image loads.
-   */
-  private ensureCharacterTilesets(): void {
-    for (const char of this.characters) {
-      const sheetId = char.sheetId;
-      const fw = char.frameWidth || 16;
-      const fh = char.frameHeight || 32;
-
-      for (const sheet of ["idle", "walk"] as const) {
-        const tsId = charTilesetId(sheetId, sheet);
-        if (!findTileset(this.tilesets, tsId)) {
-          this.tilesets.push(makeCharTileset(sheetId, sheet, fw, fh, 0, 0));
-        }
-      }
-    }
-  }
-
   // ─── Disk Persistence ───────────────────────────────────────
 
   /**
    * Load all game data from disk.
    *
    * Reads:
-   *   game/tilesets.json        → this.tilesets (+ _savedTilesetIds)
-   *   game/characters.json      → this.characters (with migration)
    *   game/resources/*.json     → this.resources
    *   game/composites/*.json    → this.composites
    *   game/rooms/*.json         → this.rooms
@@ -336,22 +244,12 @@ class AppState {
   private async loadFromDisk(): Promise<void> {
     try {
       // Fire all reads in parallel
-      const [tilesetsData, charsData, resourceFiles, compositeFiles, roomFiles, maskFiles] = await Promise.all([
-        fsReadJSON<TilesetDefinition[]>(`${BASE}/tilesets.json`),
-        fsReadJSON<CharacterDefinition[]>(`${BASE}/characters.json`),
+      const [resourceFiles, compositeFiles, roomFiles, maskFiles] = await Promise.all([
         fsReadDir<Resource>(`${BASE}/resources`),
         fsReadDir<CompositeObject>(`${BASE}/composites`),
         fsReadDir<RoomDefinition>(`${BASE}/rooms`),
         fsReadDir<Mask>(`${BASE}/masks`),
       ]);
-
-      // Tilesets
-      this.tilesets = Array.isArray(tilesetsData) ? tilesetsData : [];
-      this._savedTilesetIds = new Set(this.tilesets.map((t) => t.id));
-
-      // Characters (with migration)
-      const rawChars = Array.isArray(charsData) ? charsData : [];
-      this.characters = rawChars.map((c: any) => migrateCharacter(c));
 
       // Resources — one per file
       this.resources = Object.values(resourceFiles);
@@ -374,14 +272,10 @@ class AppState {
       // Masks — one per file
       this.masks = Object.values(maskFiles);
 
-      // Ensure all character sheet tilesets are registered
-      this.ensureCharacterTilesets();
-
       console.log(
-        `[AppState] Loaded from disk: ${this.tilesets.length} tilesets, ` +
+        `[AppState] Loaded from disk: ` +
         `${this.composites.length} composites, ${this.rooms.length} rooms, ` +
-        `${this.characters.length} characters, ${this.resources.length} resources, ` +
-        `${this.masks.length} masks`
+        `${this.resources.length} resources, ${this.masks.length} masks`
       );
     } catch (err) {
       console.error("[AppState] Failed to load from disk:", err);
@@ -456,100 +350,4 @@ class AppState {
 /** Singleton app state */
 export const appState = new AppState();
 
-// ─── Migration helper ─────────────────────────────────────────────
 
-/**
- * Migrate old-format CharacterDefinition to current format.
- *
- * Handles two old formats:
- * 1. Oldest: { idle: Record<dir, strip>, walk: Record<dir, strip>, idleSpeed, walkSpeed }
- * 2. Intermediate (v4): animations[] with strip.sheet ("idle"|"walk") instead of strip.tilesetId
- *
- * Current format: animations[] with strip.tilesetId = "char_{sheetId}_{idle|walk}"
- */
-function migrateCharacter(c: any): CharacterDefinition {
-  const sheetId: string = c.sheetId || "unknown";
-
-  // Oldest format: no animations array at all
-  if (!Array.isArray(c.animations)) {
-    const animations: CharacterAnimation[] = [];
-
-    if (c.idle) {
-      for (const dir of CHARACTER_DIRECTIONS) {
-        const strip = c.idle[dir];
-        if (strip) {
-          animations.push({
-            family: "idle",
-            direction: dir as CharacterDirection,
-            variant: 0,
-            strip: { tilesetId: charTilesetId(sheetId, "idle"), row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
-          });
-        }
-      }
-    }
-
-    if (c.walk) {
-      for (const dir of CHARACTER_DIRECTIONS) {
-        const strip = c.walk[dir];
-        if (strip) {
-          animations.push({
-            family: "walk",
-            direction: dir as CharacterDirection,
-            variant: 0,
-            strip: { tilesetId: charTilesetId(sheetId, "walk"), row: strip.row, startFrame: strip.startFrame, frameCount: strip.frameCount },
-          });
-        }
-      }
-    }
-
-    const familySpeeds: Record<string, number> = {};
-    if (c.idleSpeed) familySpeeds["idle"] = c.idleSpeed;
-    if (c.walkSpeed) familySpeeds["walk"] = c.walkSpeed;
-
-    return {
-      id: c.id,
-      name: c.name,
-      sheetId,
-      frameWidth: c.frameWidth || 16,
-      frameHeight: c.frameHeight || 32,
-      animations,
-      familySpeeds,
-      variantSequences: c.variantSequences || [],
-    };
-  }
-
-  // Intermediate format: animations[] exists but strips may have .sheet instead of .tilesetId
-  let needsMigration = false;
-  const animations: CharacterAnimation[] = c.animations.map((a: any) => {
-    const strip = a.strip;
-    if (strip && "sheet" in strip && !strip.tilesetId) {
-      needsMigration = true;
-      const sheet = strip.sheet as "idle" | "walk";
-      return {
-        ...a,
-        strip: {
-          tilesetId: charTilesetId(sheetId, sheet),
-          row: strip.row,
-          startFrame: strip.startFrame,
-          frameCount: strip.frameCount,
-        },
-      };
-    }
-    return a;
-  });
-
-  if (needsMigration) {
-    console.log(`Migrated character "${c.name}" strips from sheet to tilesetId`);
-  }
-
-  return {
-    id: c.id,
-    name: c.name,
-    sheetId,
-    frameWidth: c.frameWidth || 16,
-    frameHeight: c.frameHeight || 32,
-    animations,
-    familySpeeds: c.familySpeeds || {},
-    variantSequences: c.variantSequences || [],
-  };
-}
