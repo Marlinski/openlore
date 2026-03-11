@@ -1119,7 +1119,127 @@
     .cut-mask-item:hover .delete-btn { opacity: 1; }
 
     /* ═══════════════════════════════════════════════════════════
-       TAB 4: Room Tester
+       Resource Browser
+       ═══════════════════════════════════════════════════════════ */
+    #tab-browser {
+      flex-direction: row;
+    }
+
+    #browser-left {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    /* Tag facet list */
+    .tag-facet-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 1px;
+      font-size: 12px;
+    }
+    .tag-facet-item:hover { background: var(--bg-surface); }
+    .tag-facet-item.selected { border-color: var(--blue); background: var(--bg-surface); }
+    .tag-facet-item .facet-key {
+      color: var(--text-dim);
+      font-size: 11px;
+      min-width: 50px;
+    }
+    .tag-facet-item .facet-value {
+      flex: 1;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tag-facet-item .facet-count {
+      font-size: 10px;
+      color: var(--text-dim);
+      background: var(--bg-surface);
+      padding: 1px 5px;
+      border-radius: 8px;
+    }
+
+    /* Active filter pills */
+    .browser-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px 0;
+    }
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--blue);
+      color: var(--bg-main);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      cursor: default;
+      font-weight: 500;
+    }
+    .filter-pill .pill-remove {
+      cursor: pointer;
+      font-size: 13px;
+      opacity: 0.7;
+      margin-left: 2px;
+    }
+    .filter-pill .pill-remove:hover { opacity: 1; }
+
+    /* Resource grid in browser */
+    .browser-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      padding: 8px;
+    }
+    .browser-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      background: var(--bg-main);
+    }
+    .browser-card:hover { border-color: var(--blue); background: var(--bg-surface); }
+    .browser-card.selected { border-color: var(--blue); background: var(--bg-surface); }
+    .browser-card canvas {
+      image-rendering: pixelated;
+      max-height: 64px;
+      display: block;
+      margin: 0 auto 4px;
+    }
+    .browser-card .card-name {
+      font-size: 10px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .browser-card .card-tags {
+      font-size: 9px;
+      color: var(--text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .browser-card .card-thumb-placeholder {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      margin: 0 auto 4px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       Room Tester
        ═══════════════════════════════════════════════════════════ */
     #tab-tester {
       flex-direction: row;
@@ -1238,10 +1358,11 @@
   <!-- ─── Top Bar ──────────────────────────────────────────── -->
   <div id="topbar">
     <span class="logo">OFFISIMS</span>
-    <button class="tab-btn active" data-tab="composite">1. Composite Builder</button>
-    <button class="tab-btn" data-tab="room">2. Room Editor</button>
-    <button class="tab-btn" data-tab="cutter">3. Tile Cutter</button>
-    <button class="tab-btn" data-tab="tester">4. Room Tester</button>
+    <button class="tab-btn active" data-tab="cutter">1. Tile Cutter</button>
+    <button class="tab-btn" data-tab="browser">2. Browser</button>
+    <button class="tab-btn" data-tab="composite">3. Composite Builder</button>
+    <button class="tab-btn" data-tab="room">4. Room Editor</button>
+    <button class="tab-btn" data-tab="tester">5. Room Tester</button>
     <span class="topbar-spacer"></span>
     <button class="topbar-action" id="pack-resources-btn">Pack Resources</button>
   </div>
@@ -1249,8 +1370,8 @@
   <!-- ─── Tab Content ──────────────────────────────────────── -->
   <div id="tab-content">
 
-    <!-- Tab 1: Composite Builder -->
-    <div id="tab-composite" class="tab-panel active">
+    <!-- Composite Builder -->
+    <div id="tab-composite" class="tab-panel">
       <!-- Left: tileset picker + selection info -->
       <div id="comp-left" class="panel">
         <div class="panel-header">Tileset</div>
@@ -1337,7 +1458,7 @@
       </div>
     </div>
 
-    <!-- Tab 2: Room Editor -->
+    <!-- Room Editor -->
     <div id="tab-room" class="tab-panel">
       <!-- Left panel: changes based on mode -->
       <div id="room-left" class="panel">
@@ -1504,8 +1625,8 @@
       </div>
     </div>
 
-    <!-- Tab 3: Tile Cutter -->
-    <div id="tab-cutter" class="tab-panel">
+    <!-- Tile Cutter -->
+    <div id="tab-cutter" class="tab-panel active">
       <!-- Left: tileset selection + tag assignment + save -->
       <div id="cut-left" class="panel">
         <div class="panel-header">Tile Cutter</div>
@@ -1645,7 +1766,7 @@
       </div>
     </div>
 
-    <!-- Tab 4: Room Tester -->
+    <!-- Room Tester -->
     <div id="tab-tester" class="tab-panel">
       <!-- Left: room + character selection -->
       <div id="tester-left" class="panel">
@@ -1706,6 +1827,37 @@
         </div>
         <div id="tester-canvas-wrap">
           <div id="tester-hint">Select a room and character, then click "Load Room"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resource Browser -->
+    <div id="tab-browser" class="tab-panel">
+      <!-- Left: tag facets -->
+      <div id="browser-left" class="panel">
+        <div class="panel-header">Tag Filters</div>
+        <div class="panel-body">
+          <div id="browser-active-filters" class="browser-filters"></div>
+          <div id="browser-facets" style="overflow-y: auto; max-height: calc(100vh - 200px);"></div>
+        </div>
+      </div>
+
+      <div class="panel-resize-handle" data-resize-target="browser-left"></div>
+
+      <!-- Center: resource grid -->
+      <div id="browser-center" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+          <span id="browser-result-count" style="font-weight: 600; font-size: 12px;">0 resources</span>
+          <span class="topbar-spacer"></span>
+          <input type="text" id="browser-search" placeholder="Search by name..." style="width: 200px; font-size: 11px;">
+          <div id="browser-pagination" style="display: none; align-items: center; gap: 4px; margin-left: auto;">
+            <button id="browser-prev-btn" class="btn btn-sm" disabled>&laquo; Prev</button>
+            <span id="browser-page-label" style="font-size: 11px; min-width: 50px; text-align: center;">1 / 1</span>
+            <button id="browser-next-btn" class="btn btn-sm">Next &raquo;</button>
+          </div>
+        </div>
+        <div id="browser-grid-container" style="flex: 1; overflow: auto;">
+          <div id="browser-grid" class="browser-grid"></div>
         </div>
       </div>
     </div>

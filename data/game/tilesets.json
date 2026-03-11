@@ -1,0 +1,110 @@
+[
+  {
+    "id": "room_builder",
+    "label": "Room Builder (Floors & Walls)",
+    "path": "/data/tilesets/3_office/Room_Builder_Office_48x48.png",
+    "tileWidth": 48,
+    "tileHeight": 48,
+    "cols": 16,
+    "rows": 14
+  },
+  {
+    "id": "office_shadow",
+    "label": "Office (Black Shadow)",
+    "path": "/data/tilesets/3_office/Modern_Office_Black_Shadow_48x48.png",
+    "tileWidth": 48,
+    "tileHeight": 48,
+    "cols": 16,
+    "rows": 53
+  },
+  {
+    "id": "office_shadowless",
+    "label": "Office (Shadowless)",
+    "path": "/data/tilesets/3_office/Modern_Office_Shadowless_48x48.png",
+    "tileWidth": 48,
+    "tileHeight": 48,
+    "cols": 16,
+    "rows": 53
+  },
+  {
+    "id": "office_combined",
+    "label": "Office (Combined)",
+    "path": "/data/tilesets/3_office/Modern_Office_Shadowless_48x48.png",
+    "tileWidth": 48,
+    "tileHeight": 48,
+    "cols": 16,
+    "rows": 53
+  },
+  {
+    "id": "char_adam_idle",
+    "label": "adam (idle)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_idle_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 1
+  },
+  {
+    "id": "char_adam_walk",
+    "label": "adam (walk)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 7
+  },
+  {
+    "id": "char_alex_idle",
+    "label": "alex (idle)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Alex_idle_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 1
+  },
+  {
+    "id": "char_alex_walk",
+    "label": "alex (walk)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Alex_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 7
+  },
+  {
+    "id": "char_amelia_idle",
+    "label": "amelia (idle)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Amelia_idle_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 1
+  },
+  {
+    "id": "char_amelia_walk",
+    "label": "amelia (walk)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Amelia_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 7
+  },
+  {
+    "id": "char_bob_idle",
+    "label": "bob (idle)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Bob_idle_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 1
+  },
+  {
+    "id": "char_bob_walk",
+    "label": "bob (walk)",
+    "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Bob_48x48.png",
+    "tileWidth": 16,
+    "tileHeight": 32,
+    "cols": 24,
+    "rows": 7
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "id": "mmlaarha42u8qt",
+  "name": "walk_up",
+  "tags": [
+    "entity:character",
+    "name:tony",
+    "state:walk",
+    "dir:up"
+  ],
+  "frames": [
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 6,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 7,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 8,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 9,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 10,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+      "srcCol": 11,
+      "srcRow": 4,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

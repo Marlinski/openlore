@@ -1,0 +1,54 @@
+{
+  "id": "mmla9cvygauohz",
+  "name": "idle_left",
+  "tags": [
+    "entity:character",
+    "name:fiona",
+    "state:idle",
+    "dir:left"
+  ],
+  "frames": [
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 12,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 13,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 14,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 15,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 16,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+      "srcCol": 17,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

@@ -1,19 +1,21 @@
 /**
  * Offisims Content Tools — Main entry point
  *
- * Single-page app with 4 tabs:
- *   1. Composite Builder
- *   2. Room Editor
- *   3. Tile Cutter
- *   4. Room Tester
+ * Single-page app with 5 tabs:
+ *   1. Tile Cutter
+ *   2. Resource Browser
+ *   3. Composite Builder
+ *   4. Room Editor
+ *   5. Room Tester
  *
  * Project data is loaded from / saved to disk automatically via the FS API.
  */
 
 import { appState } from "./state.js";
+import { initCutterTab } from "./cutter.js";
+import { initBrowserTab } from "./browser.js";
 import { initCompositeTab } from "./composite.js";
 import { initRoomTab } from "./room.js";
-import { initCutterTab } from "./cutter.js";
 import { initTesterTab } from "./tester.js";
 
 // ─── Tab switching ────────────────────────────────────────────────
@@ -158,9 +160,10 @@ async function init(): Promise<void> {
   setStatus(`Loaded: ${appState.tilesets.length} tilesets, ${appState.composites.length} composites, ${appState.rooms.length} rooms, ${appState.resources.length} resources, ${appState.masks.length} masks`);
   updateStatusBar();
 
+  initCutterTab();
+  initBrowserTab();
   initCompositeTab();
   initRoomTab();
-  initCutterTab();
   initTesterTab();
 }
 

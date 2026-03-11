@@ -1,0 +1,54 @@
+{
+  "id": "mml8u080x8ekx7",
+  "name": "premade_character_48_r2_c0",
+  "tags": [
+    "entity:character",
+    "name:amanda",
+    "state:idle",
+    "dir:right"
+  ],
+  "frames": [
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 0,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 1,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 2,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 3,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 4,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+      "srcCol": 5,
+      "srcRow": 2,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

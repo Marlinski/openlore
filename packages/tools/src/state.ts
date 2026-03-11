@@ -2,17 +2,94 @@
  * Shared application state across all tabs.
  * Persists to disk via the FS API (Vite plugin middleware).
  *
- * All mutations save immediately to data/game/game-data.json.
- * No localStorage, no server sync — the file on disk is the single source of truth.
+ * Data layout on disk (under data/game/):
+ *   tilesets.json        — array of TilesetDefinition (user overrides only)
+ *   characters.json      — array of CharacterDefinition
+ *   resources/<id>.json  — one Resource per file
+ *   composites/<id>.json — one CompositeObject per file
+ *   rooms/<name>.json    — one RoomDefinition per file (keyed by name)
+ *   masks/<id>.json      — one Mask per file
+ *
+ * Each mutation writes only the affected file(s) — no monolithic save.
+ * No localStorage, no server sync — the files on disk are the single source of truth.
  */
 
-import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition, Resource, Mask } from "@offisims/shared";
+import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, TilesetDefinition, Resource, Mask } from "@offisims/shared";
 import { CHARACTER_DIRECTIONS, findTileset, charTilesetId, makeCharTileset } from "@offisims/shared";
 
-/** Path to the project data file, relative to the data/ directory */
-const PROJECT_PATH = "game/game-data.json";
+/** Base path for all game data, relative to data/ */
+const BASE = "game";
 
 type Listener = () => void;
+
+// ─── FS helpers ──────────────────────────────────────────────────
+
+/** Write a JSON file to data/<relPath> */
+async function fsWrite(relPath: string, data: unknown): Promise<void> {
+  try {
+    const resp = await fetch(`/fs/write?path=${encodeURIComponent(relPath)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data, null, 2),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      console.error(`[AppState] Failed to write ${relPath}:`, err);
+    }
+  } catch (err) {
+    console.error(`[AppState] Failed to write ${relPath}:`, err);
+  }
+}
+
+/** Delete a file at data/<relPath>. Silently ignores 404. */
+async function fsDelete(relPath: string): Promise<void> {
+  try {
+    const resp = await fetch(`/fs/delete?path=${encodeURIComponent(relPath)}`, {
+      method: "DELETE",
+    });
+    if (!resp.ok && resp.status !== 404) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      console.error(`[AppState] Failed to delete ${relPath}:`, err);
+    }
+  } catch (err) {
+    console.error(`[AppState] Failed to delete ${relPath}:`, err);
+  }
+}
+
+/** Read a JSON file from data/<relPath>. Returns null on 404 or error. */
+async function fsReadJSON<T>(relPath: string): Promise<T | null> {
+  try {
+    const resp = await fetch(`/fs/read?path=${encodeURIComponent(relPath)}`);
+    if (resp.ok) return await resp.json() as T;
+    if (resp.status !== 404) {
+      console.warn(`[AppState] Failed to read ${relPath}: ${resp.status}`);
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[AppState] Failed to read ${relPath}:`, err);
+    return null;
+  }
+}
+
+/** Read all JSON files in a directory. Returns parsed objects keyed by filename. */
+async function fsReadDir<T>(relDir: string): Promise<Record<string, T>> {
+  try {
+    const resp = await fetch(`/fs/read-dir?dir=${encodeURIComponent(relDir)}`);
+    if (resp.ok) {
+      const { files } = await resp.json() as { files: Record<string, T> };
+      return files;
+    }
+    if (resp.status !== 404) {
+      console.warn(`[AppState] Failed to read dir ${relDir}: ${resp.status}`);
+    }
+    return {};
+  } catch (err) {
+    console.warn(`[AppState] Failed to read dir ${relDir}:`, err);
+    return {};
+  }
+}
+
+// ─── AppState ────────────────────────────────────────────────────
 
 class AppState {
   tilesets: TilesetDefinition[] = [];
@@ -24,8 +101,8 @@ class AppState {
   private listeners: Listener[] = [];
 
   /**
-   * IDs of tilesets that were explicitly saved in game-data.json (user overrides).
-   * Only these get serialized back to disk — scanned tilesets are ephemeral.
+   * IDs of tilesets that were explicitly saved (user overrides).
+   * Only these get serialized to tilesets.json — scanned tilesets are ephemeral.
    */
   private _savedTilesetIds = new Set<string>();
 
@@ -34,11 +111,6 @@ class AppState {
   /** Promise that resolves when initial load is done */
   private _readyPromise: Promise<void>;
   private _resolveReady!: () => void;
-
-  /** Debounce timer for save operations */
-  private _saveTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Minimum ms between disk writes */
-  private static SAVE_DEBOUNCE_MS = 300;
 
   constructor() {
     this._readyPromise = new Promise((resolve) => {
@@ -63,8 +135,8 @@ class AppState {
     };
   }
 
+  /** Notify all listeners of a state change (does NOT trigger a save — saves are per-mutation) */
   private notify(): void {
-    this.scheduleSave();
     for (const fn of this.listeners) fn();
   }
 
@@ -75,18 +147,28 @@ class AppState {
     return findTileset(this.tilesets, id);
   }
 
-  /** Add or update a tileset */
+  /** Add or update a tileset and persist tilesets.json */
   addTileset(tileset: TilesetDefinition): void {
     const idx = this.tilesets.findIndex((t) => t.id === tileset.id);
     if (idx >= 0) this.tilesets[idx] = tileset;
     else this.tilesets.push(tileset);
+    this._savedTilesetIds.add(tileset.id);
+    this.saveTilesets();
     this.notify();
   }
 
-  /** Remove a tileset by ID */
+  /** Remove a tileset by ID and persist tilesets.json */
   removeTileset(id: string): void {
     this.tilesets = this.tilesets.filter((t) => t.id !== id);
+    this._savedTilesetIds.delete(id);
+    this.saveTilesets();
     this.notify();
+  }
+
+  /** Write tilesets.json (only user-saved tilesets, not scanned) */
+  private saveTilesets(): void {
+    const saved = this.tilesets.filter((t) => this._savedTilesetIds.has(t.id));
+    fsWrite(`${BASE}/tilesets.json`, saved);
   }
 
   // ─── Composites ─────────────────────────────────────────────
@@ -94,11 +176,13 @@ class AppState {
   addComposite(composite: CompositeObject): void {
     this.composites = this.composites.filter((c) => c.id !== composite.id);
     this.composites.push(composite);
+    fsWrite(`${BASE}/composites/${composite.id}.json`, composite);
     this.notify();
   }
 
   removeComposite(id: string): void {
     this.composites = this.composites.filter((c) => c.id !== id);
+    fsDelete(`${BASE}/composites/${id}.json`);
     this.notify();
   }
 
@@ -109,14 +193,19 @@ class AppState {
   // ─── Rooms ──────────────────────────────────────────────────
 
   addRoom(room: RoomDefinition): void {
+    // If renaming, remove the old file
+    const existing = this.rooms.find((r) => r.name !== room.name);
+    // Actually, rooms are keyed by name so just upsert
     const idx = this.rooms.findIndex((r) => r.name === room.name);
     if (idx >= 0) this.rooms[idx] = room;
     else this.rooms.push(room);
+    fsWrite(`${BASE}/rooms/${room.name}.json`, room);
     this.notify();
   }
 
   removeRoom(name: string): void {
     this.rooms = this.rooms.filter((r) => r.name !== name);
+    fsDelete(`${BASE}/rooms/${name}.json`);
     this.notify();
   }
 
@@ -132,13 +221,17 @@ class AppState {
       const tsId = charTilesetId(char.sheetId, sheet);
       if (!findTileset(this.tilesets, tsId)) {
         this.tilesets.push(makeCharTileset(char.sheetId, sheet, fw, fh, 0, 0));
+        this._savedTilesetIds.add(tsId);
       }
     }
+    this.saveCharacters();
+    this.saveTilesets();
     this.notify();
   }
 
   removeCharacter(id: string): void {
     this.characters = this.characters.filter((c) => c.id !== id);
+    this.saveCharacters();
     this.notify();
   }
 
@@ -146,16 +239,23 @@ class AppState {
     return this.characters.find((c) => c.id === id);
   }
 
+  /** Write characters.json */
+  private saveCharacters(): void {
+    fsWrite(`${BASE}/characters.json`, this.characters);
+  }
+
   // ─── Resources ──────────────────────────────────────────────
 
   addResource(resource: Resource): void {
     this.resources = this.resources.filter((r) => r.id !== resource.id);
     this.resources.push(resource);
+    fsWrite(`${BASE}/resources/${resource.id}.json`, resource);
     this.notify();
   }
 
   removeResource(id: string): void {
     this.resources = this.resources.filter((r) => r.id !== id);
+    fsDelete(`${BASE}/resources/${id}.json`);
     this.notify();
   }
 
@@ -182,11 +282,13 @@ class AppState {
   addMask(mask: Mask): void {
     this.masks = this.masks.filter((m) => m.id !== mask.id);
     this.masks.push(mask);
+    fsWrite(`${BASE}/masks/${mask.id}.json`, mask);
     this.notify();
   }
 
   removeMask(id: string): void {
     this.masks = this.masks.filter((m) => m.id !== id);
+    fsDelete(`${BASE}/masks/${id}.json`);
     this.notify();
   }
 
@@ -218,72 +320,69 @@ class AppState {
 
   // ─── Disk Persistence ───────────────────────────────────────
 
-  /** Serialize current state to ProjectData JSON */
-  private toJSON(): string {
-    // Only persist tilesets that were in the original game-data.json (user overrides),
-    // not the auto-scanned ones — those are rediscovered on every load.
-    const savedTilesets = this.tilesets.filter((t) => this._savedTilesetIds.has(t.id));
-    const data: ProjectData = {
-      tilesets: savedTilesets,
-      composites: this.composites,
-      rooms: this.rooms,
-      characters: this.characters,
-      resources: this.resources,
-      masks: this.masks,
-    };
-    return JSON.stringify(data, null, 2);
-  }
-
-  /** Schedule a debounced save to disk */
-  private scheduleSave(): void {
-    if (this._saveTimer) clearTimeout(this._saveTimer);
-    this._saveTimer = setTimeout(() => {
-      this._saveTimer = null;
-      this.saveToDisk();
-    }, AppState.SAVE_DEBOUNCE_MS);
-  }
-
-  /** Write project data to disk via FS API */
-  private async saveToDisk(): Promise<void> {
-    try {
-      const json = this.toJSON();
-      const resp = await fetch(`/fs/write?path=${encodeURIComponent(PROJECT_PATH)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: json,
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        console.error("[AppState] Failed to save to disk:", err);
-      }
-    } catch (err) {
-      console.error("[AppState] Failed to save to disk:", err);
-    }
-  }
-
-  /** Load project data from disk via FS API, then merge with scanned tilesets */
+  /**
+   * Load all game data from disk.
+   *
+   * Reads:
+   *   game/tilesets.json        → this.tilesets (+ _savedTilesetIds)
+   *   game/characters.json      → this.characters (with migration)
+   *   game/resources/*.json     → this.resources
+   *   game/composites/*.json    → this.composites
+   *   game/rooms/*.json         → this.rooms
+   *   game/masks/*.json         → this.masks
+   *
+   * Then merges in scanned tilesets from data/tilesets/.
+   */
   private async loadFromDisk(): Promise<void> {
     try {
-      const resp = await fetch(`/fs/read?path=${encodeURIComponent(PROJECT_PATH)}`);
+      // Fire all reads in parallel
+      const [tilesetsData, charsData, resourceFiles, compositeFiles, roomFiles, maskFiles] = await Promise.all([
+        fsReadJSON<TilesetDefinition[]>(`${BASE}/tilesets.json`),
+        fsReadJSON<CharacterDefinition[]>(`${BASE}/characters.json`),
+        fsReadDir<Resource>(`${BASE}/resources`),
+        fsReadDir<CompositeObject>(`${BASE}/composites`),
+        fsReadDir<RoomDefinition>(`${BASE}/rooms`),
+        fsReadDir<Mask>(`${BASE}/masks`),
+      ]);
 
-      if (resp.ok) {
-        const data: ProjectData = await resp.json();
-        this.hydrate(data);
-        console.log(
-          `[AppState] Loaded from disk: ${this.tilesets.length} tilesets, ` +
-          `${this.composites.length} composites, ${this.rooms.length} rooms, ` +
-          `${this.characters.length} characters, ${this.resources.length} resources, ` +
-          `${this.masks.length} masks`
-        );
-      } else if (resp.status === 404) {
-        // No project file yet — start empty. Tilesets come from game-data.json
-        // or are registered by individual tools (room editor, character definer).
-        console.log("[AppState] No project file on disk, starting fresh");
-        await this.saveToDisk();
-      } else {
-        const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        console.error("[AppState] Failed to load from disk:", err);
-      }
+      // Tilesets
+      this.tilesets = Array.isArray(tilesetsData) ? tilesetsData : [];
+      this._savedTilesetIds = new Set(this.tilesets.map((t) => t.id));
+
+      // Characters (with migration)
+      const rawChars = Array.isArray(charsData) ? charsData : [];
+      this.characters = rawChars.map((c: any) => migrateCharacter(c));
+
+      // Resources — one per file
+      this.resources = Object.values(resourceFiles);
+
+      // Composites — one per file
+      this.composites = Object.values(compositeFiles);
+
+      // Rooms — one per file, with defaults for missing fields
+      this.rooms = Object.values(roomFiles).map((r: any) => {
+        if (!r.doors) r.doors = [];
+        if (!r.placements) r.placements = [];
+        if (!r.walkability) {
+          const w = r.width || 16;
+          const h = r.height || 12;
+          r.walkability = new Array(w * h).fill(true);
+        }
+        return r as RoomDefinition;
+      });
+
+      // Masks — one per file
+      this.masks = Object.values(maskFiles);
+
+      // Ensure all character sheet tilesets are registered
+      this.ensureCharacterTilesets();
+
+      console.log(
+        `[AppState] Loaded from disk: ${this.tilesets.length} tilesets, ` +
+        `${this.composites.length} composites, ${this.rooms.length} rooms, ` +
+        `${this.characters.length} characters, ${this.resources.length} resources, ` +
+        `${this.masks.length} masks`
+      );
     } catch (err) {
       console.error("[AppState] Failed to load from disk:", err);
     }
@@ -299,7 +398,7 @@ class AppState {
 
   /**
    * Fetch all PNGs from /fs/scan-tilesets and merge into this.tilesets.
-   * Game-data overrides (already in this.tilesets) take precedence.
+   * Saved tilesets (already in this.tilesets) take precedence.
    * Scanned tilesets get cols=0, rows=0 — resolved lazily when the image loads.
    */
   private async scanAndMergeTilesets(): Promise<void> {
@@ -323,7 +422,7 @@ class AppState {
       for (const s of scanned) {
         const path = `/data/${s.relPath}`;
 
-        // Skip if already present (game-data override takes precedence)
+        // Skip if already present (saved override takes precedence)
         if (existingByPath.has(path)) continue;
 
         // Derive an id from the relative path:
@@ -351,43 +450,6 @@ class AppState {
     } catch (err) {
       console.warn("[AppState] Failed to scan tilesets:", err);
     }
-  }
-
-  /** Hydrate state from a ProjectData object, applying migrations */
-  private hydrate(data: ProjectData): void {
-    this.composites = data.composites || [];
-
-    // Migrate old-format characters to new animations[] format
-    this.characters = (data.characters || []).map((c: any) => migrateCharacter(c));
-
-    // Ensure rooms have doors array
-    this.rooms = (data.rooms || []).map((r: any) => {
-      if (!r.doors) r.doors = [];
-      if (!r.placements) r.placements = [];
-      if (!r.walkability) {
-        const w = r.width || 16;
-        const h = r.height || 12;
-        r.walkability = new Array(w * h).fill(true);
-      }
-      return r;
-    });
-
-    // Load tilesets from project data (no defaults — everything comes from disk)
-    this.tilesets = Array.isArray(data.tilesets) ? data.tilesets : [];
-    // Track which tilesets came from game-data.json so only those get saved back
-    this._savedTilesetIds = new Set(this.tilesets.map((t) => t.id));
-
-    // Load resources and masks
-    this.resources = Array.isArray(data.resources) ? data.resources : [];
-    this.masks = Array.isArray(data.masks) ? data.masks : [];
-
-    // Ensure all character sheet tilesets referenced by characters are registered
-    this.ensureCharacterTilesets();
-  }
-
-  /** Export current state as a JSON string (for debugging or manual export) */
-  exportToJSON(): string {
-    return this.toJSON();
   }
 }
 

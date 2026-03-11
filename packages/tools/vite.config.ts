@@ -185,6 +185,50 @@ export default defineConfig({
               return;
             }
 
+            // ── GET /fs/read-dir?dir=<relative> ─────────────────
+            // Read all JSON files in a directory under data/.
+            // Returns { files: { "filename.json": <parsed content>, ... } }
+            if (req.method === "GET" && route === "/fs/read-dir") {
+              const relDir = url.searchParams.get("dir");
+              if (!relDir) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "dir parameter required" }));
+                return;
+              }
+
+              const dirPath = safeResolve(relDir);
+              if (!dirPath) {
+                res.statusCode = 403;
+                res.end(JSON.stringify({ error: "Path outside data directory" }));
+                return;
+              }
+
+              if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+                // Directory doesn't exist yet — return empty (not an error)
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ files: {} }));
+                return;
+              }
+
+              const files: Record<string, unknown> = {};
+              const items = fs.readdirSync(dirPath, { withFileTypes: true });
+              for (const item of items) {
+                if (!item.isFile() || !item.name.endsWith(".json")) continue;
+                const filePath = path.join(dirPath, item.name);
+                try {
+                  const content = fs.readFileSync(filePath, "utf-8");
+                  files[item.name] = JSON.parse(content);
+                } catch (e) {
+                  console.warn(`[FS] Failed to read/parse ${relDir}/${item.name}:`, e);
+                }
+              }
+
+              console.log(`[FS] Read ${Object.keys(files).length} JSON files from ${relDir}/`);
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ files }));
+              return;
+            }
+
             // ── GET /fs/list?dir=<relative>&recursive=true ────────
             // List files in a directory under data/.
             // Returns { entries: [{ name, path, type, size }] }
