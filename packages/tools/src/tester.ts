@@ -1,9 +1,10 @@
 /**
  * Tab 4: Room Tester
  *
- * PixiJS-based interactive room tester. Loads a saved room and character,
- * renders the room with proper z-sorting, and allows the player to walk
- * around with WASD/arrow keys.
+ * PixiJS-based interactive room tester. Loads compiled resources from
+ * data/resources/ (atlas PNGs + room/character JSONs) and renders the
+ * room with proper z-sorting, allowing the player to walk around with
+ * WASD/arrow keys.
  *
  * Rendering model (matches room editor Option A):
  *   - Floor layer: top-to-bottom, left-to-right
@@ -25,23 +26,79 @@ import {
   Graphics,
   Rectangle,
 } from "pixi.js";
-import {
-  TILE_SIZE,
-  type TilesetId,
-  type RoomDefinition,
-  type DoorDefinition,
-  type TexturePlacement,
-  type CharacterDefinition,
-  type CharacterDirection,
-  type CharacterAnimation,
-  type VariantSequence,
-  getCharacterAnimation,
-  getCharacterAnimations,
-  getCharacterSequences,
-  getPlacementSize,
-} from "@offisims/shared";
-import { appState } from "./state.js";
+import { TILE_SIZE, type CharacterDirection, type VariantSequence } from "@offisims/shared";
 import { setStatus } from "./main.js";
+
+// ─── Compiled resource types (mirrors compiler.ts output) ────────
+
+interface CompiledRegionRef {
+  atlas: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface CompiledPlacement {
+  gridX: number;
+  gridY: number;
+  layer: "floor" | "object";
+  region?: CompiledRegionRef;
+  parts?: { region: CompiledRegionRef; offsetX: number; offsetY: number; zBias?: number }[];
+  zBias?: number;
+}
+
+interface CompiledDoor {
+  id: string;
+  col: number;
+  row: number;
+  target: string;
+}
+
+interface CompiledRoom {
+  name: string;
+  width: number;
+  height: number;
+  walkability: boolean[];
+  doors: CompiledDoor[];
+  placements: CompiledPlacement[];
+  atlases: string[];
+}
+
+interface CompiledAnimationStrip {
+  frameWidth: number;
+  frameHeight: number;
+  frames: { atlas: string; x: number; y: number }[];
+}
+
+interface CompiledCharacterAnimation {
+  family: string;
+  direction: string;
+  variant: number;
+  strip: CompiledAnimationStrip;
+}
+
+interface CompiledCharacter {
+  id: string;
+  name: string;
+  frameWidth: number;
+  frameHeight: number;
+  animations: CompiledCharacterAnimation[];
+  familySpeeds: Record<string, number>;
+  variantSequences: VariantSequence[];
+  atlases: string[];
+}
+
+interface CompiledManifest {
+  compiledAt: string;
+  atlases: { file: string; tilesetId: string; regions: number; sizeBytes: number }[];
+  rooms: { name: string; file: string }[];
+  characters: { name: string; file: string }[];
+}
+
+// ─── Resource base path ──────────────────────────────────────────
+
+const RESOURCES_BASE = "/data/resources";
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
@@ -61,14 +118,15 @@ const seqListDiv = document.getElementById("tester-seq-list") as HTMLDivElement;
 // ─── State ────────────────────────────────────────────────────────
 
 let pixiApp: Application | null = null;
-let currentRoom: RoomDefinition | null = null;
-let currentChar: CharacterDefinition | null = null;
+let manifest: CompiledManifest | null = null;
+let currentRoom: CompiledRoom | null = null;
+let currentChar: CompiledCharacter | null = null;
 let currentZoom = 1;
 let showGrid = false;
 let showWalkability = false;
 
-/** Tileset images loaded as PixiJS textures (room tilesets + character sheets) */
-const tilesetTextures: Map<string, Texture> = new Map();
+/** Atlas textures loaded by atlas filename (e.g. "atlas_a1b2c3d4e5.png") */
+const atlasTextures: Map<string, Texture> = new Map();
 
 // ─── Character state ─────────────────────────────────────────────
 
@@ -145,52 +203,78 @@ interface ObjectEntry {
 
 let objectEntries: ObjectEntry[] = [];
 
-// ─── Tileset texture loading ─────────────────────────────────────
+// ─── Resource loading helpers ────────────────────────────────────
 
-function loadTilesetTexture(tilesetId: TilesetId): Promise<Texture> {
-  const cached = tilesetTextures.get(tilesetId);
+/** Fetch the compiled manifest */
+async function loadManifest(): Promise<CompiledManifest | null> {
+  try {
+    const res = await fetch(`${RESOURCES_BASE}/manifest.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch a compiled room JSON */
+async function loadCompiledRoom(roomFile: string): Promise<CompiledRoom> {
+  const res = await fetch(`${RESOURCES_BASE}/rooms/${roomFile}`);
+  if (!res.ok) throw new Error(`Failed to load room: ${roomFile}`);
+  return await res.json();
+}
+
+/** Fetch a compiled character JSON */
+async function loadCompiledCharacter(charFile: string): Promise<CompiledCharacter> {
+  const res = await fetch(`${RESOURCES_BASE}/characters/${charFile}`);
+  if (!res.ok) throw new Error(`Failed to load character: ${charFile}`);
+  return await res.json();
+}
+
+/** Load an atlas PNG as a PixiJS texture */
+function loadAtlasTexture(atlasFile: string): Promise<Texture> {
+  const cached = atlasTextures.get(atlasFile);
   if (cached) return Promise.resolve(cached);
 
-  const info = appState.getTileset(tilesetId);
-  if (!info) return Promise.reject(new Error(`Unknown tileset ${tilesetId}`));
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const texture = Texture.from(img);
       texture.source.scaleMode = "nearest";
-      tilesetTextures.set(tilesetId, texture);
+      atlasTextures.set(atlasFile, texture);
       resolve(texture);
     };
-    img.onerror = () => reject(new Error(`Failed to load tileset ${tilesetId}`));
-    img.src = info.path;
+    img.onerror = () => reject(new Error(`Failed to load atlas ${atlasFile}`));
+    img.src = `${RESOURCES_BASE}/atlas/${atlasFile}`;
   });
 }
 
-// ─── Populate dropdowns ──────────────────────────────────────────
+// ─── Populate dropdowns from manifest ────────────────────────────
 
-function populateDropdowns(): void {
+async function populateDropdowns(): Promise<void> {
+  manifest = await loadManifest();
+
   // Rooms
   roomSelect.innerHTML = "";
-  if (appState.rooms.length === 0) {
-    roomSelect.innerHTML = '<option value="">(no rooms saved)</option>';
+  if (!manifest || manifest.rooms.length === 0) {
+    roomSelect.innerHTML = '<option value="">(no compiled rooms)</option>';
   } else {
-    for (const room of appState.rooms) {
+    for (const room of manifest.rooms) {
       const opt = document.createElement("option");
-      opt.value = room.name;
-      opt.textContent = `${room.name} (${room.width}×${room.height})`;
+      opt.value = room.file;
+      opt.textContent = room.name;
       roomSelect.appendChild(opt);
     }
   }
 
   // Characters
   charSelect.innerHTML = "";
-  if (appState.characters.length === 0) {
-    charSelect.innerHTML = '<option value="">(no characters saved)</option>';
+  if (!manifest || manifest.characters.length === 0) {
+    charSelect.innerHTML = '<option value="">(no compiled characters)</option>';
   } else {
-    for (const char of appState.characters) {
+    for (const char of manifest.characters) {
       const opt = document.createElement("option");
-      opt.value = char.id;
-      opt.textContent = `${char.name} (${char.sheetId})`;
+      opt.value = char.file;
+      opt.textContent = char.name;
       charSelect.appendChild(opt);
     }
   }
@@ -200,52 +284,33 @@ function populateDropdowns(): void {
 
 function updateLoadButton(): void {
   loadBtn.disabled = !roomSelect.value || !charSelect.value ||
-    appState.rooms.length === 0 || appState.characters.length === 0;
+    !manifest || manifest.rooms.length === 0 || manifest.characters.length === 0;
 }
 
 // ─── Load room into PixiJS ──────────────────────────────────────
 
 async function loadRoom(): Promise<void> {
-  const roomName = roomSelect.value;
-  const charId = charSelect.value;
+  const roomFile = roomSelect.value;
+  const charFile = charSelect.value;
 
-  if (!roomName || !charId) return;
+  if (!roomFile || !charFile) return;
 
-  const room = appState.rooms.find((r) => r.name === roomName);
-  const char = appState.characters.find((c) => c.id === charId);
-
-  if (!room || !char) {
-    setStatus("Room or character not found");
-    return;
-  }
-
-  currentRoom = room;
-  currentChar = char;
-
-  setStatus(`Loading room "${room.name}" with character "${char.name}"...`);
+  setStatus("Loading compiled room...");
   modeHint.textContent = "Loading...";
 
   try {
-    // Load all needed tileset textures (room tilesets + character sheet tilesets)
-    const neededTilesets = new Set<TilesetId>();
-    for (const p of room.placements) {
-      if (p.region) neededTilesets.add(p.region.tilesetId);
-      if (p.compositeId) {
-        const comp = appState.getComposite(p.compositeId);
-        if (comp) {
-          for (const part of comp.parts) {
-            neededTilesets.add(part.region.tilesetId);
-          }
-        }
-      }
-    }
+    // Load room and character JSONs
+    const [room, char] = await Promise.all([
+      loadCompiledRoom(roomFile),
+      loadCompiledCharacter(charFile),
+    ]);
 
-    // Add character sheet tilesets
-    for (const anim of char.animations) {
-      neededTilesets.add(anim.strip.tilesetId);
-    }
+    currentRoom = room;
+    currentChar = char;
 
-    await Promise.all([...neededTilesets].map((id) => loadTilesetTexture(id)));
+    // Load all needed atlas textures
+    const neededAtlases = new Set<string>([...room.atlases, ...char.atlases]);
+    await Promise.all([...neededAtlases].map((a) => loadAtlasTexture(a)));
 
     // Create or reset PixiJS app
     await initPixiApp(room, char);
@@ -260,7 +325,7 @@ async function loadRoom(): Promise<void> {
   }
 }
 
-async function initPixiApp(room: RoomDefinition, char: CharacterDefinition): Promise<void> {
+async function initPixiApp(room: CompiledRoom, char: CompiledCharacter): Promise<void> {
   // Destroy old app if exists
   if (pixiApp) {
     pixiApp.destroy(true, { children: true });
@@ -334,14 +399,9 @@ async function initPixiApp(room: RoomDefinition, char: CharacterDefinition): Pro
   });
 }
 
-// ─── Build room sprites ──────────────────────────────────────────
+// ─── Build room sprites from compiled data ──────────────────────
 
-/**
- * Each object placement produces one or more ObjectEntry items, each with
- * its own per-sprite anchorY so that composite parts sort correctly
- * relative to other objects (matching the room editor's render-time z-sort).
- */
-function buildRoomSprites(room: RoomDefinition): void {
+function buildRoomSprites(room: CompiledRoom): void {
   if (!floorContainer || !objectContainer) return;
 
   objectEntries = [];
@@ -367,22 +427,30 @@ function buildRoomSprites(room: RoomDefinition): void {
   }
 }
 
+/** Create a Sprite from a CompiledRegionRef (atlas pixel coords) */
+function createAtlasSprite(ref: CompiledRegionRef): Sprite | null {
+  const baseTex = atlasTextures.get(ref.atlas);
+  if (!baseTex) return null;
+
+  const frame = new Rectangle(ref.x, ref.y, ref.w, ref.h);
+  const texture = new Texture({ source: baseTex.source, frame });
+  return new Sprite(texture);
+}
+
 /** Add a floor placement (no z-sorting needed, just draw order) */
-function addFloorPlacement(p: TexturePlacement): void {
+function addFloorPlacement(p: CompiledPlacement): void {
   if (!floorContainer) return;
 
-  if (p.compositeId) {
-    const comp = appState.getComposite(p.compositeId);
-    if (!comp) return;
-    // Sort composite parts by render order for floor
-    const sorted = [...comp.parts].sort((a, b) => {
-      const anchorA = a.offsetY + a.region.h + (a.zBias ?? 0);
-      const anchorB = b.offsetY + b.region.h + (b.zBias ?? 0);
+  if (p.parts) {
+    // Composite: expanded inline as parts — sort by render order for floor
+    const sorted = [...p.parts].sort((a, b) => {
+      const anchorA = a.offsetY + a.region.h / TILE_SIZE + (a.zBias ?? 0);
+      const anchorB = b.offsetY + b.region.h / TILE_SIZE + (b.zBias ?? 0);
       if (anchorA !== anchorB) return anchorA - anchorB;
       return a.offsetX - b.offsetX;
     });
     for (const part of sorted) {
-      const sprite = createRegionSprite(part.region.tilesetId, part.region.srcCol, part.region.srcRow, part.region.w, part.region.h);
+      const sprite = createAtlasSprite(part.region);
       if (sprite) {
         sprite.x = (p.gridX + part.offsetX) * TILE_SIZE;
         sprite.y = (p.gridY + part.offsetY) * TILE_SIZE;
@@ -390,7 +458,7 @@ function addFloorPlacement(p: TexturePlacement): void {
       }
     }
   } else if (p.region) {
-    const sprite = createRegionSprite(p.region.tilesetId, p.region.srcCol, p.region.srcRow, p.region.w, p.region.h);
+    const sprite = createAtlasSprite(p.region);
     if (sprite) {
       sprite.x = p.gridX * TILE_SIZE;
       sprite.y = p.gridY * TILE_SIZE;
@@ -400,59 +468,39 @@ function addFloorPlacement(p: TexturePlacement): void {
 }
 
 /** Add an object placement — each sprite gets its own anchorY for z-sort */
-function addObjectPlacement(p: TexturePlacement): void {
+function addObjectPlacement(p: CompiledPlacement): void {
   if (!objectContainer) return;
 
-  if (p.compositeId) {
-    const comp = appState.getComposite(p.compositeId);
-    if (!comp) return;
-    for (const part of comp.parts) {
-      const sprite = createRegionSprite(part.region.tilesetId, part.region.srcCol, part.region.srcRow, part.region.w, part.region.h);
+  if (p.parts) {
+    // Composite: each part gets its own z-sort entry
+    for (const part of p.parts) {
+      const sprite = createAtlasSprite(part.region);
       if (sprite) {
         sprite.x = (p.gridX + part.offsetX) * TILE_SIZE;
         sprite.y = (p.gridY + part.offsetY) * TILE_SIZE;
-        // Per-part anchorY = placement gridY + part bottom edge + part zBias + placement zBias
-        const anchorY = p.gridY + part.offsetY + part.region.h + (part.zBias ?? 0) + (p.zBias ?? 0);
+        // Per-part anchorY = placement gridY + part bottom edge (in tiles) + part zBias + placement zBias
+        const partHeightTiles = part.region.h / TILE_SIZE;
+        const anchorY = p.gridY + part.offsetY + partHeightTiles + (part.zBias ?? 0) + (p.zBias ?? 0);
         objectContainer.addChild(sprite);
         objectEntries.push({ sprite, anchorY });
       }
     }
   } else if (p.region) {
-    const sprite = createRegionSprite(p.region.tilesetId, p.region.srcCol, p.region.srcRow, p.region.w, p.region.h);
+    const sprite = createAtlasSprite(p.region);
     if (sprite) {
       sprite.x = p.gridX * TILE_SIZE;
       sprite.y = p.gridY * TILE_SIZE;
-      const anchorY = p.gridY + p.region.h + (p.zBias ?? 0);
+      const heightTiles = p.region.h / TILE_SIZE;
+      const anchorY = p.gridY + heightTiles + (p.zBias ?? 0);
       objectContainer.addChild(sprite);
       objectEntries.push({ sprite, anchorY });
     }
   }
 }
 
-function createRegionSprite(
-  tilesetId: TilesetId,
-  srcCol: number,
-  srcRow: number,
-  w: number,
-  h: number,
-): Sprite | null {
-  const baseTexture = tilesetTextures.get(tilesetId);
-  if (!baseTexture) return null;
-
-  const frame = new Rectangle(
-    srcCol * TILE_SIZE,
-    srcRow * TILE_SIZE,
-    w * TILE_SIZE,
-    h * TILE_SIZE,
-  );
-  const texture = new Texture({ source: baseTexture.source, frame });
-  const sprite = new Sprite(texture);
-  return sprite;
-}
-
 // ─── Character sprite ───────────────────────────────────────────
 
-function createCharacterSprite(char: CharacterDefinition, room: RoomDefinition): void {
+function createCharacterSprite(char: CompiledCharacter, room: CompiledRoom): void {
   if (!objectContainer) return;
 
   // Find a walkable tile to start on
@@ -499,21 +547,24 @@ function createCharacterSprite(char: CharacterDefinition, room: RoomDefinition):
   });
 }
 
+/**
+ * Get a PixiJS texture for a specific frame from the compiled character data.
+ * Each frame has its own atlas + pixel coords (frames may not be contiguous).
+ */
 function getCharacterFrameTexture(
-  tilesetId: string,
-  row: number,
-  startFrame: number,
+  anim: CompiledCharacterAnimation,
   frameIndex: number,
 ): Texture | null {
-  const baseTex = tilesetTextures.get(tilesetId);
-  if (!baseTex || !currentChar) return null;
+  if (!currentChar) return null;
 
-  const fw = currentChar.frameWidth;
-  const fh = currentChar.frameHeight;
-  const col = startFrame + frameIndex;
+  const frame = anim.strip.frames[frameIndex];
+  if (!frame) return null;
 
-  const frame = new Rectangle(col * fw, row * fh, fw, fh);
-  return new Texture({ source: baseTex.source, frame });
+  const baseTex = atlasTextures.get(frame.atlas);
+  if (!baseTex) return null;
+
+  const rect = new Rectangle(frame.x, frame.y, anim.strip.frameWidth, anim.strip.frameHeight);
+  return new Texture({ source: baseTex.source, frame: rect });
 }
 
 function updateCharacterTexture(): void {
@@ -522,15 +573,17 @@ function updateCharacterTexture(): void {
   const anim = getCurrentAnimation();
   if (!anim) {
     // Fallback: try idle variant 0
-    const fallback = getCharacterAnimation(currentChar, "idle", charDir);
+    const fallback = currentChar.animations.find(
+      (a) => a.family === "idle" && a.direction === charDir && a.variant === 0,
+    );
     if (!fallback) return;
-    const tex = getCharacterFrameTexture(fallback.strip.tilesetId, fallback.strip.row, fallback.strip.startFrame, 0);
+    const tex = getCharacterFrameTexture(fallback, 0);
     if (tex) charSprite.texture = tex;
     return;
   }
 
-  const frameIdx = animFrame % anim.strip.frameCount;
-  const tex = getCharacterFrameTexture(anim.strip.tilesetId, anim.strip.row, anim.strip.startFrame, frameIdx);
+  const frameIdx = animFrame % anim.strip.frames.length;
+  const tex = getCharacterFrameTexture(anim, frameIdx);
   if (tex) charSprite.texture = tex;
 }
 
@@ -539,7 +592,7 @@ function updateCharacterTexture(): void {
  * If a sequence is active, returns the animation for the current step's variant.
  * Otherwise returns variant 0.
  */
-function getCurrentAnimation(): CharacterAnimation | undefined {
+function getCurrentAnimation(): CompiledCharacterAnimation | undefined {
   if (!currentChar) return undefined;
 
   if (seqPlayback.sequence) {
@@ -547,12 +600,17 @@ function getCurrentAnimation(): CharacterAnimation | undefined {
     if (seq.steps.length > 0) {
       const step = seq.steps[seqPlayback.stepIndex % seq.steps.length];
       // Find the animation for this variant
-      const anims = getCharacterAnimations(currentChar, animFamily, charDir);
+      const anims = currentChar.animations.filter(
+        (a) => a.family === animFamily && a.direction === charDir,
+      );
       return anims.find((a) => a.variant === step.variant) ?? anims[0];
     }
   }
 
-  return getCharacterAnimation(currentChar, animFamily, charDir);
+  // Default: variant 0
+  return currentChar.animations.find(
+    (a) => a.family === animFamily && a.direction === charDir && a.variant === 0,
+  );
 }
 
 /**
@@ -647,7 +705,9 @@ function syncSequencePlayback(): void {
     return;
   }
 
-  const sequences = getCharacterSequences(currentChar, animFamily, charDir);
+  const sequences = (currentChar.variantSequences || []).filter(
+    (s) => s.family === animFamily && s.direction === charDir,
+  );
   const seq = sequences.find((s) => s.name === seqName) ?? null;
 
   // Only reset playback if the sequence actually changed
@@ -668,7 +728,7 @@ function parseDoorTarget(target: string): [string, string] {
 }
 
 /** Find the door the character is currently standing on (if any) */
-function getDoorAtPosition(room: RoomDefinition, x: number, y: number): DoorDefinition | undefined {
+function getDoorAtPosition(room: CompiledRoom, x: number, y: number): CompiledDoor | undefined {
   const col = Math.floor(x + 0.5); // use center of character
   const row = Math.floor(y + 0.5);
   return room.doors.find((d) => d.col === col && d.row === row);
@@ -676,23 +736,17 @@ function getDoorAtPosition(room: RoomDefinition, x: number, y: number): DoorDefi
 
 /**
  * Transition to a different room via a door.
- * Loads the target room, rebuilds the scene, and places the character
- * on the target door tile facing the same direction.
+ * Loads the target room from compiled resources, rebuilds the scene,
+ * and places the character on the target door tile.
  */
 async function transitionToRoom(targetRoomName: string, targetDoorId: string): Promise<void> {
-  if (transitioning || !currentChar) return;
+  if (transitioning || !currentChar || !manifest) return;
   transitioning = true;
 
-  const targetRoom = appState.rooms.find((r) => r.name === targetRoomName);
-  if (!targetRoom) {
-    setStatus(`Door target room "${targetRoomName}" not found`);
-    transitioning = false;
-    return;
-  }
-
-  const targetDoor = targetRoom.doors.find((d) => d.id === targetDoorId);
-  if (!targetDoor) {
-    setStatus(`Door "${targetDoorId}" not found in room "${targetRoomName}"`);
+  // Find the room file in the manifest
+  const roomEntry = manifest.rooms.find((r) => r.name === targetRoomName);
+  if (!roomEntry) {
+    setStatus(`Door target room "${targetRoomName}" not found in manifest`);
     transitioning = false;
     return;
   }
@@ -700,6 +754,15 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
   setStatus(`Transitioning to "${targetRoomName}"...`);
 
   try {
+    const targetRoom = await loadCompiledRoom(roomEntry.file);
+
+    const targetDoor = targetRoom.doors.find((d) => d.id === targetDoorId);
+    if (!targetDoor) {
+      setStatus(`Door "${targetDoorId}" not found in room "${targetRoomName}"`);
+      transitioning = false;
+      return;
+    }
+
     // Same room — just teleport the character, no scene rebuild needed
     if (currentRoom && targetRoom.name === currentRoom.name) {
       charX = targetDoor.col;
@@ -717,24 +780,9 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
       return;
     }
 
-    // Different room — full scene rebuild
-    // Load any new tileset textures needed by the target room
-    const neededTilesets = new Set<TilesetId>();
-    for (const p of targetRoom.placements) {
-      if (p.region) neededTilesets.add(p.region.tilesetId);
-      if (p.compositeId) {
-        const comp = appState.getComposite(p.compositeId);
-        if (comp) {
-          for (const part of comp.parts) {
-            neededTilesets.add(part.region.tilesetId);
-          }
-        }
-      }
-    }
-    for (const anim of currentChar.animations) {
-      neededTilesets.add(anim.strip.tilesetId);
-    }
-    await Promise.all([...neededTilesets].map((id) => loadTilesetTexture(id)));
+    // Different room — load needed atlases and rebuild
+    const neededAtlases = new Set<string>([...targetRoom.atlases, ...currentChar.atlases]);
+    await Promise.all([...neededAtlases].map((a) => loadAtlasTexture(a)));
 
     // Save character state we want to preserve across rooms
     const preservedDir = charDir;
@@ -760,7 +808,14 @@ async function transitionToRoom(targetRoomName: string, targetDoorId: string): P
     currentDoorId = targetDoorId;
 
     // Update the room dropdown to reflect current room
-    roomSelect.value = targetRoomName;
+    // Find the matching option by room name
+    for (let i = 0; i < roomSelect.options.length; i++) {
+      const opt = roomSelect.options[i];
+      if (opt.textContent === targetRoomName || opt.value === roomEntry.file) {
+        roomSelect.selectedIndex = i;
+        break;
+      }
+    }
 
     modeHint.textContent = `${targetRoom.name} — ${targetRoom.width}×${targetRoom.height} — ${currentChar.name}`;
     hintDiv.textContent = "WASD / Arrow keys to move";
@@ -806,7 +861,6 @@ function updateCharacter(dt: number): void {
     dy /= len;
   }
 
-  const wasMoving = charMoving;
   charMoving = dx !== 0 || dy !== 0;
 
   // Update direction
@@ -876,7 +930,7 @@ function updateCharacter(dt: number): void {
 
     // Check if we wrapped past the current animation's frame count
     const currentAnim = getCurrentAnimation();
-    if (currentAnim && animFrame >= currentAnim.strip.frameCount) {
+    if (currentAnim && animFrame >= currentAnim.strip.frames.length) {
       animFrame = 0;
 
       // If a sequence is active, advance the sequence step
@@ -903,7 +957,7 @@ function updateCharacter(dt: number): void {
   }
 }
 
-function isWalkable(x: number, y: number, room: RoomDefinition): boolean {
+function isWalkable(x: number, y: number, room: CompiledRoom): boolean {
   // Character occupies 1 tile at (x, y). Check bounds + walkability.
   // We add a small margin for smooth movement
   const margin = 0.05;
@@ -950,7 +1004,7 @@ function zSortObjects(): void {
 
 // ─── Overlay drawing (grid + walkability) ───────────────────────
 
-function drawOverlays(room: RoomDefinition): void {
+function drawOverlays(room: CompiledRoom): void {
   if (!overlayContainer) return;
   overlayContainer.removeChildren();
 
@@ -1106,12 +1160,6 @@ setInterval(() => {
     updateInfo();
   }
 }, 100);
-
-// ─── Subscribe to state changes ─────────────────────────────────
-
-appState.subscribe(() => {
-  populateDropdowns();
-});
 
 // ─── Init ────────────────────────────────────────────────────────
 

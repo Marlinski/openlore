@@ -5,6 +5,6 @@ dist/
 *.gif
 *.tsbuildinfo
 
-# Licensed assets (not redistributable)
-data/sprites/
-data/characters/
+# Data — only data/game/ is tracked
+data/*
+!data/game/

@@ -4,14 +4,16 @@
  * Single-page app with 4 tabs:
  *   1. Composite Builder
  *   2. Room Editor
- *   3. Character Definer
+ *   3. Tile Cutter
  *   4. Room Tester
+ *
+ * Project data is loaded from / saved to disk automatically via the FS API.
  */
 
 import { appState } from "./state.js";
 import { initCompositeTab } from "./composite.js";
 import { initRoomTab } from "./room.js";
-import { initCharacterTab } from "./character.js";
+import { initCutterTab } from "./cutter.js";
 import { initTesterTab } from "./tester.js";
 
 // ─── Tab switching ────────────────────────────────────────────────
@@ -39,51 +41,51 @@ tabButtons.forEach((btn) => {
 function updateStatusBar(): void {
   const compositesEl = document.getElementById("status-composites")!;
   const roomsEl = document.getElementById("status-rooms")!;
-  const charsEl = document.getElementById("status-characters")!;
+  const resourcesEl = document.getElementById("status-resources")!;
+  const masksEl = document.getElementById("status-masks")!;
   compositesEl.textContent = `Composites: ${appState.composites.length}`;
   roomsEl.textContent = `Rooms: ${appState.rooms.length}`;
-  charsEl.textContent = `Characters: ${appState.characters.length}`;
+  resourcesEl.textContent = `Resources: ${appState.resources.length}`;
+  masksEl.textContent = `Masks: ${appState.masks.length}`;
 }
 
 appState.subscribe(updateStatusBar);
 updateStatusBar();
 
-// ─── Import / Export ──────────────────────────────────────────────
-
-document.getElementById("btn-export")!.addEventListener("click", () => {
-  appState.exportToFile();
-  setStatus("Exported project to file");
-});
-
-document.getElementById("btn-import")!.addEventListener("click", async () => {
-  await appState.importFromFile();
-  setStatus("Imported project from file");
-});
-
-// ─── Server sync ─────────────────────────────────────────────────
-
-document.getElementById("btn-push")!.addEventListener("click", async () => {
-  setStatus("Syncing to server...");
-  const result = await appState.pushToServer();
-  setStatus(result.ok ? result.message : `Sync failed: ${result.message}`);
-});
-
-document.getElementById("btn-pull")!.addEventListener("click", async () => {
-  setStatus("Loading from server...");
-  const result = await appState.pullFromServer();
-  setStatus(result.ok ? result.message : `Load failed: ${result.message}`);
-});
+// ─── Status text ─────────────────────────────────────────────────
 
 export function setStatus(text: string): void {
   document.getElementById("status-text")!.textContent = text;
 }
+
+// ─── Pack Resources button ──────────────────────────────────────
+
+const packBtn = document.getElementById("pack-resources-btn") as HTMLButtonElement;
+packBtn.addEventListener("click", async () => {
+  packBtn.disabled = true;
+  packBtn.textContent = "Packing...";
+  setStatus("Compiling resources...");
+  try {
+    const res = await fetch("/fs/compile", { method: "POST" });
+    const result = await res.json();
+    if (result.ok) {
+      setStatus(`Packed: ${result.message}`);
+    } else {
+      setStatus(`Pack failed: ${result.message}`);
+    }
+  } catch (e) {
+    setStatus(`Pack error: ${e}`);
+  } finally {
+    packBtn.disabled = false;
+    packBtn.textContent = "Pack Resources";
+  }
+});
 
 // ─── Resizable left panels ───────────────────────────────────────
 
 const PANEL_WIDTHS_KEY = "offisims_panel_widths";
 const MIN_PANEL_WIDTH = 180;
 const MAX_PANEL_WIDTH = 600;
-const DEFAULT_PANEL_WIDTH = 280;
 
 /** Load saved panel widths from localStorage */
 function loadPanelWidths(): Record<string, number> {
@@ -148,9 +150,18 @@ document.querySelectorAll<HTMLDivElement>(".panel-resize-handle").forEach((handl
   });
 });
 
-// ─── Initialize tabs ─────────────────────────────────────────────
+// ─── Initialize tabs (after data loads from disk) ────────────────
 
-initCompositeTab();
-initRoomTab();
-initCharacterTab();
-initTesterTab();
+async function init(): Promise<void> {
+  setStatus("Loading project from disk...");
+  await appState.ready;
+  setStatus(`Loaded: ${appState.tilesets.length} tilesets, ${appState.composites.length} composites, ${appState.rooms.length} rooms, ${appState.resources.length} resources, ${appState.masks.length} masks`);
+  updateStatusBar();
+
+  initCompositeTab();
+  initRoomTab();
+  initCutterTab();
+  initTesterTab();
+}
+
+init();

@@ -24,7 +24,7 @@ import {
 } from "@offisims/shared";
 import { appState } from "./state.js";
 import { setStatus } from "./main.js";
-import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetSelect } from "./tileset-picker.js";
+import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetList } from "./tileset-picker.js";
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ const WORKSPACE_ROWS = 16;
 
 // ─── DOM elements ─────────────────────────────────────────────────
 
-const tilesetSelect = document.getElementById("comp-tileset-select") as HTMLSelectElement;
+const tilesetSelectContainer = document.getElementById("comp-tileset-select") as HTMLDivElement;
 const tilesetZoom = document.getElementById("comp-tileset-zoom") as HTMLSelectElement;
 const tilesetGridToggle = document.getElementById("comp-tileset-grid") as HTMLInputElement;
 const tilesetContainer = document.getElementById("comp-tileset-container") as HTMLDivElement;
@@ -93,6 +93,9 @@ let isDragging = false;
 
 // ─── Tileset Picker ───────────────────────────────────────────────
 
+// FilterableList instance — created during init, used for change events
+let tilesetList: ReturnType<typeof populateTilesetList>;
+
 const picker = new TilesetPicker(tilesetContainer, (region) => {
   selectedBrush = region;
   selectedPartUid = null;
@@ -100,11 +103,7 @@ const picker = new TilesetPicker(tilesetContainer, (region) => {
   drawWorkspace();
 });
 
-tilesetSelect.addEventListener("change", () => {
-  picker.setTileset(tilesetSelect.value as TilesetId);
-  selectedBrush = null;
-  selectionInfo.textContent = "Click/drag on the tileset to select a region.";
-});
+// tilesetList change is handled via onSelect callback (see initCompositeTab)
 
 tilesetZoom.addEventListener("change", () => {
   picker.setZoom(parseInt(tilesetZoom.value));
@@ -740,14 +739,21 @@ appState.subscribe(() => {
 // ─── Init ─────────────────────────────────────────────────────────
 
 export function initCompositeTab(): void {
-  // Populate tileset dropdown from state
-  populateTilesetSelect(tilesetSelect, "office_combined");
+  // Populate tileset filterable list
+  tilesetList = populateTilesetList(tilesetSelectContainer, "office_combined");
+
+  tilesetList.onSelect((id) => {
+    picker.setTileset(id as TilesetId);
+    selectedBrush = null;
+    selectionInfo.textContent = "Click/drag on the tileset to select a region.";
+  });
 
   // Preload all tileset images
   const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
 
   Promise.all(loadPromises).then(() => {
-    picker.setTileset(tilesetSelect.value as TilesetId);
+    const selected = tilesetList.getValue();
+    if (selected) picker.setTileset(selected as TilesetId);
     renderSavedComposites();
     drawWorkspace();
     setStatus("Composite Builder ready");

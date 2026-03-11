@@ -812,18 +812,18 @@
     .comp-part-item:hover .delete-btn { opacity: 1; }
 
     /* ═══════════════════════════════════════════════════════════
-       TAB 3: Character Definer
+       TAB 3: Tile Cutter
        ═══════════════════════════════════════════════════════════ */
-    #tab-character {
+    #tab-cutter {
       flex-direction: row;
     }
 
-    #char-left {
+    #cut-left {
       width: 280px;
       flex-shrink: 0;
     }
 
-    #char-center {
+    #cut-center {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -832,7 +832,7 @@
       overflow: hidden;
     }
 
-    #char-toolbar {
+    #cut-toolbar {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -843,64 +843,48 @@
       flex-wrap: wrap;
     }
 
-    #char-sheet-wrap {
+    #cut-sheet-wrap {
       flex: 1;
       overflow: auto;
       padding: 12px;
     }
 
-    #char-sheet-wrap canvas {
+    #cut-sheet-wrap canvas {
       display: block;
       image-rendering: pixelated;
     }
 
-    .char-sheet-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin: 8px 0 4px 0;
-    }
-    .char-sheet-label:first-child { margin-top: 0; }
-
-    #char-right {
+    #cut-right {
       width: 320px;
       flex-shrink: 0;
     }
 
-    /* Drag selection overlay on sheet canvas */
-    .char-drag-overlay {
+    /* Drag selection overlay on tileset canvas */
+    .cut-drag-overlay {
       position: absolute;
       border: 2px solid var(--accent);
-      background: rgba(233, 69, 96, 0.2);
+      background: rgba(233, 69, 96, 0.15);
       pointer-events: none;
       z-index: 10;
       display: none;
     }
-
-    /* Assignment form (appears after selection) */
-    #char-assign-form {
+    /* Pending selection overlay — stays visible until Add Cut / Cancel */
+    .cut-pending-overlay {
+      position: absolute;
+      border: 2px solid var(--blue);
+      background: rgba(96, 165, 250, 0.18);
+      pointer-events: none;
+      z-index: 9;
       display: none;
-      padding: 8px;
-      background: var(--bg-surface);
-      border: 1px solid var(--accent);
-      border-radius: 4px;
-      margin: 8px 0;
     }
-    #char-assign-form .assign-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    #char-assign-form .assign-row label {
-      min-width: 50px;
-      font-size: 11px;
+    /* Sequence extension region — lighter shade than the base rect */
+    .cut-drag-overlay.sequence {
+      border-style: dashed;
+      background: rgba(233, 69, 96, 0.08);
     }
 
-    /* Animation entry item in the right panel list */
-    .char-anim-item {
+    /* Cut entry item in the right panel list */
+    .cut-entry-item {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -912,29 +896,33 @@
       cursor: pointer;
       position: relative;
     }
-    .char-anim-item:hover { background: var(--bg-surface); }
-    .char-anim-item.selected { border-color: var(--blue); background: var(--bg-surface); }
-    .char-anim-item canvas {
+    .cut-entry-item:hover { background: var(--bg-surface); }
+    .cut-entry-item.selected { border-color: var(--blue); background: var(--bg-surface); }
+    .cut-entry-item canvas {
       image-rendering: pixelated;
       flex-shrink: 0;
       border: 1px solid var(--border);
     }
-    .char-anim-item .info {
+    .cut-entry-item .info {
       flex: 1;
       min-width: 0;
     }
-    .char-anim-item .info .name {
+    .cut-entry-item .info .name {
       font-size: 11px;
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .char-anim-item .info .meta {
+    .cut-entry-item .info .meta {
       font-size: 10px;
       color: var(--text-dim);
     }
-    .char-anim-item .delete-btn {
+    .cut-entry-item .info .tags {
+      font-size: 10px;
+      color: var(--green);
+    }
+    .cut-entry-item .delete-btn {
       opacity: 0;
       background: none;
       border: none;
@@ -943,40 +931,93 @@
       font-size: 14px;
       padding: 2px 4px;
     }
-    .char-anim-item:hover .delete-btn { opacity: 1; }
+    .cut-entry-item:hover .delete-btn { opacity: 1; }
 
-    /* Family group header */
-    .char-family-header {
+    /* Assign rows (shared across tile-level and cut-level forms) */
+    #cut-left .assign-row {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 6px;
-      margin-top: 8px;
-      margin-bottom: 2px;
+      margin-bottom: 6px;
+    }
+    #cut-left .assign-row label {
+      min-width: 50px;
       font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--blue);
-      border-bottom: 1px solid var(--border);
-    }
-    .char-family-header:first-child { margin-top: 0; }
-    .char-family-header .speed-input {
-      margin-left: auto;
-      font-size: 10px;
-      font-weight: 400;
-      color: var(--text-dim);
-      text-transform: none;
-      letter-spacing: 0;
-    }
-    .char-family-header .speed-input input {
-      width: 36px;
-      font-size: 10px;
-      padding: 1px 3px;
     }
 
-    /* Animation preview box */
-    .char-preview-box {
+    /* Tag editor */
+    #cut-assign-form {
+      display: none;
+      padding: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      margin: 8px 0;
+    }
+
+    /* Tag autocomplete dropdown */
+    .tag-autocomplete {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 100;
+      max-height: 150px;
+      overflow-y: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .tag-autocomplete .ac-item {
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .tag-autocomplete .ac-item:hover,
+    .tag-autocomplete .ac-item.active {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    /* Tag pills */
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 1px 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--green);
+      border-radius: 10px;
+      font-size: 10px;
+      color: var(--green);
+      margin: 1px 2px;
+    }
+    .tag-pill .remove-tag {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 11px;
+      margin-left: 2px;
+      border: none;
+      background: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .tag-pill .remove-tag:hover { color: var(--accent-hover); }
+
+    .shared-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-bottom: 3px;
+      min-height: 0;
+    }
+    .shared-tags-container:empty { margin-bottom: 0; }
+
+    /* Preview box (reused from character tab) */
+    .cut-preview-box {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
@@ -986,17 +1027,17 @@
       border-radius: 4px;
       background: var(--bg);
     }
-    .char-preview-box canvas {
+    .cut-preview-box canvas {
       image-rendering: pixelated;
     }
-    .char-preview-box .label {
+    .cut-preview-box .label {
       font-size: 10px;
       color: var(--text-dim);
       text-transform: uppercase;
     }
 
-    /* Saved character item */
-    .char-saved-item {
+    /* Saved resource item */
+    .cut-saved-item {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -1006,23 +1047,28 @@
       cursor: pointer;
       margin-bottom: 2px;
     }
-    .char-saved-item:hover { background: var(--bg-surface); }
-    .char-saved-item .info {
+    .cut-saved-item:hover { background: var(--bg-surface); }
+    .cut-saved-item.selected { border-color: var(--blue); background: var(--bg-surface); }
+    .cut-saved-item .info {
       flex: 1;
       min-width: 0;
     }
-    .char-saved-item .info .name {
+    .cut-saved-item .info .name {
       font-weight: 500;
       font-size: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .char-saved-item .info .meta {
+    .cut-saved-item .info .meta {
       font-size: 10px;
       color: var(--text-dim);
     }
-    .char-saved-item .delete-btn {
+    .cut-saved-item .info .tags {
+      font-size: 10px;
+      color: var(--green);
+    }
+    .cut-saved-item .delete-btn {
       opacity: 0;
       background: none;
       border: none;
@@ -1031,33 +1077,37 @@
       font-size: 14px;
       padding: 2px 4px;
     }
-    .char-saved-item:hover .delete-btn { opacity: 1; }
+    .cut-saved-item:hover .delete-btn { opacity: 1; }
 
-    /* Variant sequence item */
-    .char-seq-item {
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      margin-bottom: 4px;
-      background: var(--bg);
-    }
-    .char-seq-item .seq-header {
+    /* Saved mask item */
+    .cut-mask-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 4px;
+      padding: 5px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
     }
-    .char-seq-item .seq-header .seq-name {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--blue);
+    .cut-mask-item:hover { background: var(--bg-surface); }
+    .cut-mask-item .info {
       flex: 1;
+      min-width: 0;
     }
-    .char-seq-item .seq-header .seq-meta {
+    .cut-mask-item .info .name {
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--blue);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cut-mask-item .info .meta {
       font-size: 10px;
       color: var(--text-dim);
     }
-    .char-seq-item .seq-header .delete-btn {
+    .cut-mask-item .delete-btn {
       opacity: 0;
       background: none;
       border: none;
@@ -1066,43 +1116,7 @@
       font-size: 14px;
       padding: 2px 4px;
     }
-    .char-seq-item:hover .seq-header .delete-btn { opacity: 1; }
-    .char-seq-step {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 0;
-      font-size: 11px;
-    }
-    .char-seq-step .step-label {
-      flex: 1;
-      color: var(--text);
-    }
-    .char-seq-step input[type="number"] {
-      width: 40px;
-      font-size: 10px;
-      padding: 1px 3px;
-    }
-    .char-seq-step .delete-btn {
-      opacity: 0;
-      background: none;
-      border: none;
-      color: var(--accent);
-      cursor: pointer;
-      font-size: 12px;
-      padding: 1px 3px;
-    }
-    .char-seq-step:hover .delete-btn { opacity: 1; }
-    .char-seq-add-step {
-      font-size: 10px;
-      color: var(--blue);
-      cursor: pointer;
-      border: none;
-      background: none;
-      padding: 2px 0;
-      margin-top: 2px;
-    }
-    .char-seq-add-step:hover { text-decoration: underline; }
+    .cut-mask-item:hover .delete-btn { opacity: 1; }
 
     /* ═══════════════════════════════════════════════════════════
        TAB 4: Room Tester
@@ -1162,6 +1176,61 @@
       pointer-events: none;
       z-index: 10;
     }
+
+    /* ─── FilterableList component ──────────────────────────── */
+    .filterable-list {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    .filterable-list-input {
+      width: 100%;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text);
+      outline: none;
+    }
+    .filterable-list-input:focus {
+      border-color: var(--accent);
+    }
+    .filterable-list-items {
+      max-height: 180px;
+      overflow-y: auto;
+      margin-top: 4px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg);
+    }
+    .filterable-list-item {
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-dim);
+    }
+    .filterable-list-item:hover {
+      background: var(--bg-surface);
+      color: var(--text);
+    }
+    .filterable-list-item.selected {
+      background: var(--accent);
+      color: #fff;
+    }
+    .filterable-list-items::-webkit-scrollbar {
+      width: 6px;
+    }
+    .filterable-list-items::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    .filterable-list-items::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
@@ -1171,14 +1240,10 @@
     <span class="logo">OFFISIMS</span>
     <button class="tab-btn active" data-tab="composite">1. Composite Builder</button>
     <button class="tab-btn" data-tab="room">2. Room Editor</button>
-    <button class="tab-btn" data-tab="character">3. Character Definer</button>
+    <button class="tab-btn" data-tab="cutter">3. Tile Cutter</button>
     <button class="tab-btn" data-tab="tester">4. Room Tester</button>
     <span class="topbar-spacer"></span>
-    <button class="topbar-action" id="btn-export">Export JSON</button>
-    <button class="topbar-action" id="btn-import">Import JSON</button>
-    <span style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></span>
-    <button class="topbar-action" id="btn-push" style="color: var(--green);">Sync to Server</button>
-    <button class="topbar-action" id="btn-pull" style="color: var(--blue);">Load from Server</button>
+    <button class="topbar-action" id="pack-resources-btn">Pack Resources</button>
   </div>
 
   <!-- ─── Tab Content ──────────────────────────────────────── -->
@@ -1190,8 +1255,7 @@
       <div id="comp-left" class="panel">
         <div class="panel-header">Tileset</div>
         <div style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
-          <select id="comp-tileset-select" style="width: 100%;">
-          </select>
+          <div id="comp-tileset-select"></div>
         </div>
         <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
           <label>Zoom</label>
@@ -1332,8 +1396,7 @@
         <div id="room-left-texture" style="display: none; height: 100%; flex-direction: column;">
           <div class="panel-header">Tileset</div>
           <div style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
-            <select id="room-tileset-select" style="width: 100%;">
-            </select>
+            <div id="room-tileset-select"></div>
           </div>
           <div style="padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
             <label>Zoom</label>
@@ -1441,160 +1504,142 @@
       </div>
     </div>
 
-    <!-- Tab 3: Character Definer -->
-    <div id="tab-character" class="tab-panel">
-      <!-- Left: character selection + frame config + save -->
-      <div id="char-left" class="panel">
-        <div class="panel-header">Character Sheet</div>
+    <!-- Tab 3: Tile Cutter -->
+    <div id="tab-cutter" class="tab-panel">
+      <!-- Left: tileset selection + tag assignment + save -->
+      <div id="cut-left" class="panel">
+        <div class="panel-header">Tile Cutter</div>
         <div class="panel-body">
           <div style="margin-bottom: 8px;">
-            <label>Character</label>
-            <select id="char-sheet-select" style="width: 100%;">
-              <option value="adam">Adam</option>
-              <option value="alex">Alex</option>
-              <option value="amelia">Amelia</option>
-              <option value="bob">Bob</option>
-            </select>
+            <label>Tileset</label>
+            <div id="cut-tileset-select"></div>
           </div>
-          <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-            <label>Frame W</label>
-            <input type="number" id="char-frame-w" value="16" min="1" max="128" style="width: 52px;" />
-            <label>H</label>
-            <input type="number" id="char-frame-h" value="32" min="1" max="128" style="width: 52px;" />
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;" id="cut-sheet-info">
+            Select a tileset to begin.
           </div>
-          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;" id="char-sheet-info">
-            Loading sheets...
+          <div class="assign-row" style="align-items: flex-start;">
+            <label style="margin-top: 4px;">Shared tags</label>
+            <div style="flex: 1;">
+              <div id="cut-shared-tags" class="shared-tags-container"></div>
+              <div style="position: relative;">
+                <input type="text" id="cut-group-tag" placeholder="+ add tag" style="width: 100%; font-size: 11px;" title="Add a tag shared by all resources from this tileset" />
+                <div class="tag-autocomplete" id="cut-group-tag-ac"></div>
+              </div>
+            </div>
+          </div>
+          <div class="assign-row">
+            <label>Mask name</label>
+            <input type="text" id="cut-mask-name" placeholder="e.g. limezu_4dir" style="flex: 1;" />
+            <button class="btn" id="cut-save-mask-btn" style="font-size: 11px;" disabled>Save Mask</button>
           </div>
           <hr style="border-color: var(--border); margin: 8px 0;" />
           <!-- Assignment form (shown after drag-selecting a region) -->
-          <div id="char-assign-form">
-            <div style="font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Assign Selection</div>
+          <div id="cut-assign-form">
+            <div style="font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Tag Selection</div>
             <div class="assign-row">
-              <label>Family</label>
-              <select id="char-assign-family" style="flex: 1;">
-                <option value="idle">idle</option>
-                <option value="walk">walk</option>
-                <option value="sit_office">sit_office</option>
-                <option value="sit_couch">sit_couch</option>
-              </select>
-              <input type="text" id="char-assign-family-custom" placeholder="or type custom" style="width: 80px;" />
+              <label>Name</label>
+              <input type="text" id="cut-assign-name" placeholder="e.g. idle_down" style="flex: 1;" />
             </div>
             <div class="assign-row">
-              <label>Direction</label>
-              <select id="char-assign-dir" style="flex: 1;">
-                <option value="down">down</option>
-                <option value="up">up</option>
-                <option value="left">left</option>
-                <option value="right">right</option>
-              </select>
+              <label>Tags</label>
+              <div style="position: relative; flex: 1;">
+                <input type="text" id="cut-assign-tags" placeholder="tag1, tag2, ..." style="width: 100%;" />
+                <div class="tag-autocomplete" id="cut-assign-tags-ac"></div>
+              </div>
             </div>
-            <div class="assign-row">
-              <label>Info</label>
-              <span id="char-assign-info" style="font-size: 10px; color: var(--text-dim);">—</span>
-            </div>
+            <div id="cut-assign-info" style="font-size: 10px; color: var(--text-dim); margin-bottom: 6px;">—</div>
+            <div id="cut-pending-preview" style="margin-bottom: 6px; display: flex; justify-content: center;"></div>
             <div style="display: flex; gap: 4px;">
-              <button class="btn primary" id="char-assign-btn" style="font-size: 11px;">Assign</button>
-              <button class="btn" id="char-assign-cancel-btn" style="font-size: 11px;">Cancel</button>
+              <button class="btn primary" id="cut-assign-btn" style="font-size: 11px;">Add Cut</button>
+              <button class="btn" id="cut-assign-cancel-btn" style="font-size: 11px;">Cancel</button>
             </div>
           </div>
-          <div id="char-assign-hint" style="font-size: 11px; color: var(--text-dim); line-height: 1.5;">
-            Drag on the sprite sheet to select a frame range, then assign it to a family + direction.
+          <div id="cut-assign-hint" style="font-size: 11px; color: var(--text-dim); line-height: 1.5;">
+            Drag on the tileset to select a region. Hold Shift to extend as a frame sequence.
           </div>
           <hr style="border-color: var(--border); margin: 8px 0;" />
-          <div style="margin-bottom: 8px;">
-            <label>Character Name</label>
-            <input type="text" id="char-name" placeholder="e.g. Adam" style="width: 100%;" />
+          <!-- Batch save -->
+          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+            <button class="btn primary" id="cut-save-resources-btn" disabled>Save Resources</button>
           </div>
-          <div id="char-save-status" style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;"></div>
-          <button class="btn primary" id="char-save-btn" disabled>Save Character</button>
+          <div id="cut-save-status" style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;"></div>
+          <hr style="border-color: var(--border); margin: 8px 0;" />
+          <!-- Masks -->
+          <div class="panel-header" style="padding: 0; border: 0; margin-bottom: 8px;">
+            Masks
+            <span id="cut-mask-count" style="float: right; color: var(--text-dim);">0</span>
+          </div>
+          <div id="cut-mask-list"></div>
           <hr style="border-color: var(--border); margin: 12px 0;" />
           <div class="panel-header" style="padding: 0; border: 0; margin-bottom: 8px;">
-            Saved Characters
-            <span id="char-saved-count" style="float: right; color: var(--text-dim);">0</span>
+            Saved Resources
+            <span style="float: right; display: flex; align-items: center; gap: 6px;">
+              <button class="btn-sm" id="cut-clear-resources-btn" title="Remove all resources for this tileset" style="font-size: 10px; color: var(--accent);">Clear</button>
+              <span id="cut-resource-count" style="color: var(--text-dim);">0</span>
+            </span>
           </div>
-          <div id="char-saved-list"></div>
+          <div style="margin-bottom: 6px;">
+            <input type="text" id="cut-resource-filter" placeholder="Filter by tag..." style="width: 100%;" />
+          </div>
+          <div id="cut-resource-list"></div>
         </div>
       </div>
 
       <!-- Resize handle -->
-      <div class="panel-resize-handle" data-resize-target="char-left"></div>
+      <div class="panel-resize-handle" data-resize-target="cut-left"></div>
 
-      <!-- Center: both sprite sheets stacked with drag-selection -->
-      <div id="char-center">
-        <div id="char-toolbar">
+      <!-- Center: tileset with drag-selection -->
+      <div id="cut-center">
+        <div id="cut-toolbar">
           <label>Zoom</label>
-          <select id="char-zoom">
+          <select id="cut-zoom">
+            <option value="1" selected>1x</option>
             <option value="2">2x</option>
             <option value="3">3x</option>
-            <option value="4" selected>4x</option>
+            <option value="4">4x</option>
             <option value="6">6x</option>
             <option value="8">8x</option>
           </select>
-          <label><input type="checkbox" id="char-grid-toggle" checked /> Grid</label>
-          <div id="char-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
-            Drag on the sheet to select frames. Assigned strips are color-coded.
+          <label><input type="checkbox" id="cut-grid-toggle" checked /> Grid</label>
+          <div id="cut-hint" style="margin-left: 12px; color: var(--text-dim); font-size: 12px;">
+            Drag = static rectangle. Hold Shift to extend as frame sequence.
           </div>
         </div>
-        <div id="char-sheet-wrap">
+        <div id="cut-sheet-wrap">
           <div style="position: relative; display: inline-block;">
-            <div class="char-sheet-label">Idle Sheet</div>
-            <div id="char-idle-canvas-wrap" style="position: relative; display: inline-block;">
-              <canvas id="char-idle-canvas"></canvas>
-              <div class="char-drag-overlay" id="char-idle-drag"></div>
-            </div>
-            <div class="char-sheet-label" style="margin-top: 16px;">Walk Sheet</div>
-            <div id="char-walk-canvas-wrap" style="position: relative; display: inline-block;">
-              <canvas id="char-walk-canvas"></canvas>
-              <div class="char-drag-overlay" id="char-walk-drag"></div>
+            <div id="cut-canvas-wrap" style="position: relative; display: inline-block;">
+              <canvas id="cut-canvas"></canvas>
+              <div class="cut-drag-overlay" id="cut-drag-overlay"></div>
+              <div class="cut-drag-overlay" id="cut-seq-overlay" style="border-style: dashed; background: rgba(233, 69, 96, 0.08);"></div>
+              <div class="cut-pending-overlay" id="cut-pending-overlay"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: animations list + previews -->
-      <div id="char-right" class="panel">
-        <div class="panel-header">Animations</div>
+      <!-- Right: cuts list + previews -->
+      <div id="cut-right" class="panel">
+        <div class="panel-header">
+          Cuts
+          <span id="cut-entry-count" style="float: right; color: var(--text-dim);">0</span>
+        </div>
         <div class="panel-body">
-          <div id="char-anim-list"></div>
-          <hr style="border-color: var(--border); margin: 12px 0;" />
-          <!-- Variant Sequences -->
-          <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            Variant Sequences
-          </div>
-          <div id="char-seq-hint" style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;">
-            Create sequences to cycle through variants with custom repeat counts.
-          </div>
-          <div id="char-seq-create" style="margin-bottom: 8px;">
-            <div style="display: flex; gap: 4px; margin-bottom: 4px; align-items: center;">
-              <select id="char-seq-family" style="flex: 1; font-size: 11px;"></select>
-              <select id="char-seq-dir" style="flex: 1; font-size: 11px;">
-                <option value="down">down</option>
-                <option value="up">up</option>
-                <option value="left">left</option>
-                <option value="right">right</option>
-              </select>
-            </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
-              <input type="text" id="char-seq-name" placeholder="sequence name" style="flex: 1; font-size: 11px;" />
-              <button class="btn" id="char-seq-add-btn" style="font-size: 11px;">+ New</button>
-            </div>
-          </div>
-          <div id="char-seq-list"></div>
+          <div id="cut-entry-list"></div>
           <hr style="border-color: var(--border); margin: 12px 0;" />
           <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
             Preview
           </div>
           <div style="margin-bottom: 8px;">
             <label>Speed</label>
-            <input type="range" id="char-anim-speed" min="1" max="20" value="8" style="width: 100%;" />
+            <input type="range" id="cut-preview-speed" min="1" max="20" value="4" style="width: 100%;" />
             <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim);">
               <span>Slow</span>
-              <span id="char-anim-speed-label">8 fps</span>
+              <span id="cut-preview-speed-label">4 fps</span>
               <span>Fast</span>
             </div>
           </div>
-          <div id="char-preview-area" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-            <div style="color: var(--text-dim); font-size: 11px;">Assign animations to preview.</div>
+          <div id="cut-preview-area" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+            <div style="color: var(--text-dim); font-size: 11px;">Add cuts to preview.</div>
           </div>
         </div>
       </div>
@@ -1673,7 +1718,8 @@
     <span class="topbar-spacer"></span>
     <span id="status-composites">Composites: 0</span>
     <span id="status-rooms">Rooms: 0</span>
-    <span id="status-characters">Characters: 0</span>
+    <span id="status-resources">Resources: 0</span>
+    <span id="status-masks">Masks: 0</span>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

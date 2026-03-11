@@ -44,7 +44,7 @@ import {
 } from "@offisims/shared";
 import { appState } from "./state.js";
 import { setStatus } from "./main.js";
-import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetSelect } from "./tileset-picker.js";
+import { TilesetPicker, loadTilesetImage, getCachedTilesetImage, populateTilesetList } from "./tileset-picker.js";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ const doorListDiv = document.getElementById("room-door-list") as HTMLDivElement;
 
 // Left panel: texture mode
 const leftTextureDiv = document.getElementById("room-left-texture") as HTMLDivElement;
-const roomTilesetSelect = document.getElementById("room-tileset-select") as HTMLSelectElement;
+const roomTilesetSelectContainer = document.getElementById("room-tileset-select") as HTMLDivElement;
 const roomTilesetZoom = document.getElementById("room-tileset-zoom") as HTMLSelectElement;
 const roomTilesetGridToggle = document.getElementById("room-tileset-grid") as HTMLInputElement;
 const roomTilesetContainer = document.getElementById("room-tileset-container") as HTMLDivElement;
@@ -300,6 +300,9 @@ function confirmDiscardChanges(): boolean {
 
 // ─── Tileset Picker (texture mode) ───────────────────────────────
 
+// FilterableList instance — created during init
+let roomTilesetList: ReturnType<typeof populateTilesetList>;
+
 const roomPicker = new TilesetPicker(roomTilesetContainer, (region) => {
   selectedBrush = { type: "region", region };
   selectedPlacements.clear();
@@ -308,11 +311,7 @@ const roomPicker = new TilesetPicker(roomTilesetContainer, (region) => {
   drawRoom();
 });
 
-roomTilesetSelect.addEventListener("change", () => {
-  roomPicker.setTileset(roomTilesetSelect.value as TilesetId);
-  selectedBrush = null;
-  roomSelectionInfo.textContent = "Click/drag on tileset to select brush.";
-});
+// roomTilesetList change is handled via onSelect callback (see initRoomTab)
 
 roomTilesetZoom.addEventListener("change", () => {
   roomPicker.setZoom(parseInt(roomTilesetZoom.value));
@@ -1884,14 +1883,21 @@ export function initRoomTab(): void {
   // Try to restore previous editor state before anything else
   const restored = restoreEditorState();
 
-  // Populate tileset dropdown dynamically
-  populateTilesetSelect(roomTilesetSelect);
+  // Populate tileset filterable list
+  roomTilesetList = populateTilesetList(roomTilesetSelectContainer);
+
+  roomTilesetList.onSelect((id) => {
+    roomPicker.setTileset(id as TilesetId);
+    selectedBrush = null;
+    roomSelectionInfo.textContent = "Click/drag on tileset to select brush.";
+  });
 
   // Preload all tileset images
   const loadPromises = appState.tilesets.map((ts) => loadTilesetImage(ts.id));
 
   Promise.all(loadPromises).then(() => {
-    roomPicker.setTileset(roomTilesetSelect.value as TilesetId);
+    const selected = roomTilesetList.getValue();
+    if (selected) roomPicker.setTileset(selected as TilesetId);
     renderSavedRooms();
 
     if (restored) {

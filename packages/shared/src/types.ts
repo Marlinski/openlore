@@ -53,46 +53,6 @@ export interface TilesetDefinition {
 /** Tileset ID is just a string — no longer a const union */
 export type TilesetId = string;
 
-/** Built-in tilesets seeded on first load. Users can add more. */
-export const DEFAULT_TILESETS: TilesetDefinition[] = [
-  {
-    id: "room_builder",
-    label: "Room Builder (Floors & Walls)",
-    path: "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
-    tileWidth: 48,
-    tileHeight: 48,
-    cols: 16,
-    rows: 14,
-  },
-  {
-    id: "office_shadow",
-    label: "Office (Black Shadow)",
-    path: "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
-    tileWidth: 48,
-    tileHeight: 48,
-    cols: 16,
-    rows: 53,
-  },
-  {
-    id: "office_shadowless",
-    label: "Office (Shadowless)",
-    path: "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
-    tileWidth: 48,
-    tileHeight: 48,
-    cols: 16,
-    rows: 53,
-  },
-  {
-    id: "office_combined",
-    label: "Office (Combined)",
-    path: "/data/sprites/Modern_Office_48x48.png",
-    tileWidth: 48,
-    tileHeight: 48,
-    cols: 16,
-    rows: 53,
-  },
-];
-
 // ─── Tileset Region ─────────────────────────────────────────────────
 
 /**
@@ -460,6 +420,110 @@ export function getCharacterSequences(
   );
 }
 
+// ─── Resource ───────────────────────────────────────────────────────
+
+/**
+ * A resource is the fundamental unit in the asset system.
+ * It is a sequence of 1+ frames (a static tile is a sequence of length 1).
+ *
+ * Resources are tagged with arbitrary strings. Tags serve double duty:
+ *   - Metadata: "idle", "walk", "down", "variant_0", "48x48"
+ *   - Grouping: "adam", "desk_fan", "office_furniture"
+ *
+ * A "character" is not a special type — it's a set of resources that share
+ * a common group tag (e.g. "adam") and have the right animation tags
+ * (e.g. "idle" + "down", "walk" + "left", etc.).
+ *
+ * Resources can be created:
+ *   - Manually via the Tile Cutter (drag-select on a tileset)
+ *   - In batch by applying a Mask to a tileset
+ *   - By the Composite tool (stitching resources together)
+ */
+export interface Resource {
+  /** Unique identifier */
+  id: string;
+  /** Human-readable name (e.g. "adam_idle_down", "desk_fan_spin") */
+  name: string;
+  /** Tags for grouping, filtering, and semantic meaning */
+  tags: string[];
+  /**
+   * Ordered list of frames. Length 1 = static resource.
+   * All frames must have the same pixel dimensions (w * tileWidth, h * tileHeight).
+   */
+  frames: ResourceFrame[];
+}
+
+/**
+ * A single frame in a resource, referencing a rectangular tile region
+ * in a source tileset image.
+ *
+ * Coordinates are in tiles (not pixels) — resolved via the tileset's
+ * tileWidth/tileHeight at render time.
+ */
+export interface ResourceFrame {
+  /** Source tileset ID */
+  tilesetId: TilesetId;
+  /** Top-left tile column in the tileset (0-indexed) */
+  srcCol: number;
+  /** Top-left tile row in the tileset (0-indexed) */
+  srcRow: number;
+  /** Width in tiles */
+  w: number;
+  /** Height in tiles */
+  h: number;
+}
+
+// ─── Mask ───────────────────────────────────────────────────────────
+
+/**
+ * A mask is a reusable cut template for batch-creating tagged resources
+ * from a tileset. It defines a set of "cuts" — each cut specifies where
+ * to extract frames and what tags to apply to the resulting resource.
+ *
+ * Masks are created by the Tile Cutter: you manually cut a tileset into
+ * resources, then "Save as Mask" captures the cut pattern. Later, you
+ * can apply the same mask to a different tileset of the same shape
+ * (e.g. different character spritesheet with the same layout).
+ *
+ * When applying a mask, the user provides a "group tag" (e.g. "amanda")
+ * that gets added to every resource created by the mask, along with
+ * the cut-specific tags (e.g. "idle", "down").
+ */
+export interface Mask {
+  /** Unique identifier */
+  id: string;
+  /** Human-readable name (e.g. "limezu_legacy_character") */
+  name: string;
+  /** Expected tile width of the source tileset */
+  tileWidth: number;
+  /** Expected tile height of the source tileset */
+  tileHeight: number;
+  /** The cuts that define how to slice the tileset */
+  cuts: MaskCut[];
+}
+
+/**
+ * A single cut within a mask. Defines a contiguous frame range
+ * to extract, plus the tags to apply to the resulting resource.
+ *
+ * Coordinates are relative to the tileset grid (tile columns/rows).
+ * When applied, each cut creates one Resource.
+ */
+export interface MaskCut {
+  /** Tags to apply to the resource created by this cut (e.g. ["idle", "down"]) */
+  tags: string[];
+  /** Row in the tileset grid (0-indexed) */
+  row: number;
+  /** Starting frame column (0-indexed) */
+  startFrame: number;
+  /** Number of frames to extract */
+  frameCount: number;
+  /** Width of each frame in tiles (defaults to 1 if omitted) */
+  frameWidth?: number;
+  /** Height of each frame in tiles (defaults to 1 if omitted) */
+  frameHeight?: number;
+}
+
 // ─── Project data (saved to localStorage / exported as JSON) ────────
 
 export interface ProjectData {
@@ -467,7 +531,12 @@ export interface ProjectData {
   tilesets: TilesetDefinition[];
   composites: CompositeObject[];
   rooms: RoomDefinition[];
+  /** @deprecated — being migrated to resources with tags. Kept for backward compat. */
   characters: CharacterDefinition[];
+  /** Tagged resources (sequences and statics) */
+  resources?: Resource[];
+  /** Reusable cut templates */
+  masks?: Mask[];
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -487,8 +556,9 @@ export function charTilesetId(sheetId: string, sheet: CharacterSheet): string {
 
 /**
  * Build a TilesetDefinition for a character sheet.
+ * `sheetPath` is the serving URL (e.g. "/data/tilesets/2_Characters/.../Adam_48x48.png").
  * The image dimensions (cols, rows) are unknown at definition time —
- * they're filled in after the image loads.
+ * they're filled in after the image loads (pass 0, 0 as placeholder).
  */
 export function makeCharTileset(
   sheetId: string,
@@ -497,11 +567,12 @@ export function makeCharTileset(
   frameHeight: number,
   imgWidth: number,
   imgHeight: number,
+  sheetPath?: string,
 ): TilesetDefinition {
   return {
     id: charTilesetId(sheetId, sheet),
     label: `${sheetId} (${sheet})`,
-    path: `/data/characters/${sheetId}_${sheet}.png`,
+    path: sheetPath || `/data/tilesets/${sheetId}_${sheet}.png`,
     tileWidth: frameWidth,
     tileHeight: frameHeight,
     cols: Math.floor(imgWidth / frameWidth),

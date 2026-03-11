@@ -15,7 +15,7 @@
  *   picker.setZoom(2);
  */
 
-import { TILE_SIZE, type TilesetId, type TilesetRegion, type TilesetDefinition } from "@offisims/shared";
+import { type TilesetId, type TilesetRegion, type TilesetDefinition } from "@offisims/shared";
 import { appState } from "./state.js";
 
 /** Global tileset image cache shared across all pickers */
@@ -31,6 +31,11 @@ export function loadTilesetImage(tilesetId: string): Promise<HTMLImageElement> {
     const img = new Image();
     img.onload = () => {
       imageCache.set(tilesetId, img);
+      // Lazily compute cols/rows from actual image dimensions if not yet known
+      if (info.cols === 0 || info.rows === 0) {
+        info.cols = Math.floor(img.naturalWidth / info.tileWidth);
+        info.rows = Math.floor(img.naturalHeight / info.tileHeight);
+      }
       resolve(img);
     };
     img.onerror = () => reject(new Error(`Failed to load ${info.path}`));
@@ -139,9 +144,10 @@ export class TilesetPicker {
     const info = this.getInfo();
     if (!info) return;
 
-    const ts = TILE_SIZE * this.zoom;
-    const w = info.cols * ts;
-    const h = info.rows * ts;
+    const tw = info.tileWidth * this.zoom;
+    const th = info.tileHeight * this.zoom;
+    const w = info.cols * tw;
+    const h = info.rows * th;
 
     this.canvas.width = w;
     this.canvas.height = h;
@@ -160,14 +166,14 @@ export class TilesetPicker {
       ctx.lineWidth = 1;
       for (let x = 0; x <= info.cols; x++) {
         ctx.beginPath();
-        ctx.moveTo(x * ts + 0.5, 0);
-        ctx.lineTo(x * ts + 0.5, h);
+        ctx.moveTo(x * tw + 0.5, 0);
+        ctx.lineTo(x * tw + 0.5, h);
         ctx.stroke();
       }
       for (let y = 0; y <= info.rows; y++) {
         ctx.beginPath();
-        ctx.moveTo(0, y * ts + 0.5);
-        ctx.lineTo(w, y * ts + 0.5);
+        ctx.moveTo(0, y * th + 0.5);
+        ctx.lineTo(w, y * th + 0.5);
         ctx.stroke();
       }
     }
@@ -182,9 +188,10 @@ export class TilesetPicker {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const ts = TILE_SIZE * this.zoom;
-    const col = Math.floor(x / ts);
-    const row = Math.floor(y / ts);
+    const tw = info.tileWidth * this.zoom;
+    const th = info.tileHeight * this.zoom;
+    const col = Math.floor(x / tw);
+    const row = Math.floor(y / th);
     if (col < 0 || col >= info.cols || row < 0 || row >= info.rows) return null;
     return { col, row };
   }
@@ -236,17 +243,20 @@ export class TilesetPicker {
   }
 
   private updateDragOverlay(): void {
-    const ts = TILE_SIZE * this.zoom;
+    const info = this.getInfo();
+    if (!info) return;
+    const tw = info.tileWidth * this.zoom;
+    const th = info.tileHeight * this.zoom;
     const minCol = Math.min(this.dragStartCol, this.dragEndCol);
     const minRow = Math.min(this.dragStartRow, this.dragEndRow);
     const maxCol = Math.max(this.dragStartCol, this.dragEndCol);
     const maxRow = Math.max(this.dragStartRow, this.dragEndRow);
 
     this.selectionOverlay.style.display = "block";
-    this.selectionOverlay.style.left = `${minCol * ts}px`;
-    this.selectionOverlay.style.top = `${minRow * ts}px`;
-    this.selectionOverlay.style.width = `${(maxCol - minCol + 1) * ts}px`;
-    this.selectionOverlay.style.height = `${(maxRow - minRow + 1) * ts}px`;
+    this.selectionOverlay.style.left = `${minCol * tw}px`;
+    this.selectionOverlay.style.top = `${minRow * th}px`;
+    this.selectionOverlay.style.width = `${(maxCol - minCol + 1) * tw}px`;
+    this.selectionOverlay.style.height = `${(maxRow - minRow + 1) * th}px`;
   }
 
   private updateSelectionOverlay(): void {
@@ -255,37 +265,62 @@ export class TilesetPicker {
       return;
     }
 
-    const ts = TILE_SIZE * this.zoom;
+    const info = this.getInfo();
+    if (!info) return;
+    const tw = info.tileWidth * this.zoom;
+    const th = info.tileHeight * this.zoom;
     const r = this.selection;
     this.selectionOverlay.style.display = "block";
-    this.selectionOverlay.style.left = `${r.srcCol * ts}px`;
-    this.selectionOverlay.style.top = `${r.srcRow * ts}px`;
-    this.selectionOverlay.style.width = `${r.w * ts}px`;
-    this.selectionOverlay.style.height = `${r.h * ts}px`;
+    this.selectionOverlay.style.left = `${r.srcCol * tw}px`;
+    this.selectionOverlay.style.top = `${r.srcRow * th}px`;
+    this.selectionOverlay.style.width = `${r.w * tw}px`;
+    this.selectionOverlay.style.height = `${r.h * th}px`;
   }
 }
 
-// ─── Helpers for populating tileset <select> dropdowns ─────────────
+// ─── Helpers for populating tileset filterable lists ───────────────
+
+import { FilterableList } from "./filterable-list.js";
+export { FilterableList } from "./filterable-list.js";
 
 /**
- * Populate a <select> element with the current tilesets from appState.
- * Preserves the current selection if still valid.
+ * Create (or update) a FilterableList of tilesets inside a container element.
+ *
+ * On first call, creates the FilterableList and populates it.
+ * On subsequent calls with the same container, updates the item list
+ * (preserving selection & filter text).
+ *
+ * @param container The DOM element that will contain the filterable list.
+ * @param defaultId Optional tileset id to select by default.
+ * @param filter Optional predicate to include only matching tilesets.
+ * @returns The FilterableList instance.
  */
-export function populateTilesetSelect(select: HTMLSelectElement, defaultId?: string): void {
-  const currentValue = select.value;
-  select.innerHTML = "";
-  for (const ts of appState.tilesets) {
-    const opt = document.createElement("option");
-    opt.value = ts.id;
-    opt.textContent = ts.label;
-    select.appendChild(opt);
+const listInstances = new Map<HTMLElement, FilterableList>();
+
+export function populateTilesetList(
+  container: HTMLElement,
+  defaultId?: string,
+  filter?: (ts: TilesetDefinition) => boolean,
+): FilterableList {
+  let list = listInstances.get(container);
+  if (!list) {
+    list = new FilterableList(container);
+    listInstances.set(container, list);
   }
-  // Restore previous selection if it still exists, else use default
-  if (appState.getTileset(currentValue)) {
-    select.value = currentValue;
-  } else if (defaultId && appState.getTileset(defaultId)) {
-    select.value = defaultId;
-  } else if (appState.tilesets.length > 0) {
-    select.value = appState.tilesets[0].id;
+
+  const tilesets = filter ? appState.tilesets.filter(filter) : appState.tilesets;
+  const items = tilesets.map((ts) => ({
+    id: ts.id,
+    label: ts.label,
+    meta: ts.path, // include path for search matching
+  }));
+  list.setItems(items);
+
+  if (defaultId) {
+    list.setDefault(defaultId);
+  } else if (!list.getValue() && tilesets.length > 0) {
+    list.setDefault(tilesets[0].id);
   }
+
+  return list;
 }

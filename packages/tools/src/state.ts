@@ -1,18 +1,16 @@
 /**
  * Shared application state across all tabs.
- * Uses localStorage for persistence with event-driven updates.
+ * Persists to disk via the FS API (Vite plugin middleware).
  *
- * V4: Added dynamic tilesets registry to ProjectData.
- * Tilesets are now stored alongside composites/rooms/characters.
- * Default LimeZu tilesets are seeded on first load.
- * Migrates from v3 (adds tilesets array with defaults).
+ * All mutations save immediately to data/game/game-data.json.
+ * No localStorage, no server sync — the file on disk is the single source of truth.
  */
 
-import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition } from "@offisims/shared";
-import { CHARACTER_DIRECTIONS, DEFAULT_TILESETS, findTileset, charTilesetId, makeCharTileset } from "@offisims/shared";
+import type { CompositeObject, RoomDefinition, CharacterDefinition, CharacterAnimation, CharacterDirection, ProjectData, TilesetDefinition, Resource, Mask } from "@offisims/shared";
+import { CHARACTER_DIRECTIONS, findTileset, charTilesetId, makeCharTileset } from "@offisims/shared";
 
-const STORAGE_KEY = "offisims_project_v4";
-const OLD_STORAGE_KEY = "offisims_project_v3";
+/** Path to the project data file, relative to the data/ directory */
+const PROJECT_PATH = "game/game-data.json";
 
 type Listener = () => void;
 
@@ -21,10 +19,41 @@ class AppState {
   composites: CompositeObject[] = [];
   rooms: RoomDefinition[] = [];
   characters: CharacterDefinition[] = [];
+  resources: Resource[] = [];
+  masks: Mask[] = [];
   private listeners: Listener[] = [];
 
+  /**
+   * IDs of tilesets that were explicitly saved in game-data.json (user overrides).
+   * Only these get serialized back to disk — scanned tilesets are ephemeral.
+   */
+  private _savedTilesetIds = new Set<string>();
+
+  /** Whether initial load from disk has completed */
+  private _ready = false;
+  /** Promise that resolves when initial load is done */
+  private _readyPromise: Promise<void>;
+  private _resolveReady!: () => void;
+
+  /** Debounce timer for save operations */
+  private _saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Minimum ms between disk writes */
+  private static SAVE_DEBOUNCE_MS = 300;
+
   constructor() {
-    this.load();
+    this._readyPromise = new Promise((resolve) => {
+      this._resolveReady = resolve;
+    });
+    this.loadFromDisk();
+  }
+
+  /** Wait for initial load to complete */
+  get ready(): Promise<void> {
+    return this._readyPromise;
+  }
+
+  get isReady(): boolean {
+    return this._ready;
   }
 
   subscribe(fn: Listener): () => void {
@@ -35,7 +64,7 @@ class AppState {
   }
 
   private notify(): void {
-    this.save();
+    this.scheduleSave();
     for (const fn of this.listeners) fn();
   }
 
@@ -117,17 +146,60 @@ class AppState {
     return this.characters.find((c) => c.id === id);
   }
 
+  // ─── Resources ──────────────────────────────────────────────
+
+  addResource(resource: Resource): void {
+    this.resources = this.resources.filter((r) => r.id !== resource.id);
+    this.resources.push(resource);
+    this.notify();
+  }
+
+  removeResource(id: string): void {
+    this.resources = this.resources.filter((r) => r.id !== id);
+    this.notify();
+  }
+
+  getResource(id: string): Resource | undefined {
+    return this.resources.find((r) => r.id === id);
+  }
+
+  /** Find all resources that have ALL of the given tags */
+  getResourcesByTags(tags: string[]): Resource[] {
+    return this.resources.filter((r) => tags.every((t) => r.tags.includes(t)));
+  }
+
+  /** Get all unique tags across all resources */
+  getAllResourceTags(): string[] {
+    const tagSet = new Set<string>();
+    for (const r of this.resources) {
+      for (const t of r.tags) tagSet.add(t);
+    }
+    return [...tagSet].sort();
+  }
+
+  // ─── Masks ─────────────────────────────────────────────────
+
+  addMask(mask: Mask): void {
+    this.masks = this.masks.filter((m) => m.id !== mask.id);
+    this.masks.push(mask);
+    this.notify();
+  }
+
+  removeMask(id: string): void {
+    this.masks = this.masks.filter((m) => m.id !== id);
+    this.notify();
+  }
+
+  getMask(id: string): Mask | undefined {
+    return this.masks.find((m) => m.id === id);
+  }
+
   // ─── Character tileset registration ─────────────────────────
 
   /**
    * Scan all characters and ensure their referenced char_* tilesets exist.
-   * This fixes the case where character data references tileset IDs like
-   * "char_adam_idle" but those tilesets were never added (e.g. because the
-   * Character Definer tab wasn't visited, or data was imported without them).
-   *
-   * We can't know the exact image dimensions here (the image hasn't loaded),
-   * so we create tilesets with cols=0, rows=0 as placeholders. The Character
-   * Definer (or tester) will update them after loading the actual image.
+   * Creates tilesets with cols=0, rows=0 as placeholders — they get updated
+   * after the actual image loads.
    */
   private ensureCharacterTilesets(): void {
     for (const char of this.characters) {
@@ -144,257 +216,178 @@ class AppState {
     }
   }
 
-  // ─── Persistence ────────────────────────────────────────────
+  // ─── Disk Persistence ───────────────────────────────────────
 
-  private save(): void {
+  /** Serialize current state to ProjectData JSON */
+  private toJSON(): string {
+    // Only persist tilesets that were in the original game-data.json (user overrides),
+    // not the auto-scanned ones — those are rediscovered on every load.
+    const savedTilesets = this.tilesets.filter((t) => this._savedTilesetIds.has(t.id));
     const data: ProjectData = {
-      tilesets: this.tilesets,
+      tilesets: savedTilesets,
       composites: this.composites,
       rooms: this.rooms,
       characters: this.characters,
-    };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {
-      console.error("Failed to save state:", e);
-    }
-  }
-
-  private load(): void {
-    try {
-      let raw = localStorage.getItem(STORAGE_KEY);
-      let migrated = false;
-
-      // Migrate from v3 if v4 doesn't exist yet
-      if (!raw) {
-        raw = localStorage.getItem(OLD_STORAGE_KEY);
-        if (raw) migrated = true;
-      }
-
-      if (raw) {
-        const data = JSON.parse(raw);
-        this.composites = data.composites || [];
-        // Migrate old-format characters to new animations[] format
-        this.characters = (data.characters || []).map((c: any) => migrateCharacter(c));
-        // Ensure rooms have doors array
-        this.rooms = (data.rooms || []).map((r: any) => {
-          if (!r.doors) r.doors = [];
-          if (!r.placements) r.placements = [];
-          if (!r.walkability) {
-            const w = r.width || 16;
-            const h = r.height || 12;
-            r.walkability = new Array(w * h).fill(true);
-          }
-          return r;
-        });
-
-        // Load tilesets or seed defaults
-        if (Array.isArray(data.tilesets) && data.tilesets.length > 0) {
-          this.tilesets = data.tilesets;
-        } else {
-          // v3 data or empty tilesets — seed with defaults
-          this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
-        }
-
-        // Ensure all default tilesets are present (merge, don't replace)
-        for (const def of DEFAULT_TILESETS) {
-          if (!findTileset(this.tilesets, def.id)) {
-            this.tilesets.push({ ...def });
-          }
-        }
-
-        if (migrated) {
-          console.log("Migrated project data from v3 to v4 (added tilesets)");
-          this.save(); // persist as v4
-        }
-
-        // Ensure all character sheet tilesets are registered
-        this.ensureCharacterTilesets();
-      } else {
-        // Brand new — seed with defaults
-        this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
-      }
-    } catch (e) {
-      console.error("Failed to load state:", e);
-      this.tilesets = DEFAULT_TILESETS.map((t) => ({ ...t }));
-    }
-  }
-
-  exportToJSON(): string {
-    const data: ProjectData = {
-      tilesets: this.tilesets,
-      composites: this.composites,
-      rooms: this.rooms,
-      characters: this.characters,
+      resources: this.resources,
+      masks: this.masks,
     };
     return JSON.stringify(data, null, 2);
   }
 
-  importFromJSON(json: string): void {
-    const data: ProjectData = JSON.parse(json);
-
-    // Merge tilesets: skip duplicates (by id)
-    const incomingTilesets = data.tilesets || [];
-    const existingTilesetIds = new Set(this.tilesets.map((t) => t.id));
-    let addedTilesets = 0;
-    for (const ts of incomingTilesets) {
-      if (!existingTilesetIds.has(ts.id)) {
-        this.tilesets.push(ts);
-        existingTilesetIds.add(ts.id);
-        addedTilesets++;
-      }
-    }
-
-    const incomingComposites = data.composites || [];
-    const incomingRooms = data.rooms || [];
-    const incomingCharacters = (data.characters || []).map((c: any) => migrateCharacter(c));
-
-    // Merge composites: skip duplicates (by id)
-    const existingCompIds = new Set(this.composites.map((c) => c.id));
-    let addedComps = 0;
-    for (const comp of incomingComposites) {
-      if (!existingCompIds.has(comp.id)) {
-        this.composites.push(comp);
-        existingCompIds.add(comp.id);
-        addedComps++;
-      }
-    }
-
-    // Merge rooms: skip duplicates (by name)
-    const existingRoomNames = new Set(this.rooms.map((r) => r.name));
-    let addedRooms = 0;
-    for (const room of incomingRooms) {
-      if (!existingRoomNames.has(room.name)) {
-        this.rooms.push(room);
-        existingRoomNames.add(room.name);
-        addedRooms++;
-      }
-    }
-
-    // Merge characters: skip duplicates (by id)
-    const existingCharIds = new Set(this.characters.map((c) => c.id));
-    let addedChars = 0;
-    for (const char of incomingCharacters) {
-      if (!existingCharIds.has(char.id)) {
-        this.characters.push(char);
-        existingCharIds.add(char.id);
-        addedChars++;
-      }
-    }
-
-    console.log(`Import: ${addedTilesets} tilesets, ${addedComps} composites, ${addedRooms} rooms, ${addedChars} characters added`);
-    // Ensure all character sheet tilesets are registered
-    this.ensureCharacterTilesets();
-    this.notify();
+  /** Schedule a debounced save to disk */
+  private scheduleSave(): void {
+    if (this._saveTimer) clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this.saveToDisk();
+    }, AppState.SAVE_DEBOUNCE_MS);
   }
 
-  exportToFile(): void {
-    const blob = new Blob([this.exportToJSON()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "offisims_project.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  importFromFile(): Promise<void> {
-    return new Promise((resolve) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json";
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file) return resolve();
-        const text = await file.text();
-        this.importFromJSON(text);
-        resolve();
-      };
-      input.click();
-    });
-  }
-
-  // ─── Server sync ────────────────────────────────────────────
-
-  /** Push current project data to the game server (PUT /api/game-data) */
-  async pushToServer(): Promise<{ ok: boolean; message: string }> {
-    const data: ProjectData = {
-      tilesets: this.tilesets,
-      composites: this.composites,
-      rooms: this.rooms,
-      characters: this.characters,
-    };
-
+  /** Write project data to disk via FS API */
+  private async saveToDisk(): Promise<void> {
     try {
-      const resp = await fetch("/api/game-data", {
+      const json = this.toJSON();
+      const resp = await fetch(`/fs/write?path=${encodeURIComponent(PROJECT_PATH)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: json,
       });
-
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        return { ok: false, message: `Server error: ${err.error || resp.statusText}` };
+        console.error("[AppState] Failed to save to disk:", err);
       }
-
-      const result = await resp.json();
-      return {
-        ok: true,
-        message: `Synced: ${result.rooms} rooms, ${result.characters} characters, ${result.composites} composites, ${result.tilesets} tilesets`,
-      };
-    } catch (err: any) {
-      return { ok: false, message: `Connection failed: ${err.message}` };
+    } catch (err) {
+      console.error("[AppState] Failed to save to disk:", err);
     }
   }
 
-  /** Pull project data from the game server (GET /api/game-data) and replace local state */
-  async pullFromServer(): Promise<{ ok: boolean; message: string }> {
+  /** Load project data from disk via FS API, then merge with scanned tilesets */
+  private async loadFromDisk(): Promise<void> {
     try {
-      const resp = await fetch("/api/game-data");
+      const resp = await fetch(`/fs/read?path=${encodeURIComponent(PROJECT_PATH)}`);
 
-      if (!resp.ok) {
+      if (resp.ok) {
+        const data: ProjectData = await resp.json();
+        this.hydrate(data);
+        console.log(
+          `[AppState] Loaded from disk: ${this.tilesets.length} tilesets, ` +
+          `${this.composites.length} composites, ${this.rooms.length} rooms, ` +
+          `${this.characters.length} characters, ${this.resources.length} resources, ` +
+          `${this.masks.length} masks`
+        );
+      } else if (resp.status === 404) {
+        // No project file yet — start empty. Tilesets come from game-data.json
+        // or are registered by individual tools (room editor, character definer).
+        console.log("[AppState] No project file on disk, starting fresh");
+        await this.saveToDisk();
+      } else {
         const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        return { ok: false, message: `Server error: ${err.error || resp.statusText}` };
+        console.error("[AppState] Failed to load from disk:", err);
       }
-
-      const data: ProjectData = await resp.json();
-
-      // Full replace (not merge) — this is a "load from server" operation
-      this.tilesets = data.tilesets || [];
-      this.composites = data.composites || [];
-      this.rooms = (data.rooms || []).map((r: any) => {
-        if (!r.doors) r.doors = [];
-        if (!r.placements) r.placements = [];
-        if (!r.walkability) {
-          const w = r.width || 16;
-          const h = r.height || 12;
-          r.walkability = new Array(w * h).fill(true);
-        }
-        return r;
-      });
-      this.characters = (data.characters || []).map((c: any) => migrateCharacter(c));
-
-      // Ensure default tilesets are present
-      for (const def of DEFAULT_TILESETS) {
-        if (!findTileset(this.tilesets, def.id)) {
-          this.tilesets.push({ ...def });
-        }
-      }
-
-      // Ensure character tilesets are registered
-      this.ensureCharacterTilesets();
-
-      // Persist and notify listeners
-      this.save();
-      for (const fn of this.listeners) fn();
-
-      return {
-        ok: true,
-        message: `Loaded: ${this.rooms.length} rooms, ${this.characters.length} characters, ${this.composites.length} composites, ${this.tilesets.length} tilesets`,
-      };
-    } catch (err: any) {
-      return { ok: false, message: `Connection failed: ${err.message}` };
+    } catch (err) {
+      console.error("[AppState] Failed to load from disk:", err);
     }
+
+    // Scan filesystem for all available tilesets and merge them in
+    await this.scanAndMergeTilesets();
+
+    this._ready = true;
+    this._resolveReady();
+    // Notify listeners that data is loaded
+    for (const fn of this.listeners) fn();
+  }
+
+  /**
+   * Fetch all PNGs from /fs/scan-tilesets and merge into this.tilesets.
+   * Game-data overrides (already in this.tilesets) take precedence.
+   * Scanned tilesets get cols=0, rows=0 — resolved lazily when the image loads.
+   */
+  private async scanAndMergeTilesets(): Promise<void> {
+    try {
+      const resp = await fetch("/fs/scan-tilesets");
+      if (!resp.ok) {
+        console.warn("[AppState] Failed to scan tilesets:", resp.statusText);
+        return;
+      }
+      const { tilesets: scanned } = await resp.json() as {
+        tilesets: { relPath: string; tileWidth: number; tileHeight: number }[];
+      };
+
+      // Build a set of existing tileset paths for dedup
+      const existingByPath = new Map<string, TilesetDefinition>();
+      for (const ts of this.tilesets) {
+        existingByPath.set(ts.path, ts);
+      }
+
+      let added = 0;
+      for (const s of scanned) {
+        const path = `/data/${s.relPath}`;
+
+        // Skip if already present (game-data override takes precedence)
+        if (existingByPath.has(path)) continue;
+
+        // Derive an id from the relative path:
+        //   "tilesets/3_office/Room_Builder_48x48.png" → "tilesets/3_office/Room_Builder_48x48"
+        const id = s.relPath.replace(/\.png$/i, "");
+
+        // Label: just the filename without extension and size suffix
+        const filename = s.relPath.split("/").pop() || s.relPath;
+        const label = filename.replace(/\.png$/i, "");
+
+        const ts: TilesetDefinition = {
+          id,
+          label,
+          path,
+          tileWidth: s.tileWidth,
+          tileHeight: s.tileHeight,
+          cols: 0, // resolved lazily when image loads
+          rows: 0,
+        };
+        this.tilesets.push(ts);
+        added++;
+      }
+
+      console.log(`[AppState] Scanned ${scanned.length} tilesets, added ${added} new (${this.tilesets.length} total)`);
+    } catch (err) {
+      console.warn("[AppState] Failed to scan tilesets:", err);
+    }
+  }
+
+  /** Hydrate state from a ProjectData object, applying migrations */
+  private hydrate(data: ProjectData): void {
+    this.composites = data.composites || [];
+
+    // Migrate old-format characters to new animations[] format
+    this.characters = (data.characters || []).map((c: any) => migrateCharacter(c));
+
+    // Ensure rooms have doors array
+    this.rooms = (data.rooms || []).map((r: any) => {
+      if (!r.doors) r.doors = [];
+      if (!r.placements) r.placements = [];
+      if (!r.walkability) {
+        const w = r.width || 16;
+        const h = r.height || 12;
+        r.walkability = new Array(w * h).fill(true);
+      }
+      return r;
+    });
+
+    // Load tilesets from project data (no defaults — everything comes from disk)
+    this.tilesets = Array.isArray(data.tilesets) ? data.tilesets : [];
+    // Track which tilesets came from game-data.json so only those get saved back
+    this._savedTilesetIds = new Set(this.tilesets.map((t) => t.id));
+
+    // Load resources and masks
+    this.resources = Array.isArray(data.resources) ? data.resources : [];
+    this.masks = Array.isArray(data.masks) ? data.masks : [];
+
+    // Ensure all character sheet tilesets referenced by characters are registered
+    this.ensureCharacterTilesets();
+  }
+
+  /** Export current state as a JSON string (for debugging or manual export) */
+  exportToJSON(): string {
+    return this.toJSON();
   }
 }
 

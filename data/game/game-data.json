@@ -3,7 +3,7 @@
     {
       "id": "room_builder",
       "label": "Room Builder (Floors & Walls)",
-      "path": "/data/sprites/1_Room_Builder_Office/Room_Builder_Office_48x48.png",
+      "path": "/data/tilesets/3_office/Room_Builder_Office_48x48.png",
       "tileWidth": 48,
       "tileHeight": 48,
       "cols": 16,
@@ -12,7 +12,7 @@
     {
       "id": "office_shadow",
       "label": "Office (Black Shadow)",
-      "path": "/data/sprites/2_Modern_Office_Black_Shadow/Modern_Office_Black_Shadow_48x48.png",
+      "path": "/data/tilesets/3_office/Modern_Office_Black_Shadow_48x48.png",
       "tileWidth": 48,
       "tileHeight": 48,
       "cols": 16,
@@ -21,7 +21,7 @@
     {
       "id": "office_shadowless",
       "label": "Office (Shadowless)",
-      "path": "/data/sprites/3_Modern_Office_Shadowless/Modern_Office_Shadowless_48x48.png",
+      "path": "/data/tilesets/3_office/Modern_Office_Shadowless_48x48.png",
       "tileWidth": 48,
       "tileHeight": 48,
       "cols": 16,
@@ -30,7 +30,7 @@
     {
       "id": "office_combined",
       "label": "Office (Combined)",
-      "path": "/data/sprites/Modern_Office_48x48.png",
+      "path": "/data/tilesets/3_office/Modern_Office_Shadowless_48x48.png",
       "tileWidth": 48,
       "tileHeight": 48,
       "cols": 16,
@@ -39,7 +39,7 @@
     {
       "id": "char_adam_idle",
       "label": "adam (idle)",
-      "path": "/data/characters/adam_idle.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_idle_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -48,7 +48,7 @@
     {
       "id": "char_adam_walk",
       "label": "adam (walk)",
-      "path": "/data/characters/adam_walk.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -57,7 +57,7 @@
     {
       "id": "char_alex_idle",
       "label": "alex (idle)",
-      "path": "/data/characters/alex_idle.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Alex_idle_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -66,7 +66,7 @@
     {
       "id": "char_alex_walk",
       "label": "alex (walk)",
-      "path": "/data/characters/alex_walk.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Alex_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -75,7 +75,7 @@
     {
       "id": "char_amelia_idle",
       "label": "amelia (idle)",
-      "path": "/data/characters/amelia_idle.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Amelia_idle_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -84,7 +84,7 @@
     {
       "id": "char_amelia_walk",
       "label": "amelia (walk)",
-      "path": "/data/characters/amelia_walk.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Amelia_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -93,7 +93,7 @@
     {
       "id": "char_bob_idle",
       "label": "bob (idle)",
-      "path": "/data/characters/bob_idle.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Bob_idle_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -102,7 +102,7 @@
     {
       "id": "char_bob_walk",
       "label": "bob (walk)",
-      "path": "/data/characters/bob_walk.png",
+      "path": "/data/tilesets/2_Characters/Old/Single_Characters_Legacy/48x48/Bob_48x48.png",
       "tileWidth": 16,
       "tileHeight": 32,
       "cols": 24,
@@ -4829,6 +4829,4740 @@
               "repeats": 1
             }
           ]
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "mml8u07yxgpx6g",
+      "name": "premade_character_48_r0_c0",
+      "tags": [
+        "amanda",
+        "character_preview"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u080x8ekx7",
+      "name": "premade_character_48_r2_c0",
+      "tags": [
+        "amanda",
+        "idle_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u0800whe7p",
+      "name": "premade_character_48_r2_c6",
+      "tags": [
+        "amanda",
+        "idle_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u082nls0i7",
+      "name": "premade_character_48_r2_c12",
+      "tags": [
+        "amanda",
+        "idle_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 12,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 13,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 14,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 15,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 16,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 17,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u082s8yjti",
+      "name": "premade_character_48_r2_c18",
+      "tags": [
+        "amanda",
+        "idle_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 18,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 19,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 20,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 21,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 22,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 23,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u083w6aean",
+      "name": "premade_character_48_r4_c0",
+      "tags": [
+        "amanda",
+        "walk_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u084m8fpjx",
+      "name": "premade_character_48_r4_c6",
+      "tags": [
+        "amanda",
+        "walk_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u084r5stgv",
+      "name": "premade_character_48_r4_c12",
+      "tags": [
+        "amanda",
+        "walk_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 12,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 13,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 14,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 15,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 16,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 17,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u084z5t3pt",
+      "name": "premade_character_48_r4_c18",
+      "tags": [
+        "amanda",
+        "walk_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 18,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 19,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 20,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 21,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 22,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 23,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08554az3b",
+      "name": "premade_character_48_r6_c0",
+      "tags": [
+        "amanda",
+        "sleep_head"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u086x6kpue",
+      "name": "premade_character_48_r8_c0",
+      "tags": [
+        "amanda",
+        "sit_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u086av1nde",
+      "name": "premade_character_48_r8_c6",
+      "tags": [
+        "amanda",
+        "sit_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u087vnxkpw",
+      "name": "premade_character_48_r12_c0",
+      "tags": [
+        "amanda",
+        "idle_down_sip"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u088qq1rj7",
+      "name": "premade_character_48_r14_c0",
+      "tags": [
+        "amanda",
+        "idle_down_read"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u0883lp7pz",
+      "name": "premade_character_48_r16_c24",
+      "tags": [
+        "amanda",
+        "cart_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 24,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 26,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 28,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u089wh5442",
+      "name": "premade_character_48_r16_c0",
+      "tags": [
+        "amanda",
+        "push_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 0,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 1,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 2,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 3,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 4,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 5,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u089i4u3os",
+      "name": "premade_character_48_r16_c6",
+      "tags": [
+        "amanda",
+        "push_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 6,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 7,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 8,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 9,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 10,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 11,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08aw0p6gf",
+      "name": "premade_character_48_r16_c12",
+      "tags": [
+        "amanda",
+        "push_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 12,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 13,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 14,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 15,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 16,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 17,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08bj5wqdx",
+      "name": "premade_character_48_r16_c18",
+      "tags": [
+        "amanda",
+        "push_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 18,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 19,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 20,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 21,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 22,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 23,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08b0ryhwc",
+      "name": "premade_character_48_r16_c30",
+      "tags": [
+        "amanda",
+        "cart_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 30,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 32,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 34,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08bvfnd5r",
+      "name": "premade_character_48_r16_c36",
+      "tags": [
+        "amanda",
+        "cart_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 36,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 38,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 40,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mml8u08cxqs937",
+      "name": "premade_character_48_r16_c42",
+      "tags": [
+        "amanda",
+        "cart_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 42,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 44,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_01",
+          "srcCol": 46,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvv383331",
+      "name": "character_preview",
+      "tags": [
+        "fiona",
+        "character_preview"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvx4btbgs",
+      "name": "idle_right",
+      "tags": [
+        "fiona",
+        "idle_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvy1984d3",
+      "name": "idle_up",
+      "tags": [
+        "fiona",
+        "idle_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvygauohz",
+      "name": "idle_left",
+      "tags": [
+        "fiona",
+        "idle_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 12,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 13,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 14,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 15,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 16,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 17,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvz4hu9n7",
+      "name": "idle_down",
+      "tags": [
+        "fiona",
+        "idle_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 18,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 19,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 20,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 21,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 22,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 23,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cvz0ay3ry",
+      "name": "walk_right",
+      "tags": [
+        "fiona",
+        "walk_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw0idxvpd",
+      "name": "walk_up",
+      "tags": [
+        "fiona",
+        "walk_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw0mj3fx8",
+      "name": "walk_left",
+      "tags": [
+        "fiona",
+        "walk_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 12,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 13,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 14,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 15,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 16,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 17,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw17sezy8",
+      "name": "walk_down",
+      "tags": [
+        "fiona",
+        "walk_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 18,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 19,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 20,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 21,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 22,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 23,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw2er9zzu",
+      "name": "sleep_head",
+      "tags": [
+        "fiona",
+        "sleep_head"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw2sgzpp2",
+      "name": "sit_right",
+      "tags": [
+        "fiona",
+        "sit_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw3f8v0pt",
+      "name": "sit_left",
+      "tags": [
+        "fiona",
+        "sit_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw3al50oy",
+      "name": "idle_down_sip",
+      "tags": [
+        "fiona",
+        "idle_down_sip"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw4kcryv5",
+      "name": "idle_down_read",
+      "tags": [
+        "fiona",
+        "idle_down_read"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw54hermu",
+      "name": "cart_right",
+      "tags": [
+        "fiona",
+        "cart_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 24,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 26,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 28,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw5bu27rq",
+      "name": "push_right",
+      "tags": [
+        "fiona",
+        "push_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 0,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 1,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 2,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 3,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 4,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 5,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw6op34yk",
+      "name": "push_up",
+      "tags": [
+        "fiona",
+        "push_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 6,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 7,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 8,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 9,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 10,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 11,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw6blhjlb",
+      "name": "push_left",
+      "tags": [
+        "fiona",
+        "push_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 12,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 13,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 14,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 15,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 16,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 17,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw7gzienn",
+      "name": "push_down",
+      "tags": [
+        "fiona",
+        "push_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 18,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 19,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 20,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 21,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 22,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 23,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw8u209y2",
+      "name": "cart_up",
+      "tags": [
+        "fiona",
+        "cart_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 30,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 32,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 34,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw838rv5o",
+      "name": "cart_left",
+      "tags": [
+        "fiona",
+        "cart_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 36,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 38,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 40,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmla9cw9pelpb3",
+      "name": "cart_down",
+      "tags": [
+        "fiona",
+        "cart_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 42,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 44,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_02",
+          "srcCol": 46,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7d87soepo",
+      "name": "character_preview",
+      "tags": [
+        "arthur",
+        "character_preview"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7d9tm0rsi",
+      "name": "idle_right",
+      "tags": [
+        "arthur",
+        "idle_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dascz4zm",
+      "name": "idle_up",
+      "tags": [
+        "arthur",
+        "idle_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7daqr8b6a",
+      "name": "idle_left",
+      "tags": [
+        "arthur",
+        "idle_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 12,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 13,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 14,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 15,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 16,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 17,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dby83en8",
+      "name": "idle_down",
+      "tags": [
+        "arthur",
+        "idle_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 18,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 19,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 20,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 21,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 22,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 23,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7db6jcwvy",
+      "name": "walk_right",
+      "tags": [
+        "arthur",
+        "walk_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dckdkn7q",
+      "name": "walk_up",
+      "tags": [
+        "arthur",
+        "walk_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dc83l25w",
+      "name": "walk_left",
+      "tags": [
+        "arthur",
+        "walk_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 12,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 13,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 14,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 15,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 16,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 17,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dctd1g1i",
+      "name": "walk_down",
+      "tags": [
+        "arthur",
+        "walk_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 18,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 19,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 20,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 21,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 22,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 23,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dddt1h87",
+      "name": "sleep_head",
+      "tags": [
+        "arthur",
+        "sleep_head"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7ddvnvxqc",
+      "name": "sit_right",
+      "tags": [
+        "arthur",
+        "sit_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7de1aqydu",
+      "name": "sit_left",
+      "tags": [
+        "arthur",
+        "sit_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7deklnq8l",
+      "name": "idle_down_sip",
+      "tags": [
+        "arthur",
+        "idle_down_sip"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7df8ujslp",
+      "name": "idle_down_read",
+      "tags": [
+        "arthur",
+        "idle_down_read"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dgiaiqr6",
+      "name": "cart_right",
+      "tags": [
+        "arthur",
+        "cart_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 24,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 26,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 28,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dgf02n6u",
+      "name": "push_right",
+      "tags": [
+        "arthur",
+        "push_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 0,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 1,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 2,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 3,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 4,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 5,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dhads01y",
+      "name": "push_up",
+      "tags": [
+        "arthur",
+        "push_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 6,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 7,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 8,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 9,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 10,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 11,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dhn4ym2t",
+      "name": "push_left",
+      "tags": [
+        "arthur",
+        "push_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 12,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 13,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 14,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 15,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 16,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 17,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7divl2s3k",
+      "name": "push_down",
+      "tags": [
+        "arthur",
+        "push_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 18,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 19,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 20,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 21,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 22,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 23,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7djx6vr2b",
+      "name": "cart_up",
+      "tags": [
+        "arthur",
+        "cart_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 30,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 32,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 34,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dj1mmov9",
+      "name": "cart_left",
+      "tags": [
+        "arthur",
+        "cart_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 36,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 38,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 40,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaa7dkqgg2dq",
+      "name": "cart_down",
+      "tags": [
+        "arthur",
+        "cart_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 42,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 44,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_03",
+          "srcCol": 46,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarh8atbzzr",
+      "name": "character_preview",
+      "tags": [
+        "tony",
+        "character_preview"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 0,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarh9t4hbbz",
+      "name": "idle_right",
+      "tags": [
+        "tony",
+        "idle_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarh91a2lrf",
+      "name": "idle_up",
+      "tags": [
+        "tony",
+        "idle_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarh9o0sgcx",
+      "name": "idle_left",
+      "tags": [
+        "tony",
+        "idle_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 12,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 13,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 14,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 15,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 16,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 17,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhamvp4za",
+      "name": "idle_down",
+      "tags": [
+        "tony",
+        "idle_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 18,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 19,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 20,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 21,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 22,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 23,
+          "srcRow": 2,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhatm4604",
+      "name": "walk_right",
+      "tags": [
+        "tony",
+        "walk_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarha42u8qt",
+      "name": "walk_up",
+      "tags": [
+        "tony",
+        "walk_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhb2om3x4",
+      "name": "walk_left",
+      "tags": [
+        "tony",
+        "walk_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 12,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 13,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 14,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 15,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 16,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 17,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhb8lbokk",
+      "name": "walk_down",
+      "tags": [
+        "tony",
+        "walk_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 18,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 19,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 20,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 21,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 22,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 23,
+          "srcRow": 4,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhcoc7imx",
+      "name": "sleep_head",
+      "tags": [
+        "tony",
+        "sleep_head"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 6,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhcb1ce5d",
+      "name": "sit_right",
+      "tags": [
+        "tony",
+        "sit_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhdgai2vi",
+      "name": "sit_left",
+      "tags": [
+        "tony",
+        "sit_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 8,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhdekpcbo",
+      "name": "idle_down_sip",
+      "tags": [
+        "tony",
+        "idle_down_sip"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 12,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhesiapu1",
+      "name": "idle_down_read",
+      "tags": [
+        "tony",
+        "idle_down_read"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 14,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhe4nwj0c",
+      "name": "cart_right",
+      "tags": [
+        "tony",
+        "cart_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 24,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 26,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 28,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhfo4chsm",
+      "name": "push_right",
+      "tags": [
+        "tony",
+        "push_right"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 0,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 1,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 2,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 3,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 4,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 5,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhfd6jdx2",
+      "name": "push_up",
+      "tags": [
+        "tony",
+        "push_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 6,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 7,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 8,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 9,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 10,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 11,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhg5h99ws",
+      "name": "push_left",
+      "tags": [
+        "tony",
+        "push_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 12,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 13,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 14,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 15,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 16,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 17,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhg47hy3m",
+      "name": "push_down",
+      "tags": [
+        "tony",
+        "push_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 18,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 19,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 20,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 21,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 22,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 23,
+          "srcRow": 16,
+          "w": 1,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhh3s08xn",
+      "name": "cart_up",
+      "tags": [
+        "tony",
+        "cart_up"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 30,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 32,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 34,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhjq7943d",
+      "name": "cart_left",
+      "tags": [
+        "tony",
+        "cart_left"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 36,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 38,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 40,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    },
+    {
+      "id": "mmlaarhjggttu4",
+      "name": "cart_down",
+      "tags": [
+        "tony",
+        "cart_down"
+      ],
+      "frames": [
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 42,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 44,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        },
+        {
+          "tilesetId": "tilesets/2_Characters/Character_Generator/0_Premade_Characters/48x48/Premade_Character_48x48_04",
+          "srcCol": 46,
+          "srcRow": 16,
+          "w": 2,
+          "h": 2
+        }
+      ]
+    }
+  ],
+  "masks": [
+    {
+      "id": "mml8tz4xeibf5z",
+      "name": "character_base",
+      "tileWidth": 48,
+      "tileHeight": 48,
+      "cuts": [
+        {
+          "tags": [
+            "character_preview"
+          ],
+          "row": 0,
+          "startFrame": 0,
+          "frameCount": 4,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_right"
+          ],
+          "row": 2,
+          "startFrame": 0,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_up"
+          ],
+          "row": 2,
+          "startFrame": 6,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_left"
+          ],
+          "row": 2,
+          "startFrame": 12,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_down"
+          ],
+          "row": 2,
+          "startFrame": 18,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "walk_right"
+          ],
+          "row": 4,
+          "startFrame": 0,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "walk_up"
+          ],
+          "row": 4,
+          "startFrame": 6,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "walk_left"
+          ],
+          "row": 4,
+          "startFrame": 12,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "walk_down"
+          ],
+          "row": 4,
+          "startFrame": 18,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "sleep_head"
+          ],
+          "row": 6,
+          "startFrame": 0,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "sit_right"
+          ],
+          "row": 8,
+          "startFrame": 0,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "sit_left"
+          ],
+          "row": 8,
+          "startFrame": 6,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_down_sip"
+          ],
+          "row": 12,
+          "startFrame": 0,
+          "frameCount": 12,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "idle_down_read"
+          ],
+          "row": 14,
+          "startFrame": 0,
+          "frameCount": 12,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "cart_right"
+          ],
+          "row": 16,
+          "startFrame": 24,
+          "frameCount": 3,
+          "frameWidth": 2,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "push_right"
+          ],
+          "row": 16,
+          "startFrame": 0,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "push_up"
+          ],
+          "row": 16,
+          "startFrame": 6,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "push_left"
+          ],
+          "row": 16,
+          "startFrame": 12,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "push_down"
+          ],
+          "row": 16,
+          "startFrame": 18,
+          "frameCount": 6,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "cart_up"
+          ],
+          "row": 16,
+          "startFrame": 30,
+          "frameCount": 3,
+          "frameWidth": 2,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "cart_left"
+          ],
+          "row": 16,
+          "startFrame": 36,
+          "frameCount": 3,
+          "frameWidth": 2,
+          "frameHeight": 2
+        },
+        {
+          "tags": [
+            "cart_down"
+          ],
+          "row": 16,
+          "startFrame": 42,
+          "frameCount": 3,
+          "frameWidth": 2,
+          "frameHeight": 2
         }
       ]
     }
