@@ -5,5 +5,15 @@ dist/
 *.gif
 *.tsbuildinfo
 
+# Generated protobuf code
+gen/
+
+# Rust build artifacts
+target/
+
+# Compiled Go binaries
+studio/server/studio
+game/server/game
+
 # Data
 data/

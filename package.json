@@ -3,20 +3,23 @@
   "version": "0.2.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "shared/pack/js",
+    "game/client",
+    "studio/app"
   ],
   "scripts": {
-    "tools:dev": "yarn workspace @offisims/tools dev",
-    "tools:build": "yarn workspace @offisims/tools build",
-    "server:dev": "yarn workspace @offisims/server dev",
-    "server:build": "yarn workspace @offisims/server build",
-    "client:dev": "yarn workspace @offisims/client dev",
-    "client:build": "yarn workspace @offisims/client build",
-    "shared:build": "yarn workspace @offisims/shared build",
-    "build": "yarn shared:build && yarn tools:build && yarn server:build && yarn client:build",
-    "dev": "echo 'Use tools:dev, server:dev, or client:dev'"
+    "pack:build": "yarn workspace @offisims/pack build",
+    "game:client": "yarn workspace @offisims/client dev",
+    "studio:app": "yarn workspace @offisims/studio dev",
+    "build": "yarn pack:build && yarn workspace @offisims/client build"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "ecc-universal": "^1.8.0",
     "openai": "^6.27.0"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.66.1",
+    "@bufbuild/protoc-gen-es": "^2.11.0"
   }
 }

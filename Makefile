@@ -1,74 +1,99 @@
-# Offisims — Development commands
+# Offisims — Root orchestrator
+#
+# Studio targets delegate to studio/Makefile (single source of truth).
+# Game targets are defined here (no game/Makefile yet).
 #
 # Ports:
-#   Tools   → http://localhost:3000
-#   Server  → http://localhost:3001 (API + WebSocket + static assets)
-#   Client  → http://localhost:3002 (proxies /api, /data, /ws to server)
+#   studio/server → http://localhost:4000  (Go, data API + RAG)
+#   studio/app    → http://localhost:5173  (Preact, proxies /api + /data to :4000)
+#   game/server   → http://localhost:3001  (Go, WebSocket game server)
+#   game/client   → http://localhost:3002  (Preact, proxies to game server)
 
-.PHONY: install shared tools server client dev check build clean
+.PHONY: install proto pack \
+        studio studio-server studio-app \
+        game game-server game-client \
+        dev build check clean
 
 # ─── Setup ───────────────────────────────────────────────────────
 
-## Install all dependencies
 install:
 	yarn install
+	cd studio/server && go mod download
+	cd game/server && go mod download
+	cd shared/pack/go && go mod download
 
-## Build the shared package (required before other packages)
-shared:
-	yarn workspace @offisims/shared build
+proto:
+	npx buf generate
+	@mkdir -p shared/pack/go/pb/packv1 game/server/internal/game/pb/protocolv1 shared/pack/js/pb game/client/src/pb
+	cp gen/go/offisims/pack/v1/pack.pb.go shared/pack/go/pb/packv1/
+	cp gen/go/offisims/protocol/v1/protocol.pb.go game/server/internal/game/pb/protocolv1/
+	cp gen/ts/offisims/pack/v1/pack_pb.ts shared/pack/js/pb/
+	cp gen/ts/offisims/protocol/v1/protocol_pb.ts game/client/src/pb/
+	rm -rf gen/
+	@echo "Proto generated and copied"
 
-# ─── Dev servers (run each in its own terminal) ──────────────────
+pack:
+	yarn workspace @offisims/pack build
 
-## Start the content tools (port 3000)
-tools: shared
-	yarn workspace @offisims/tools dev
+# ─── Studio (delegates to studio/Makefile) ───────────────────────
 
-## Start the game server (port 3001)
-server: shared
-	yarn workspace @offisims/server dev
+studio:
+	$(MAKE) -C studio dev
 
-## Start the game client (port 3002)
-client: shared
+studio-server:
+	$(MAKE) -C studio server
+
+studio-app:
+	$(MAKE) -C studio app
+
+# ─── Game ────────────────────────────────────────────────────────
+
+game-server:
+	cd game/server && go run ./cmd/game
+
+game-client: pack
 	yarn workspace @offisims/client dev
 
-# ─── Run everything ─────────────────────────────────────────────
-
-## Start all 3 dev servers (server first, then tools + client)
-dev: shared
-	@echo "Starting all dev servers..."
-	@echo "  Tools:  http://localhost:3000"
+game:
+	@echo "Starting Game..."
 	@echo "  Server: http://localhost:3001"
 	@echo "  Client: http://localhost:3002"
-	@echo ""
 	@trap 'kill 0' INT TERM; \
-		yarn workspace @offisims/server dev & \
-		while ! curl -sf http://localhost:3001/api/game-data > /dev/null 2>&1; do sleep 0.2; done; \
-		yarn workspace @offisims/tools dev & \
-		yarn workspace @offisims/client dev & \
+		$(MAKE) game-server & \
+		while ! curl -sf http://localhost:3001/api/status > /dev/null 2>&1; do sleep 0.2; done; \
+		$(MAKE) game-client & \
 		wait
 
-# ─── Type checking & building ────────────────────────────────────
+# ─── All together ────────────────────────────────────────────────
 
-## Type-check all packages (no emit)
-check: shared
-	npx tsc -p packages/server/tsconfig.json --noEmit
-	npx tsc -p packages/client/tsconfig.json --noEmit
-	npx tsc -p packages/tools/tsconfig.json --noEmit
-	@echo "All packages type-check OK"
+dev:
+	@trap 'kill 0' INT TERM; \
+		$(MAKE) studio-server & \
+		$(MAKE) game-server & \
+		$(MAKE) studio-app & \
+		$(MAKE) game-client & \
+		wait
 
-## Production build (all packages)
-build: shared
-	yarn workspace @offisims/server build
+# ─── Build ───────────────────────────────────────────────────────
+
+build: pack
+	$(MAKE) -C studio build
 	yarn workspace @offisims/client build
-	yarn workspace @offisims/tools build
-	@echo "Build complete"
+	cd game/server && go build -o ../../dist/game-server ./cmd/game
+
+# ─── Type checking ───────────────────────────────────────────────
+
+check: pack
+	npx buf lint
+	$(MAKE) -C studio check
+	npx tsc -p game/client/tsconfig.json --noEmit
+	cd shared/pack/go && go vet ./...
+	cd game/server && go vet ./...
+	@echo "All packages OK"
 
 # ─── Cleanup ─────────────────────────────────────────────────────
 
-## Remove all build artifacts
 clean:
-	rm -rf packages/shared/dist
-	rm -rf packages/server/dist
-	rm -rf packages/client/dist
-	rm -rf packages/tools/dist
-	@echo "Cleaned all dist/ directories"
+	$(MAKE) -C studio clean
+	rm -rf shared/pack/js/dist game/server/dist game/client/dist dist/ gen/
+	@echo "Cleaned all dist/ and gen/ directories"

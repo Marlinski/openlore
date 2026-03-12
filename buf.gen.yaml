@@ -1,0 +1,18 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: ""
+plugins:
+  # Go protobuf — generates .pb.go files
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+  # TypeScript protobuf-es — generates _pb.ts files
+  - remote: buf.build/bufbuild/es
+    out: gen/ts
+    opt: target=ts
+inputs:
+  - directory: shared/proto
+  - directory: game/proto

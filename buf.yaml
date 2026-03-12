@@ -1,0 +1,12 @@
+version: v2
+modules:
+  - path: shared/proto
+    name: buf.build/offisims/pack
+  - path: game/proto
+    name: buf.build/offisims/protocol
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

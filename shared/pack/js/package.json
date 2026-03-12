@@ -1,0 +1,22 @@
+{
+  "name": "@offisims/pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./pb": "./dist/pb/pack_pb.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
