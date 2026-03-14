@@ -4,19 +4,20 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { TopBar } from './components/TopBar'
 import { StatusBar } from './components/StatusBar'
 import { CutterTab } from './components/cutter/CutterTab'
-import { BrowserTab } from './components/browser/BrowserTab'
+import { ResourcesTab } from './components/resources/ResourcesTab'
 import { CompositeTab } from './components/composite/CompositeTab'
 import { RoomTab } from './components/room/RoomTab'
 import { TesterTab } from './components/tester/TesterTab'
 import { AgentPanel } from './components/agent/AgentPanel'
+import { PackPanel } from './components/PackPanel'
 import { useUIStore, TAB_LIST } from './store/ui'
 
 function TabContent({ id }: { id: string }) {
   switch (id) {
     case 'cutter':
       return <CutterTab />
-    case 'browser':
-      return <BrowserTab />
+    case 'resources':
+      return <ResourcesTab />
     case 'composite':
       return <CompositeTab />
     case 'room':
@@ -47,6 +48,7 @@ function Studio() {
       </main>
       <StatusBar />
       <AgentPanel />
+      <PackPanel />
     </div>
   )
 }

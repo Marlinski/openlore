@@ -3,6 +3,12 @@
  *
  * Renders compiled room data with WASD movement, character animation,
  * door transitions, and debug overlays.
+ *
+ * Consumes protojson format from the pack compiler:
+ *   - TilesetRegion: { tilesetId, srcCol, srcRow, w, h } (pixel coords since tile_width=1)
+ *   - ResourceFrame: same shape
+ *   - Placements: layer as string enum "PLACEMENT_LAYER_FLOOR" / "PLACEMENT_LAYER_OBJECT"
+ *   - Composites: resolved from compositeId via composite cache
  */
 
 import { useRef, useEffect, useCallback } from 'preact/hooks'
@@ -10,15 +16,15 @@ import { Application, Container, Sprite, Texture, Rectangle, Graphics } from 'pi
 import {
   useTesterStore,
   getAtlasImage,
-  type CompiledRoom,
-  type CompiledResource,
-  type CompiledRegionRef,
-  type CompiledPlacement,
+  getComposite,
+  normalizeLayer,
+  type RoomJSON,
+  type ResourceJSON,
+  type TilesetRegionJSON,
+  type PlacementJSON,
 } from '../../store/tester'
 
 const TILE_SIZE = 48
-const CHAR_SRC_W = 16
-const CHAR_SRC_H = 32
 const CHAR_RENDER_W = 48 // 1 tile wide
 const CHAR_RENDER_H = 96 // 2 tiles tall
 const MOVE_SPEED = 4 // tiles per second
@@ -55,78 +61,100 @@ export interface TesterCanvasProps {
   onHandle: (handle: TesterCanvasHandle) => void
 }
 
-function regionToTexture(region: CompiledRegionRef): Texture | null {
-  const img = getAtlasImage(region.atlas)
+/**
+ * Convert a TilesetRegion (protojson) to a PixiJS Texture.
+ * Uses getAtlasImage(tilesetId) to find the loaded atlas image.
+ * All coords are pixels since atlas tilesets use tile_width=1.
+ */
+function regionToTexture(region: TilesetRegionJSON): Texture | null {
+  const tilesetId = region.tilesetId || ''
+  if (!tilesetId) return null
+  const img = getAtlasImage(tilesetId)
   if (!img) return null
   const baseTex = Texture.from(img)
   baseTex.source.scaleMode = 'nearest'
+  const x = region.srcCol || 0
+  const y = region.srcRow || 0
+  const w = region.w || 0
+  const h = region.h || 0
+  if (w === 0 || h === 0) return null
   return new Texture({
     source: baseTex.source,
-    frame: new Rectangle(region.x, region.y, region.w, region.h),
+    frame: new Rectangle(x, y, w, h),
   })
 }
 
 function findCharResource(
-  resources: CompiledResource[],
+  resources: ResourceJSON[],
   animState: string,
   dir: Dir,
-): CompiledResource | null {
+): ResourceJSON | null {
+  const hasTags = (r: ResourceJSON, ...tags: string[]) =>
+    tags.every((t) => (r.tags ?? []).includes(t))
+
   // Try exact match: state:{animState} + dir:{dir}
-  let found = resources.find(
-    (r) =>
-      r.tags.includes(`state:${animState}`) && r.tags.includes(`dir:${dir}`),
+  let found = resources.find((r) =>
+    hasTags(r, `state:${animState}`, `dir:${dir}`),
   )
   if (found) return found
 
   // Fallback: state:{animState} + dir:down
-  found = resources.find(
-    (r) =>
-      r.tags.includes(`state:${animState}`) && r.tags.includes('dir:down'),
+  found = resources.find((r) =>
+    hasTags(r, `state:${animState}`, 'dir:down'),
   )
   if (found) return found
 
   // Fallback: state:idle + dir:{dir}
-  found = resources.find(
-    (r) => r.tags.includes('state:idle') && r.tags.includes(`dir:${dir}`),
+  found = resources.find((r) =>
+    hasTags(r, 'state:idle', `dir:${dir}`),
   )
   if (found) return found
 
   // Fallback: state:idle + dir:down
-  found = resources.find(
-    (r) => r.tags.includes('state:idle') && r.tags.includes('dir:down'),
+  found = resources.find((r) =>
+    hasTags(r, 'state:idle', 'dir:down'),
   )
   if (found) return found
 
   // Last resort: first resource with any frames
-  return resources.find((r) => r.frames.length > 0) ?? null
+  return resources.find((r) => (r.frames ?? []).length > 0) ?? null
 }
 
 function getCharTexture(
-  resources: CompiledResource[],
+  resources: ResourceJSON[],
   animState: string,
   dir: Dir,
   frameIdx: number,
 ): Texture | null {
   const res = findCharResource(resources, animState, dir)
-  if (!res || res.frames.length === 0) return null
-  const frame = res.frames[frameIdx % res.frames.length]
-  const img = getAtlasImage(frame.atlas)
+  if (!res) return null
+  const frames = res.frames ?? []
+  if (frames.length === 0) return null
+  const frame = frames[frameIdx % frames.length]
+  const tilesetId = frame.tilesetId || ''
+  if (!tilesetId) return null
+  const img = getAtlasImage(tilesetId)
   if (!img) return null
   const baseTex = Texture.from(img)
   baseTex.source.scaleMode = 'nearest'
+  const x = frame.srcCol || 0
+  const y = frame.srcRow || 0
+  const w = frame.w || 0
+  const h = frame.h || 0
+  if (w === 0 || h === 0) return null
   return new Texture({
     source: baseTex.source,
-    frame: new Rectangle(frame.x, frame.y, frame.w, frame.h),
+    frame: new Rectangle(x, y, w, h),
   })
 }
 
 function getCharFrameCount(
-  resources: CompiledResource[],
+  resources: ResourceJSON[],
   animState: string,
   dir: Dir,
 ): number {
   const res = findCharResource(resources, animState, dir)
-  return res ? res.frames.length : 1
+  return res ? (res.frames ?? []).length : 1
 }
 
 export function TesterCanvas({ onHandle }: TesterCanvasProps) {
@@ -162,10 +190,10 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
         const room = useTesterStore.getState().currentRoom
         let doorInfo = ''
         if (room) {
-          const door = room.doors.find(
-            (d) => d.col === tileX && d.row === tileY,
+          const door = (room.doors ?? []).find(
+            (d) => (d.col || 0) === tileX && (d.row || 0) === tileY,
           )
-          if (door) doorInfo = `${door.id} -> ${door.target}`
+          if (door) doorInfo = `${door.id || ''} -> ${door.target || ''}`
         }
         return {
           charX: g.charX,
@@ -183,6 +211,10 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
   useEffect(() => {
     const game = gameRef.current
     const onKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept keys when typing in an input/select/textarea
+      const tag = (document.activeElement as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return
+
       const key = e.key.toLowerCase()
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
         e.preventDefault()
@@ -200,7 +232,7 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
     }
   }, [])
 
-  // Ctrl+scroll zoom
+  // Ctrl/Cmd+scroll zoom (multiplicative, matches other tabs)
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
@@ -208,8 +240,8 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
       const store = useTesterStore.getState()
-      const delta = e.deltaY > 0 ? -0.25 : 0.25
-      store.setZoom(store.zoom + delta)
+      const delta = -e.deltaY * 0.001
+      store.setZoom(store.zoom * (1 + delta))
     }
     wrap.addEventListener('wheel', onWheel, { passive: false })
     return () => wrap.removeEventListener('wheel', onWheel)
@@ -227,21 +259,42 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
 
     const room = currentRoom
     const resources = charResources
+    const roomWidth = room.width || 0
+    const roomHeight = room.height || 0
+    const doors = room.doors ?? []
+    const placements = room.placements ?? []
+    const walkability = room.walkability ?? []
 
-    // Find a starting position (first walkable tile or first door)
+    // Check if we arrived via a door transition
+    const pendingDoor = useTesterStore.getState().consumePendingDoor()
+
+    // Find starting position
     let startX = 1
     let startY = 1
-    if (room.doors.length > 0) {
-      startX = room.doors[0].col
-      startY = room.doors[0].row
+    let startDoorKey: string | null = null
+
+    if (pendingDoor) {
+      // Arrived via door transition — spawn at the matching door
+      const arrivalDoor = doors.find((d) => d.id === pendingDoor)
+      if (arrivalDoor) {
+        startX = arrivalDoor.col || 0
+        startY = arrivalDoor.row || 0
+        // Pre-set lastDoorTile so we don't immediately re-trigger this door
+        startDoorKey = `${arrivalDoor.col || 0},${arrivalDoor.row || 0}`
+      }
+    } else if (doors.length > 0) {
+      startX = doors[0].col || 0
+      startY = doors[0].row || 0
+      // Also guard the spawn door to prevent immediate transition
+      startDoorKey = `${doors[0].col || 0},${doors[0].row || 0}`
     } else {
       // Find first walkable tile
-      for (let row = 0; row < room.height; row++) {
-        for (let col = 0; col < room.width; col++) {
-          if (room.walkability[row * room.width + col]) {
+      for (let row = 0; row < roomHeight; row++) {
+        for (let col = 0; col < roomWidth; col++) {
+          if (walkability[row * roomWidth + col]) {
             startX = col
             startY = row
-            row = room.height // break outer
+            row = roomHeight // break outer
             break
           }
         }
@@ -253,7 +306,7 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
     game.animState = 'idle'
     game.animFrame = 0
     game.animTimer = 0
-    game.lastDoorTile = null
+    game.lastDoorTile = startDoorKey
 
     let app: Application | null = null
     let worldContainer: Container
@@ -299,16 +352,16 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
       worldContainer.addChild(objectContainer)
       worldContainer.addChild(overlayContainer)
 
-      // Build floor sprites
-      for (const p of room.placements) {
-        if (p.layer !== 'floor') continue
+      // Build floor sprites (layer 1 = PLACEMENT_LAYER_FLOOR)
+      for (const p of placements) {
+        if (normalizeLayer(p.layer) !== 1) continue
         buildPlacementSprites(p, floorContainer, null)
       }
 
-      // Build object sprites
+      // Build object sprites (layer 2 = PLACEMENT_LAYER_OBJECT)
       objectSprites = []
-      for (const p of room.placements) {
-        if (p.layer !== 'object') continue
+      for (const p of placements) {
+        if (normalizeLayer(p.layer) !== 2) continue
         buildPlacementSprites(p, objectContainer, objectSprites)
       }
 
@@ -368,10 +421,10 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
           const newY = game.charY + dy * speed
 
           // Axis-separated collision
-          if (canMoveTo(room, newX, game.charY)) {
+          if (canMoveTo(roomWidth, roomHeight, walkability, newX, game.charY)) {
             game.charX = newX
           }
-          if (canMoveTo(room, game.charX, newY)) {
+          if (canMoveTo(roomWidth, roomHeight, walkability, game.charX, newY)) {
             game.charY = newY
           }
 
@@ -435,15 +488,16 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
         const tileX = Math.floor(game.charX + 0.5)
         const tileY = Math.floor(game.charY + 0.5)
         const doorKey = `${tileX},${tileY}`
-        const door = room.doors.find(
-          (d) => d.col === tileX && d.row === tileY,
+        const door = doors.find(
+          (d) => (d.col || 0) === tileX && (d.row || 0) === tileY,
         )
         if (door && door.target && doorKey !== game.lastDoorTile) {
           game.lastDoorTile = doorKey
           // Parse target: "roomName#doorId"
-          const [targetRoom, targetDoor] = door.target.includes('#')
-            ? door.target.split('#', 2)
-            : [door.target, '']
+          const target = door.target || ''
+          const [targetRoom, targetDoor] = target.includes('#')
+            ? target.split('#', 2)
+            : [target, '']
           if (targetRoom) {
             handleDoorTransition(targetRoom, targetDoor)
           }
@@ -453,27 +507,18 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
       })
     }
 
-    const handleDoorTransition = async (targetRoom: string, targetDoor: string) => {
+    const handleDoorTransition = async (targetRoom: string, _targetDoor: string) => {
       game.mounted = false
-      await useTesterStore.getState().transitionToRoom(targetRoom, targetDoor)
-      // The useEffect will re-run with the new room data
-      // Position at target door
-      const newRoom = useTesterStore.getState().currentRoom
-      if (newRoom && targetDoor) {
-        const door = newRoom.doors.find((d) => d.id === targetDoor)
-        if (door) {
-          game.charX = door.col
-          game.charY = door.row
-          game.lastDoorTile = `${door.col},${door.row}`
-        }
-      }
+      await useTesterStore.getState().transitionToRoom(targetRoom, _targetDoor)
+      // The useEffect will re-run with the new room data.
+      // pendingDoor is set in the store so the effect spawns at the right door.
     }
 
     const applyZoom = (z: number) => {
       if (!app || !worldContainer) return
       worldContainer.scale.set(z)
-      const w = room.width * TILE_SIZE * z
-      const h = room.height * TILE_SIZE * z
+      const w = roomWidth * TILE_SIZE * z
+      const h = roomHeight * TILE_SIZE * z
       app.renderer.resize(w, h)
       app.canvas.style.width = w + 'px'
       app.canvas.style.height = h + 'px'
@@ -541,7 +586,13 @@ export function TesterCanvas({ onHandle }: TesterCanvasProps) {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function canMoveTo(room: CompiledRoom, x: number, y: number): boolean {
+function canMoveTo(
+  roomWidth: number,
+  roomHeight: number,
+  walkability: boolean[],
+  x: number,
+  y: number,
+): boolean {
   // Check character center tile with margin
   const checkX = x + 0.5
   const checkY = y + 0.5
@@ -558,10 +609,10 @@ function canMoveTo(room: CompiledRoom, x: number, y: number): boolean {
   for (const [cx, cy] of corners) {
     const col = Math.floor(cx)
     const row = Math.floor(cy)
-    if (col < 0 || col >= room.width || row < 0 || row >= room.height) {
+    if (col < 0 || col >= roomWidth || row < 0 || row >= roomHeight) {
       return false
     }
-    if (!room.walkability[row * room.width + col]) {
+    if (!walkability[row * roomWidth + col]) {
       return false
     }
   }
@@ -569,63 +620,71 @@ function canMoveTo(room: CompiledRoom, x: number, y: number): boolean {
 }
 
 function buildPlacementSprites(
-  p: CompiledPlacement,
+  p: PlacementJSON,
   container: Container,
   objectSprites: { sprite: Sprite; anchorY: number }[] | null,
 ) {
+  const gridX = p.gridX || 0
+  const gridY = p.gridY || 0
+  const zBias = p.zBias || 0
+
+  // Direct region placement
   if (p.region) {
     const tex = regionToTexture(p.region)
     if (tex) {
       const sprite = new Sprite(tex)
-      sprite.x = p.gridX * TILE_SIZE
-      sprite.y = p.gridY * TILE_SIZE
-      sprite.width = p.region.w * (TILE_SIZE / 16) // scale from source to display
-      sprite.height = p.region.h * (TILE_SIZE / 16)
-      // Actually: region w/h are in source pixels, we need to figure out tile coverage
-      // The region covers (w/16) x (h/16) tiles at 16px source tile size
-      // But we don't know the source tile size. Use the region dimensions directly.
-      // The compiled region should map to gridX,gridY placement.
-      // For floor: 1 tile = TILE_SIZE rendered. Source region might be 16x16 for a tile.
-      // Let's just set width/height based on how many tiles the region covers.
-      // Since the region is from a compiled pack, w/h are source pixels.
-      // We'll scale to fill the tile grid appropriately.
-      sprite.width = (p.region.w / 16) * TILE_SIZE
-      sprite.height = (p.region.h / 16) * TILE_SIZE
+      sprite.x = gridX * TILE_SIZE
+      sprite.y = gridY * TILE_SIZE
+      // Region w/h are atlas pixels (= display pixels for compiled atlas)
+      const rw = p.region.w || 0
+      const rh = p.region.h || 0
+      sprite.width = rw
+      sprite.height = rh
       container.addChild(sprite)
 
       if (objectSprites) {
-        const heightTiles = p.region.h / 16
+        const heightTiles = rh / TILE_SIZE
         objectSprites.push({
           sprite,
-          anchorY: p.gridY + heightTiles + (p.zBias ?? 0),
+          anchorY: gridY + heightTiles + zBias,
         })
       }
     }
   }
 
-  if (p.parts) {
-    for (const part of p.parts) {
-      const tex = regionToTexture(part.region)
-      if (tex) {
-        const sprite = new Sprite(tex)
-        sprite.x = p.gridX * TILE_SIZE + part.offsetX * (TILE_SIZE / 16)
-        sprite.y = p.gridY * TILE_SIZE + part.offsetY * (TILE_SIZE / 16)
-        sprite.width = (part.region.w / 16) * TILE_SIZE
-        sprite.height = (part.region.h / 16) * TILE_SIZE
-        container.addChild(sprite)
+  // Composite placement: resolve parts from composite cache
+  if (p.compositeId) {
+    const comp = getComposite(p.compositeId)
+    if (comp) {
+      for (const part of comp.parts ?? []) {
+        if (!part.region) continue
+        const tex = regionToTexture(part.region)
+        if (tex) {
+          const sprite = new Sprite(tex)
+          const offsetX = part.offsetX || 0
+          const offsetY = part.offsetY || 0
+          // Offsets are in tile units, region w/h are in atlas pixels
+          sprite.x = gridX * TILE_SIZE + offsetX * TILE_SIZE
+          sprite.y = gridY * TILE_SIZE + offsetY * TILE_SIZE
+          const rw = part.region.w || 0
+          const rh = part.region.h || 0
+          sprite.width = rw
+          sprite.height = rh
+          container.addChild(sprite)
 
-        if (objectSprites) {
-          const heightTiles = part.region.h / 16
-          const tileOffsetY = part.offsetY / 16
-          objectSprites.push({
-            sprite,
-            anchorY:
-              p.gridY +
-              tileOffsetY +
-              heightTiles +
-              (part.zBias ?? 0) +
-              (p.zBias ?? 0),
-          })
+          if (objectSprites) {
+            const heightTiles = rh / TILE_SIZE
+            const partZBias = part.zBias || 0
+            objectSprites.push({
+              sprite,
+              anchorY:
+                gridY +
+                offsetY +
+                heightTiles +
+                partZBias +
+                zBias,
+            })
+          }
         }
       }
     }
@@ -633,13 +692,18 @@ function buildPlacementSprites(
 }
 
 function buildOverlays(
-  room: CompiledRoom,
+  room: RoomJSON,
   walkOverlay: Graphics,
   gridOverlay: Graphics,
   doorOverlay: Graphics,
   showWalkability?: boolean,
   showGrid?: boolean,
 ) {
+  const roomWidth = room.width || 0
+  const roomHeight = room.height || 0
+  const walkability = room.walkability ?? []
+  const doors = room.doors ?? []
+
   // Use store state if not provided
   if (showWalkability === undefined) {
     showWalkability = useTesterStore.getState().showWalkability
@@ -651,9 +715,9 @@ function buildOverlays(
   // Walkability overlay
   walkOverlay.clear()
   if (showWalkability) {
-    for (let row = 0; row < room.height; row++) {
-      for (let col = 0; col < room.width; col++) {
-        const walkable = room.walkability[row * room.width + col]
+    for (let row = 0; row < roomHeight; row++) {
+      for (let col = 0; col < roomWidth; col++) {
+        const walkable = walkability[row * roomWidth + col]
         walkOverlay.rect(
           col * TILE_SIZE,
           row * TILE_SIZE,
@@ -673,24 +737,24 @@ function buildOverlays(
   gridOverlay.clear()
   if (showGrid) {
     gridOverlay.setStrokeStyle({ width: 1, color: 0xffffff, alpha: 0.1 })
-    for (let row = 0; row <= room.height; row++) {
+    for (let row = 0; row <= roomHeight; row++) {
       gridOverlay.moveTo(0, row * TILE_SIZE)
-      gridOverlay.lineTo(room.width * TILE_SIZE, row * TILE_SIZE)
+      gridOverlay.lineTo(roomWidth * TILE_SIZE, row * TILE_SIZE)
       gridOverlay.stroke()
     }
-    for (let col = 0; col <= room.width; col++) {
+    for (let col = 0; col <= roomWidth; col++) {
       gridOverlay.moveTo(col * TILE_SIZE, 0)
-      gridOverlay.lineTo(col * TILE_SIZE, room.height * TILE_SIZE)
+      gridOverlay.lineTo(col * TILE_SIZE, roomHeight * TILE_SIZE)
       gridOverlay.stroke()
     }
   }
 
   // Door overlay (always visible)
   doorOverlay.clear()
-  for (const door of room.doors) {
+  for (const door of doors) {
     doorOverlay.rect(
-      door.col * TILE_SIZE,
-      door.row * TILE_SIZE,
+      (door.col || 0) * TILE_SIZE,
+      (door.row || 0) * TILE_SIZE,
       TILE_SIZE,
       TILE_SIZE,
     )

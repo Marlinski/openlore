@@ -196,16 +196,16 @@ export const useCompositeStore = create<CompositeState>()((set, get) => ({
     for (const p of parts) {
       minX = Math.min(minX, p.gridX)
       minY = Math.min(minY, p.gridY)
-      maxX = Math.max(maxX, p.gridX + p.region.w)
-      maxY = Math.max(maxY, p.gridY + p.region.h)
+      maxX = Math.max(maxX, p.gridX + (p.region.w || 1))
+      maxY = Math.max(maxY, p.gridY + (p.region.h || 1))
     }
     return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY }
   },
 
   getSortedParts: () => {
     return [...get().parts].sort((a, b) => {
-      const anchorA = a.gridY + a.region.h + a.zBias
-      const anchorB = b.gridY + b.region.h + b.zBias
+      const anchorA = a.gridY + (a.region.h || 1) + a.zBias
+      const anchorB = b.gridY + (b.region.h || 1) + b.zBias
       if (anchorA !== anchorB) return anchorA - anchorB
       return a.gridX - b.gridX
     })

@@ -42,7 +42,7 @@ export function TileStackPanel() {
       const p = placements[i]
       const size = getPlacementSize(p, getComposite)
       if (!size) continue
-      if (col >= p.gridX && col < p.gridX + size.w && row >= p.gridY && row < p.gridY + size.h) {
+      if (col >= (p.gridX || 0) && col < (p.gridX || 0) + size.w && row >= (p.gridY || 0) && row < (p.gridY || 0) + size.h) {
         // Filter by layer tab
         if (layerTab === 'floor' && !isFloor(p)) continue
         if (layerTab === 'object' && !isObject(p)) continue
@@ -59,18 +59,18 @@ export function TileStackPanel() {
 
     floors.sort((a, b) => {
       const pa = placements[a], pb = placements[b]
-      if (pa.gridY !== pb.gridY) return pa.gridY - pb.gridY
-      return pa.gridX - pb.gridX
+      if ((pa.gridY || 0) !== (pb.gridY || 0)) return (pa.gridY || 0) - (pb.gridY || 0)
+      return (pa.gridX || 0) - (pb.gridX || 0)
     })
 
     objects.sort((a, b) => {
       const pa = placements[a], pb = placements[b]
       const sizeA = getPlacementSize(pa, getComposite)
       const sizeB = getPlacementSize(pb, getComposite)
-      const anchorA = pa.gridY + (sizeA?.h ?? 1) + (pa.zBias ?? 0)
-      const anchorB = pb.gridY + (sizeB?.h ?? 1) + (pb.zBias ?? 0)
+      const anchorA = (pa.gridY || 0) + (sizeA?.h ?? 1) + (pa.zBias ?? 0)
+      const anchorB = (pb.gridY || 0) + (sizeB?.h ?? 1) + (pb.zBias ?? 0)
       if (anchorA !== anchorB) return anchorA - anchorB
-      return pa.gridX - pb.gridX
+      return (pa.gridX || 0) - (pb.gridX || 0)
     })
 
     return [...floors, ...objects]
@@ -195,16 +195,18 @@ function StackItem({ idx, order, placement, isSelected, getComposite }: StackIte
 
     if (comp) {
       // Composite thumbnail
-      const maxDim = Math.max(comp.displayWidth, comp.displayHeight)
+      const dw = comp.displayWidth || 1
+      const dh = comp.displayHeight || 1
+      const maxDim = Math.max(dw, dh)
       const scale = Math.min(24 / (maxDim * TILE_SIZE), 2)
-      canvas.width = Math.ceil(comp.displayWidth * TILE_SIZE * scale)
-      canvas.height = Math.ceil(comp.displayHeight * TILE_SIZE * scale)
+      canvas.width = Math.ceil(dw * TILE_SIZE * scale)
+      canvas.height = Math.ceil(dh * TILE_SIZE * scale)
 
       const sorted = [...comp.parts].sort((a, b) => {
-        const anchorA = a.offsetY + a.region!.h + (a.zBias ?? 0)
-        const anchorB = b.offsetY + b.region!.h + (b.zBias ?? 0)
+        const anchorA = (a.offsetY || 0) + (a.region!.h || 1) + (a.zBias || 0)
+        const anchorB = (b.offsetY || 0) + (b.region!.h || 1) + (b.zBias || 0)
         if (anchorA !== anchorB) return anchorA - anchorB
-        return a.offsetX - b.offsetX
+        return (a.offsetX || 0) - (b.offsetX || 0)
       })
 
       for (const part of sorted) {
@@ -212,32 +214,34 @@ function StackItem({ idx, order, placement, isSelected, getComposite }: StackIte
         if (!img) continue
         ctx.drawImage(
           img,
-          part.region!.srcCol * TILE_SIZE,
-          part.region!.srcRow * TILE_SIZE,
-          part.region!.w * TILE_SIZE,
-          part.region!.h * TILE_SIZE,
-          part.offsetX * TILE_SIZE * scale,
-          part.offsetY * TILE_SIZE * scale,
-          part.region!.w * TILE_SIZE * scale,
-          part.region!.h * TILE_SIZE * scale,
+          (part.region!.srcCol || 0) * TILE_SIZE,
+          (part.region!.srcRow || 0) * TILE_SIZE,
+          (part.region!.w || 1) * TILE_SIZE,
+          (part.region!.h || 1) * TILE_SIZE,
+          (part.offsetX || 0) * TILE_SIZE * scale,
+          (part.offsetY || 0) * TILE_SIZE * scale,
+          (part.region!.w || 1) * TILE_SIZE * scale,
+          (part.region!.h || 1) * TILE_SIZE * scale,
         )
       }
     } else if (placement.region) {
       // Region thumbnail
       const r = placement.region
-      const maxDim = Math.max(r.w, r.h)
+      const rw = r.w || 1
+      const rh = r.h || 1
+      const maxDim = Math.max(rw, rh)
       const scale = Math.min(24 / (maxDim * TILE_SIZE), 2)
-      canvas.width = Math.ceil(r.w * TILE_SIZE * scale)
-      canvas.height = Math.ceil(r.h * TILE_SIZE * scale)
+      canvas.width = Math.ceil(rw * TILE_SIZE * scale)
+      canvas.height = Math.ceil(rh * TILE_SIZE * scale)
 
       const img = getCachedImage(r.tilesetId)
       if (img) {
         ctx.drawImage(
           img,
-          r.srcCol * TILE_SIZE,
-          r.srcRow * TILE_SIZE,
-          r.w * TILE_SIZE,
-          r.h * TILE_SIZE,
+          (r.srcCol || 0) * TILE_SIZE,
+          (r.srcRow || 0) * TILE_SIZE,
+          rw * TILE_SIZE,
+          rh * TILE_SIZE,
           0,
           0,
           canvas.width,
@@ -253,10 +257,10 @@ function StackItem({ idx, order, placement, isSelected, getComposite }: StackIte
   const label = comp
     ? `[C] ${comp.name}`
     : placement.region
-      ? `[T] ${placement.region.w}\u00d7${placement.region.h}`
+      ? `[T] ${placement.region.w || 1}\u00d7${placement.region.h || 1}`
       : '?'
 
-  const meta = `${placement.layer} \u00b7 (${placement.gridX},${placement.gridY})${biasStr}`
+  const meta = `${placement.layer} \u00b7 (${placement.gridX || 0},${placement.gridY || 0})${biasStr}`
 
   return (
     <div

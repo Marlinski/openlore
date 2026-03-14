@@ -26,6 +26,7 @@ export function TexturePanel() {
   const [selectedTileset, setSelectedTileset] = useState<string | null>(null)
   const [pickerZoom, setPickerZoom] = useState(1)
   const [pickerGrid, setPickerGrid] = useState(true)
+  const [navCollapsed, setNavCollapsed] = useState(false)
 
   // Current region selection for the picker
   const pickerSelection =
@@ -58,20 +59,32 @@ export function TexturePanel() {
   const tilesetItems = tilesets.map((t) => ({
     id: t.id,
     label: t.label,
+    path: t.path,
     meta: `${t.tileWidth}x${t.tileHeight} ${t.cols}x${t.rows}`,
   }))
 
   return (
     <div class="room-texture-panel">
       {/* Tileset selector */}
-      <div class="room-tileset-select">
-        <FilterableList
-          items={tilesetItems}
-          value={selectedTileset}
-          onSelect={handleTilesetSelect}
-          placeholder="Filter tilesets..."
-        />
-      </div>
+      {!navCollapsed && (
+        <div class="room-tileset-select">
+          <FilterableList
+            items={tilesetItems}
+            value={selectedTileset}
+            onSelect={handleTilesetSelect}
+            placeholder="Filter tilesets..."
+          />
+        </div>
+      )}
+
+      {/* Collapse/expand toggle */}
+      <button
+        class="panel-collapse-toggle"
+        onClick={() => setNavCollapsed((c) => !c)}
+        title={navCollapsed ? 'Expand tileset nav' : 'Collapse tileset nav'}
+      >
+        <span class={`panel-collapse-arrow${navCollapsed ? ' down' : ''}`}>&#9650;</span>
+      </button>
 
       {/* Picker toolbar */}
       <div class="room-picker-toolbar">
@@ -144,38 +157,46 @@ function CompositeItem({ comp, isSelected, onSelect }: CompositeItemProps) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const maxDim = Math.max(comp.displayWidth, comp.displayHeight)
+    const dw = comp.displayWidth || 1
+    const dh = comp.displayHeight || 1
+    const maxDim = Math.max(dw, dh)
     const thumbScale = Math.min(32 / (maxDim * TILE_SIZE), 2)
-    const cw = Math.ceil(comp.displayWidth * TILE_SIZE * thumbScale)
-    const ch = Math.ceil(comp.displayHeight * TILE_SIZE * thumbScale)
+    const cw = Math.ceil(dw * TILE_SIZE * thumbScale)
+    const ch = Math.ceil(dh * TILE_SIZE * thumbScale)
     canvas.width = cw
     canvas.height = ch
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Sort parts by anchor Y
+    // Sort parts by anchor Y (guard all proto int fields with || 0 / || 1)
     const sorted = [...comp.parts].sort((a, b) => {
-      const anchorA = a.offsetY + a.region!.h + (a.zBias ?? 0)
-      const anchorB = b.offsetY + b.region!.h + (b.zBias ?? 0)
+      const anchorA = (a.offsetY || 0) + (a.region!.h || 1) + (a.zBias || 0)
+      const anchorB = (b.offsetY || 0) + (b.region!.h || 1) + (b.zBias || 0)
       if (anchorA !== anchorB) return anchorA - anchorB
-      return a.offsetX - b.offsetX
+      return (a.offsetX || 0) - (b.offsetX || 0)
     })
 
     ctx.imageSmoothingEnabled = false
     for (const part of sorted) {
       const img = getCachedImage(part.region!.tilesetId)
       if (!img) continue
+      const sc = part.region!.srcCol || 0
+      const sr = part.region!.srcRow || 0
+      const rw = part.region!.w || 1
+      const rh = part.region!.h || 1
+      const ox = part.offsetX || 0
+      const oy = part.offsetY || 0
       ctx.drawImage(
         img,
-        part.region!.srcCol * TILE_SIZE,
-        part.region!.srcRow * TILE_SIZE,
-        part.region!.w * TILE_SIZE,
-        part.region!.h * TILE_SIZE,
-        part.offsetX * TILE_SIZE * thumbScale,
-        part.offsetY * TILE_SIZE * thumbScale,
-        part.region!.w * TILE_SIZE * thumbScale,
-        part.region!.h * TILE_SIZE * thumbScale,
+        sc * TILE_SIZE,
+        sr * TILE_SIZE,
+        rw * TILE_SIZE,
+        rh * TILE_SIZE,
+        ox * TILE_SIZE * thumbScale,
+        oy * TILE_SIZE * thumbScale,
+        rw * TILE_SIZE * thumbScale,
+        rh * TILE_SIZE * thumbScale,
       )
     }
   }, [comp])
@@ -189,7 +210,7 @@ function CompositeItem({ comp, isSelected, onSelect }: CompositeItemProps) {
       <div class="room-palette-info">
         <span class="room-palette-name">[C] {comp.name}</span>
         <span class="room-palette-meta">
-          {comp.displayWidth}&times;{comp.displayHeight}
+          {comp.displayWidth || 1}&times;{comp.displayHeight || 1}
         </span>
       </div>
     </div>

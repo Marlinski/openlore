@@ -100,19 +100,19 @@ export function WorkspaceCanvas() {
   ) {
     const img = getCachedImage(part.region.tilesetId)
     if (!img) {
-      loadImage(part.region.tilesetId).then(() => draw())
+      loadImage(part.region.tilesetId).then(() => draw()).catch(() => {})
       return
     }
     ctx.drawImage(
       img,
-      part.region.srcCol * TILE_SIZE,
-      part.region.srcRow * TILE_SIZE,
-      part.region.w * TILE_SIZE,
-      part.region.h * TILE_SIZE,
+      (part.region.srcCol || 0) * TILE_SIZE,
+      (part.region.srcRow || 0) * TILE_SIZE,
+      (part.region.w || 1) * TILE_SIZE,
+      (part.region.h || 1) * TILE_SIZE,
       part.gridX * tileSize,
       part.gridY * tileSize,
-      part.region.w * tileSize,
-      part.region.h * tileSize,
+      (part.region.w || 1) * tileSize,
+      (part.region.h || 1) * tileSize,
     )
   }
 
@@ -280,8 +280,8 @@ export function WorkspaceCanvas() {
                 position: 'absolute',
                 left: `${part.gridX * ts}px`,
                 top: `${part.gridY * ts}px`,
-                width: `${part.region.w * ts}px`,
-                height: `${part.region.h * ts}px`,
+                width: `${(part.region.w || 1) * ts}px`,
+                height: `${(part.region.h || 1) * ts}px`,
               }}
               onMouseDown={(e) => handleOverlayMouseDown(e as any, part)}
             />

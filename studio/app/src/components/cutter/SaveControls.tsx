@@ -19,7 +19,6 @@ export interface SaveControlsProps {
 export function SaveControls({ tileset }: SaveControlsProps) {
   const cuts = useCutterStore((s) => s.cuts)
   const tilesetId = useCutterStore((s) => s.tilesetId)
-  const sharedTags = useCutterStore((s) => s.sharedTags)
   const clearCuts = useCutterStore((s) => s.clearCuts)
   const clearSelection = useCutterStore((s) => s.clearSelection)
 
@@ -64,10 +63,11 @@ export function SaveControls({ tileset }: SaveControlsProps) {
           }
         }
 
+        // Tags are already on the cut (shared + per-cut)
         const resource = {
           id: generateId(),
           name: cut.name,
-          tags: [...sharedTags, ...cut.tags],
+          tags: [...new Set(cut.tags)],
           frames,
         } as Resource
 
@@ -84,19 +84,22 @@ export function SaveControls({ tileset }: SaveControlsProps) {
     } finally {
       setSaving(false)
     }
-  }, [cuts, tilesetId, sharedTags, clearCuts, clearSelection, saveResource, showStatus])
+  }, [cuts, tilesetId, clearCuts, clearSelection, saveResource, showStatus])
 
   const disabled = cuts.length === 0 || !tilesetId || saving
 
   return (
     <div class="cutter-save-controls">
-      <div class="cutter-section-header">Save</div>
       <button
-        class="btn btn-primary"
+        class="btn btn-primary cutter-save-btn"
         disabled={disabled}
         onClick={handleSave}
       >
-        {saving ? 'Saving…' : `Save Resources (${cuts.length})`}
+        {saving
+          ? 'Saving\u2026'
+          : cuts.length > 0
+            ? `\uD83D\uDCBE Save ${cuts.length} Resource${cuts.length === 1 ? '' : 's'}`
+            : '\uD83D\uDCBE Save Resources'}
       </button>
       {status && <div class="cutter-save-status">{status}</div>}
     </div>

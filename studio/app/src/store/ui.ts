@@ -3,11 +3,11 @@ import { persist } from 'zustand/middleware'
 
 // ─── Tab IDs ────────────────────────────────────────────────────────
 
-export type TabId = 'cutter' | 'browser' | 'composite' | 'room' | 'tester'
+export type TabId = 'cutter' | 'resources' | 'composite' | 'room' | 'tester'
 
 export const TAB_LIST: { id: TabId; label: string }[] = [
   { id: 'cutter', label: 'Tile Cutter' },
-  { id: 'browser', label: 'Browser' },
+  { id: 'resources', label: 'Resources' },
   { id: 'composite', label: 'Composite' },
   { id: 'room', label: 'Room' },
   { id: 'tester', label: 'Tester' },
@@ -19,7 +19,7 @@ interface CutterState {
   selectedTileset: string | null
 }
 
-interface BrowserState {
+interface ResourcesState {
   filters: string[]
 }
 
@@ -51,14 +51,14 @@ interface UIState {
 
   // Per-tab selections (extended in later phases)
   cutter: CutterState
-  browser: BrowserState
+  resources: ResourcesState
   composite: CompositeState
   room: RoomState
   tester: TesterState
 
   // Per-tab setters
   setCutter: (patch: Partial<CutterState>) => void
-  setBrowser: (patch: Partial<BrowserState>) => void
+  setResources: (patch: Partial<ResourcesState>) => void
   setComposite: (patch: Partial<CompositeState>) => void
   setRoom: (patch: Partial<RoomState>) => void
   setTester: (patch: Partial<TesterState>) => void
@@ -67,7 +67,7 @@ interface UIState {
 // ─── Defaults ───────────────────────────────────────────────────────
 
 const DEFAULT_CUTTER: CutterState = { selectedTileset: null }
-const DEFAULT_BROWSER: BrowserState = { filters: [] }
+const DEFAULT_RESOURCES: ResourcesState = { filters: [] }
 const DEFAULT_COMPOSITE: CompositeState = { selectedComposite: null }
 const DEFAULT_ROOM: RoomState = { selectedRoom: null, mode: 'layout' }
 const DEFAULT_TESTER: TesterState = { selectedRoom: null }
@@ -90,15 +90,15 @@ export const useUIStore = create<UIState>()(
 
       // Per-tab
       cutter: DEFAULT_CUTTER,
-      browser: DEFAULT_BROWSER,
+      resources: DEFAULT_RESOURCES,
       composite: DEFAULT_COMPOSITE,
       room: DEFAULT_ROOM,
       tester: DEFAULT_TESTER,
 
       setCutter: (patch) =>
         set((s) => ({ cutter: { ...s.cutter, ...patch } })),
-      setBrowser: (patch) =>
-        set((s) => ({ browser: { ...s.browser, ...patch } })),
+      setResources: (patch) =>
+        set((s) => ({ resources: { ...s.resources, ...patch } })),
       setComposite: (patch) =>
         set((s) => ({ composite: { ...s.composite, ...patch } })),
       setRoom: (patch) =>

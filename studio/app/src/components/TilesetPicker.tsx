@@ -36,20 +36,40 @@ export interface TilesetPickerProps {
 /** Global image cache — shared across all TilesetPicker instances. */
 const imageCache = new Map<string, HTMLImageElement>()
 
-/** Load a tileset image by hash, caching the result. */
+/** Hashes that failed to load — prevents infinite retry loops. */
+const failedHashes = new Set<string>()
+
+/** In-flight load promises — deduplicates concurrent requests for the same hash. */
+const pendingLoads = new Map<string, Promise<HTMLImageElement>>()
+
+/** Load a tileset image by hash, caching the result. Failed loads are cached to prevent infinite retries. */
 export function loadImage(hash: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(hash)
   if (cached) return Promise.resolve(cached)
 
-  return new Promise((resolve, reject) => {
+  if (failedHashes.has(hash)) {
+    return Promise.reject(new Error(`Tileset image ${hash} previously failed to load`))
+  }
+
+  const pending = pendingLoads.get(hash)
+  if (pending) return pending
+
+  const p = new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
       imageCache.set(hash, img)
+      pendingLoads.delete(hash)
       resolve(img)
     }
-    img.onerror = () => reject(new Error(`Failed to load tileset image ${hash}`))
+    img.onerror = () => {
+      failedHashes.add(hash)
+      pendingLoads.delete(hash)
+      reject(new Error(`Failed to load tileset image ${hash}`))
+    }
     img.src = tilesetImageUrl(hash)
   })
+  pendingLoads.set(hash, p)
+  return p
 }
 
 /** Get a cached image synchronously (returns undefined if not yet loaded). */
@@ -88,10 +108,10 @@ export function TilesetPicker(props: TilesetPickerProps) {
     const img = imgRef.current
     if (!canvas || !img || !meta) return
 
-    const tw = meta.tileWidth * zoom
-    const th = meta.tileHeight * zoom
-    const w = meta.cols * tw
-    const h = meta.rows * th
+    const tw = (meta.tileWidth || 1) * zoom
+    const th = (meta.tileHeight || 1) * zoom
+    const w = (meta.cols || 1) * tw
+    const h = (meta.rows || 1) * th
 
     canvas.width = w
     canvas.height = h
@@ -105,13 +125,13 @@ export function TilesetPicker(props: TilesetPickerProps) {
     if (showGrid) {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
       ctx.lineWidth = 1
-      for (let x = 0; x <= meta.cols; x++) {
+      for (let x = 0; x <= (meta.cols || 1); x++) {
         ctx.beginPath()
         ctx.moveTo(x * tw + 0.5, 0)
         ctx.lineTo(x * tw + 0.5, h)
         ctx.stroke()
       }
-      for (let y = 0; y <= meta.rows; y++) {
+      for (let y = 0; y <= (meta.rows || 1); y++) {
         ctx.beginPath()
         ctx.moveTo(0, y * th + 0.5)
         ctx.lineTo(w, y * th + 0.5)
@@ -133,13 +153,13 @@ export function TilesetPicker(props: TilesetPickerProps) {
         el.style.display = 'none'
         return
       }
-      const tw = meta.tileWidth * zoom
-      const th = meta.tileHeight * zoom
+      const tw = (meta.tileWidth || 1) * zoom
+      const th = (meta.tileHeight || 1) * zoom
       el.style.display = 'block'
-      el.style.left = `${region.srcCol * tw}px`
-      el.style.top = `${region.srcRow * th}px`
-      el.style.width = `${region.w * tw}px`
-      el.style.height = `${region.h * th}px`
+      el.style.left = `${(region.srcCol || 0) * tw}px`
+      el.style.top = `${(region.srcRow || 0) * th}px`
+      el.style.width = `${(region.w || 1) * tw}px`
+      el.style.height = `${(region.h || 1) * th}px`
     },
     [meta, zoom],
   )
@@ -151,11 +171,16 @@ export function TilesetPicker(props: TilesetPickerProps) {
       imgRef.current = null
       return
     }
+    let cancelled = false
     loadImage(tilesetHash).then((img) => {
+      if (cancelled) return
       imgRef.current = img
       draw()
       updateOverlay(selection)
-    })
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [tilesetHash])
 
   // ─── Redraw when zoom/grid/selection changes ─────────────────
@@ -174,11 +199,11 @@ export function TilesetPicker(props: TilesetPickerProps) {
       const rect = canvas.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
-      const tw = meta.tileWidth * zoom
-      const th = meta.tileHeight * zoom
+      const tw = (meta.tileWidth || 1) * zoom
+      const th = (meta.tileHeight || 1) * zoom
       const col = Math.floor(x / tw)
       const row = Math.floor(y / th)
-      if (col < 0 || col >= meta.cols || row < 0 || row >= meta.rows) return null
+      if (col < 0 || col >= (meta.cols || 1) || row < 0 || row >= (meta.rows || 1)) return null
       return { col, row }
     },
     [meta, zoom],
@@ -247,8 +272,8 @@ export function TilesetPicker(props: TilesetPickerProps) {
     const el = overlayRef.current
     if (!el) return
     const d = dragRef.current
-    const tw = m.tileWidth * zoom
-    const th = m.tileHeight * zoom
+    const tw = (m.tileWidth || 1) * zoom
+    const th = (m.tileHeight || 1) * zoom
     const minCol = Math.min(d.startCol, d.endCol)
     const minRow = Math.min(d.startRow, d.endRow)
     const maxCol = Math.max(d.startCol, d.endCol)

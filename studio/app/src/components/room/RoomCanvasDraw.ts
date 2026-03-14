@@ -117,10 +117,10 @@ export function drawTextureMode(
   objects.sort((a, b) => {
     const sizeA = getPlacementSize(a.p, getComposite)
     const sizeB = getPlacementSize(b.p, getComposite)
-    const anchorA = a.p.gridY + (sizeA?.h ?? 1) + (a.p.zBias ?? 0)
-    const anchorB = b.p.gridY + (sizeB?.h ?? 1) + (b.p.zBias ?? 0)
+    const anchorA = (a.p.gridY || 0) + (sizeA?.h ?? 1) + (a.p.zBias || 0)
+    const anchorB = (b.p.gridY || 0) + (sizeB?.h ?? 1) + (b.p.zBias || 0)
     if (anchorA !== anchorB) return anchorA - anchorB
-    return a.p.gridX - b.p.gridX
+    return (a.p.gridX || 0) - (b.p.gridX || 0)
   })
 
   // Draw floors first, then objects
@@ -163,22 +163,22 @@ function drawPlacement(
 
     // Sort parts by anchor Y, then X (same as legacy)
     const sorted = [...comp.parts].sort((a, b) => {
-      const anchorA = a.offsetY + a.region!.h + (a.zBias ?? 0)
-      const anchorB = b.offsetY + b.region!.h + (b.zBias ?? 0)
+      const anchorA = (a.offsetY || 0) + (a.region!.h || 1) + (a.zBias || 0)
+      const anchorB = (b.offsetY || 0) + (b.region!.h || 1) + (b.zBias || 0)
       if (anchorA !== anchorB) return anchorA - anchorB
-      return a.offsetX - b.offsetX
+      return (a.offsetX || 0) - (b.offsetX || 0)
     })
 
     for (const part of sorted) {
       drawRegionAt(
         ctx,
         part.region!.tilesetId,
-        part.region!.srcCol,
-        part.region!.srcRow,
-        part.region!.w,
-        part.region!.h,
-        (p.gridX + part.offsetX) * ts,
-        (p.gridY + part.offsetY) * ts,
+        part.region!.srcCol || 0,
+        part.region!.srcRow || 0,
+        part.region!.w || 1,
+        part.region!.h || 1,
+        ((p.gridX || 0) + (part.offsetX || 0)) * ts,
+        ((p.gridY || 0) + (part.offsetY || 0)) * ts,
         ts,
         onImageMissing,
       )
@@ -187,12 +187,12 @@ function drawPlacement(
     drawRegionAt(
       ctx,
       p.region.tilesetId,
-      p.region.srcCol,
-      p.region.srcRow,
-      p.region.w,
-      p.region.h,
-      p.gridX * ts,
-      p.gridY * ts,
+      p.region.srcCol || 0,
+      p.region.srcRow || 0,
+      p.region.w || 1,
+      p.region.h || 1,
+      (p.gridX || 0) * ts,
+      (p.gridY || 0) * ts,
       ts,
       onImageMissing,
     )
@@ -213,7 +213,7 @@ function drawRegionAt(
 ) {
   const img = getCachedImage(tilesetId)
   if (!img) {
-    loadImage(tilesetId).then(onImageMissing)
+    loadImage(tilesetId).then(onImageMissing).catch(() => {})
     return
   }
   ctx.drawImage(
@@ -268,10 +268,10 @@ export function drawRegionThumbnail(
   ctx.imageSmoothingEnabled = false
   ctx.drawImage(
     img,
-    srcCol * TILE_SIZE,
-    srcRow * TILE_SIZE,
-    w * TILE_SIZE,
-    h * TILE_SIZE,
+    (srcCol || 0) * TILE_SIZE,
+    (srcRow || 0) * TILE_SIZE,
+    (w || 1) * TILE_SIZE,
+    (h || 1) * TILE_SIZE,
     0,
     0,
     canvasW,
@@ -287,17 +287,17 @@ export function drawCompositeThumbnail(
   canvasH: number,
 ) {
   const scale = Math.min(
-    canvasW / (comp.displayWidth * TILE_SIZE),
-    canvasH / (comp.displayHeight * TILE_SIZE),
+    canvasW / ((comp.displayWidth || 1) * TILE_SIZE),
+    canvasH / ((comp.displayHeight || 1) * TILE_SIZE),
     2,
   )
 
   // Sort parts by anchor Y
   const sorted = [...comp.parts].sort((a, b) => {
-    const anchorA = a.offsetY + a.region!.h + (a.zBias ?? 0)
-    const anchorB = b.offsetY + b.region!.h + (b.zBias ?? 0)
+    const anchorA = (a.offsetY || 0) + (a.region!.h || 1) + (a.zBias || 0)
+    const anchorB = (b.offsetY || 0) + (b.region!.h || 1) + (b.zBias || 0)
     if (anchorA !== anchorB) return anchorA - anchorB
-    return a.offsetX - b.offsetX
+    return (a.offsetX || 0) - (b.offsetX || 0)
   })
 
   ctx.imageSmoothingEnabled = false
@@ -306,14 +306,14 @@ export function drawCompositeThumbnail(
     if (!img) continue
     ctx.drawImage(
       img,
-      part.region!.srcCol * TILE_SIZE,
-      part.region!.srcRow * TILE_SIZE,
-      part.region!.w * TILE_SIZE,
-      part.region!.h * TILE_SIZE,
-      part.offsetX * TILE_SIZE * scale,
-      part.offsetY * TILE_SIZE * scale,
-      part.region!.w * TILE_SIZE * scale,
-      part.region!.h * TILE_SIZE * scale,
+      (part.region!.srcCol || 0) * TILE_SIZE,
+      (part.region!.srcRow || 0) * TILE_SIZE,
+      (part.region!.w || 1) * TILE_SIZE,
+      (part.region!.h || 1) * TILE_SIZE,
+      (part.offsetX || 0) * TILE_SIZE * scale,
+      (part.offsetY || 0) * TILE_SIZE * scale,
+      (part.region!.w || 1) * TILE_SIZE * scale,
+      (part.region!.h || 1) * TILE_SIZE * scale,
     )
   }
 }

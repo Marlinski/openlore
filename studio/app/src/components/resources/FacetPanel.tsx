@@ -6,8 +6,8 @@
  * Active filters are shown as removable pills at the top.
  */
 
-import { sortNamespaces } from './BrowserTab'
-import type { FacetMap } from './BrowserTab'
+import { sortNamespaces } from './ResourcesTab'
+import type { FacetMap } from './ResourcesTab'
 
 interface FacetPanelProps {
   facets: FacetMap
@@ -21,13 +21,13 @@ export function FacetPanel(props: FacetPanelProps) {
   const { facets, filters, onAddFilter, onRemoveFilter, onClearFilters } = props
 
   return (
-    <aside class="browser-facet-panel">
+    <aside class="resources-facet-panel">
       <ActiveFilters
         filters={filters}
         onRemove={onRemoveFilter}
         onClear={onClearFilters}
       />
-      <div class="browser-facet-groups">
+      <div class="resources-facet-groups">
         <FacetGroups
           facets={facets}
           filters={filters}
@@ -50,21 +50,21 @@ function ActiveFilters({ filters, onRemove, onClear }: ActiveFiltersProps) {
   if (filters.size === 0) return null
 
   return (
-    <div class="browser-active-filters">
-      <div class="browser-active-filters-header">
-        <span class="browser-active-filters-label">Active Filters</span>
-        <button class="browser-clear-btn" onClick={onClear}>
+    <div class="resources-active-filters">
+      <div class="resources-active-filters-header">
+        <span class="resources-active-filters-label">Active Filters</span>
+        <button class="resources-clear-btn" onClick={onClear}>
           Clear all
         </button>
       </div>
-      <div class="browser-filter-pills">
+      <div class="resources-filter-pills">
         {[...filters].map(([ns, value]) => (
-          <span key={ns} class="browser-filter-pill">
-            <span class="browser-pill-text">
+          <span key={ns} class="resources-filter-pill">
+            <span class="resources-pill-text">
               {ns ? `${ns}:${value}` : value}
             </span>
             <span
-              class="browser-pill-remove"
+              class="resources-pill-remove"
               onClick={() => onRemove(ns)}
             >
               &times;
@@ -89,7 +89,7 @@ function FacetGroups({ facets, filters, onAddFilter }: FacetGroupsProps) {
 
   if (nsKeys.length === 0) {
     return (
-      <div class="browser-facets-empty">No tags to filter by.</div>
+      <div class="resources-facets-empty">No tags to filter by.</div>
     )
   }
 
@@ -105,18 +105,18 @@ function FacetGroups({ facets, filters, onAddFilter }: FacetGroupsProps) {
         )
 
         return (
-          <div key={ns} class="browser-facet-group">
-            <div class="browser-facet-group-header">
+          <div key={ns} class="resources-facet-group">
+            <div class="resources-facet-group-header">
               {ns || '(unnamespaced)'}
             </div>
             {sorted.map(([value, count]) => (
               <button
                 key={value}
-                class="browser-facet-item"
+                class="resources-facet-item"
                 onClick={() => onAddFilter(ns, value)}
               >
-                <span class="browser-facet-value">{value}</span>
-                <span class="browser-facet-count">{count}</span>
+                <span class="resources-facet-value">{value}</span>
+                <span class="resources-facet-count">{count}</span>
               </button>
             ))}
           </div>

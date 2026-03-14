@@ -20,7 +20,6 @@ export interface MaskPanelProps {
 export function MaskPanel({ tileset }: MaskPanelProps) {
   const cuts = useCutterStore((s) => s.cuts)
   const tilesetId = useCutterStore((s) => s.tilesetId)
-  const sharedTags = useCutterStore((s) => s.sharedTags)
   const setCuts = useCutterStore((s) => s.setCuts)
   const clearSelection = useCutterStore((s) => s.clearSelection)
 
@@ -42,8 +41,8 @@ export function MaskPanel({ tileset }: MaskPanelProps) {
       row: cut.row,
       startFrame: cut.col,
       frameCount: cut.frameCount,
-      frameWidth: cut.frameWidth === 1 ? undefined : cut.frameWidth,
-      frameHeight: cut.frameHeight === 1 ? undefined : cut.frameHeight,
+      frameWidth: cut.frameWidth,
+      frameHeight: cut.frameHeight,
     } as MaskCut))
 
     const mask = {
@@ -67,18 +66,18 @@ export function MaskPanel({ tileset }: MaskPanelProps) {
       const newCuts: CutEntry[] = mask.cuts.map((mc: MaskCut) => ({
         id: generateId(),
         name: mc.tags.join('_') || 'cut',
-        tags: [...sharedTags, ...mc.tags],
-        col: mc.startFrame,
-        row: mc.row,
-        frameWidth: mc.frameWidth ?? 1,
-        frameHeight: mc.frameHeight ?? 1,
-        frameCount: mc.frameCount,
+        tags: [...mc.tags],
+        col: mc.startFrame || 0,
+        row: mc.row || 0,
+        frameWidth: mc.frameWidth || 1,
+        frameHeight: mc.frameHeight || 1,
+        frameCount: mc.frameCount || 1,
       }))
 
       setCuts(newCuts)
       clearSelection()
     },
-    [tilesetId, sharedTags, setCuts, clearSelection],
+    [tilesetId, setCuts, clearSelection],
   )
 
   // ─── Delete Mask ───────────────────────────────────────────────────

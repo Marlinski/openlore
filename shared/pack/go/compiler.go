@@ -2,6 +2,12 @@
 // workspace resources/composites/rooms, remapping coordinates onto
 // the generated atlases.
 //
+// The compiler outputs a standard *Pack using the same protobuf types
+// as the source format. Atlas images become TilesetDefinition entries
+// (tile_width=1, tile_height=1, making coordinates pixel-based).
+// All TilesetRegion/ResourceFrame references are remapped from source
+// tileset IDs to atlas tileset IDs with new pixel coordinates.
+//
 // Pipeline:
 //  1. Scan tileset PNGs from {workspace}/tilesets/ → build hash→path lookup
 //  2. Read resources, composites, rooms from workspace JSON files
@@ -9,8 +15,8 @@
 //  4. Group regions by source tileset
 //  5. For each tileset: extract used regions, shelf-pack into atlas PNG
 //  6. Content-hash each atlas for cache-busting filenames
-//  7. Write compiled resources/rooms with remapped atlas coordinates
-//  8. Write manifest.json
+//  7. Build compiled Pack with remapped atlas coordinates
+//  8. Write Pack to outDir using standard writer + copy atlas PNGs
 
 package pack
 
@@ -18,7 +24,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"image"
 	"image/draw"
@@ -50,7 +55,7 @@ func (r CompileResult) String() string {
 		r.AtlasCount, r.TotalAtlasKB, r.RoomCount, r.ResourceCount)
 }
 
-// Compile reads a workspace directory and produces a compiled pack in outDir.
+// Compile reads a workspace directory and produces a compiled pack.
 //
 // The workspace must contain:
 //   - tilesets/ — source tileset PNG images (scanned recursively)
@@ -58,32 +63,29 @@ func (r CompileResult) String() string {
 //   - composites/*.json — CompositeObject entities (protojson)
 //   - rooms/*.json — RoomDefinition entities (protojson)
 //
-// Output goes to outDir:
-//   - atlas/atlas_<hash>.png — one per source tileset with used regions
-//   - resources/<id>.json — compiled resources with atlas coordinates
-//   - rooms/<name>.json — compiled rooms with remapped placements
-//   - manifest.json — index of all compiled assets
-func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, error) {
+// Returns the compiled Pack (with atlas tilesets and remapped coordinates)
+// and writes atlas PNGs + Pack JSON files to outDir.
+func Compile(workspaceDir, outDir, packID, packName string) (*Pack, *CompileResult, error) {
 	// ── 1. Scan tilesets ──────────────────────────────────────────────
 	tilesetsDir := filepath.Join(workspaceDir, "tilesets")
 	tilesets, err := scanTilesets(tilesetsDir)
 	if err != nil {
-		return nil, fmt.Errorf("scan tilesets: %w", err)
+		return nil, nil, fmt.Errorf("scan tilesets: %w", err)
 	}
 	log.Printf("[compile] scanned %d tilesets", len(tilesets))
 
 	// ── 2. Read entities ──────────────────────────────────────────────
 	resources, err := readEntities[*pb.Resource](filepath.Join(workspaceDir, "resources"), func() *pb.Resource { return &pb.Resource{} })
 	if err != nil {
-		return nil, fmt.Errorf("read resources: %w", err)
+		return nil, nil, fmt.Errorf("read resources: %w", err)
 	}
 	composites, err := readEntities[*pb.CompositeObject](filepath.Join(workspaceDir, "composites"), func() *pb.CompositeObject { return &pb.CompositeObject{} })
 	if err != nil {
-		return nil, fmt.Errorf("read composites: %w", err)
+		return nil, nil, fmt.Errorf("read composites: %w", err)
 	}
 	rooms, err := readEntities[*pb.RoomDefinition](filepath.Join(workspaceDir, "rooms"), func() *pb.RoomDefinition { return &pb.RoomDefinition{} })
 	if err != nil {
-		return nil, fmt.Errorf("read rooms: %w", err)
+		return nil, nil, fmt.Errorf("read rooms: %w", err)
 	}
 	log.Printf("[compile] read %d resources, %d composites, %d rooms",
 		len(resources), len(composites), len(rooms))
@@ -130,17 +132,17 @@ func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, err
 
 	// ── 4. Clean and create output directory ──────────────────────────
 	if err := os.RemoveAll(outDir); err != nil {
-		return nil, fmt.Errorf("clean output dir: %w", err)
+		return nil, nil, fmt.Errorf("clean output dir: %w", err)
 	}
-	for _, sub := range []string{"atlas", "rooms", "resources"} {
-		if err := os.MkdirAll(filepath.Join(outDir, sub), 0o755); err != nil {
-			return nil, fmt.Errorf("create %s dir: %w", sub, err)
-		}
+	if err := os.MkdirAll(filepath.Join(outDir, "atlas"), 0o755); err != nil {
+		return nil, nil, fmt.Errorf("create atlas dir: %w", err)
 	}
 
 	// ── 5. Build atlas for each tileset ───────────────────────────────
 	atlasLookup := make(map[string]*atlasEntry) // regionKey → atlas position
-	var manifestAtlases []*manifestAtlas
+	var atlasTilesets []*pb.TilesetDefinition
+	var tilesetEntries []*pb.TilesetEntry
+	totalAtlasBytes := 0
 
 	for tilesetID, regionKeys := range collector.byTileset {
 		ts, ok := tilesets[tilesetID]
@@ -221,26 +223,29 @@ func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, err
 		// Encode atlas to PNG in memory for hashing
 		atlasBuf, err := encodePNG(atlas)
 		if err != nil {
-			return nil, fmt.Errorf("encode atlas for tileset %s: %w", tilesetID, err)
+			return nil, nil, fmt.Errorf("encode atlas for tileset %s: %w", tilesetID, err)
 		}
 
-		// Content hash for filename
+		// Content hash for filename and tileset ID
 		hash := sha256.Sum256(atlasBuf)
 		hashStr := hex.EncodeToString(hash[:])[:10]
 		atlasFile := "atlas_" + hashStr + ".png"
+		atlasTilesetID := "atlas_" + hashStr
 		atlasPath := filepath.Join(outDir, "atlas", atlasFile)
 
 		if err := os.WriteFile(atlasPath, atlasBuf, 0o644); err != nil {
-			return nil, fmt.Errorf("write atlas %s: %w", atlasFile, err)
+			return nil, nil, fmt.Errorf("write atlas %s: %w", atlasFile, err)
 		}
 
 		log.Printf("[compile] atlas for %q: %dx%dpx, %d regions, %.1f KB → %s",
 			ts.label, atlasW, atlasH, len(regions), float64(len(atlasBuf))/1024, atlasFile)
 
-		// Record entries in lookup
+		totalAtlasBytes += len(atlasBuf)
+
+		// Record entries in lookup (with atlas tileset ID for remapping)
 		for _, s := range slots {
 			atlasLookup[s.region.key] = &atlasEntry{
-				atlasFile: atlasFile,
+				tilesetID: atlasTilesetID,
 				x:         s.ax,
 				y:         s.ay,
 				w:         s.region.w,
@@ -248,16 +253,33 @@ func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, err
 			}
 		}
 
-		manifestAtlases = append(manifestAtlases, &manifestAtlas{
-			File:      atlasFile,
-			TilesetID: tilesetID,
-			Regions:   len(regions),
-			SizeBytes: len(atlasBuf),
+		// Atlas tileset definition: tile_width=1 means coordinates are pixels
+		atlasTilesets = append(atlasTilesets, &pb.TilesetDefinition{
+			Id:         atlasTilesetID,
+			Label:      "atlas:" + ts.label,
+			Path:       "atlas/" + atlasFile,
+			TileWidth:  1,
+			TileHeight: 1,
+			Cols:       int32(atlasW),
+			Rows:       int32(atlasH),
+		})
+
+		// Manifest tileset entry
+		tilesetEntries = append(tilesetEntries, &pb.TilesetEntry{
+			Id:    atlasTilesetID,
+			Label: "atlas:" + ts.label,
+			Path:  "atlas/" + atlasFile,
 		})
 	}
 
-	// ── 6. Resolve helper ─────────────────────────────────────────────
-	resolve := func(tilesetID string, srcCol, srcRow, w, h int32) *compiledRegionRef {
+	// ── 6. Build compiled Pack ────────────────────────────────────────
+	//
+	// Remap all region references from source tileset IDs → atlas tileset IDs.
+	// Since atlas tilesets have tile_width=1, coordinates are pixels.
+
+	// Region resolve helper: given source tileset tile coords, returns
+	// atlas TilesetRegion (pixel-based since tile_width=1).
+	resolveRegion := func(tilesetID string, srcCol, srcRow, w, h int32) *pb.TilesetRegion {
 		ts, ok := tilesets[tilesetID]
 		if !ok {
 			return nil
@@ -271,26 +293,51 @@ func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, err
 		if !ok {
 			return nil
 		}
-		return &compiledRegionRef{
-			Atlas: entry.atlasFile,
-			X:     entry.x,
-			Y:     entry.y,
-			W:     entry.w,
-			H:     entry.h,
+		return &pb.TilesetRegion{
+			TilesetId: entry.tilesetID,
+			SrcCol:    int32(entry.x),
+			SrcRow:    int32(entry.y),
+			W:         int32(entry.w),
+			H:         int32(entry.h),
 		}
 	}
 
-	// ── 7. Write compiled resources ───────────────────────────────────
-	var manifestResources []*manifestResource
+	// Frame resolve helper: same logic for ResourceFrame
+	resolveFrame := func(tilesetID string, srcCol, srcRow, w, h int32) *pb.ResourceFrame {
+		ts, ok := tilesets[tilesetID]
+		if !ok {
+			return nil
+		}
+		px := int(srcCol) * ts.tileWidth
+		py := int(srcRow) * ts.tileHeight
+		pw := int(w) * ts.tileWidth
+		ph := int(h) * ts.tileHeight
+		key := regionKey(tilesetID, px, py, pw, ph)
+		entry, ok := atlasLookup[key]
+		if !ok {
+			return nil
+		}
+		return &pb.ResourceFrame{
+			TilesetId: entry.tilesetID,
+			SrcCol:    int32(entry.x),
+			SrcRow:    int32(entry.y),
+			W:         int32(entry.w),
+			H:         int32(entry.h),
+		}
+	}
+
+	// Build compiled resources
+	var compiledResources []*pb.Resource
+	var resourceEntries []*pb.ResourceEntry
 
 	for _, res := range resources {
-		compiled := &compiledResource{
-			ID:   res.Id,
+		compiled := &pb.Resource{
+			Id:   res.Id,
 			Name: res.Name,
 			Tags: res.Tags,
 		}
 		for _, frame := range res.Frames {
-			ref := resolve(frame.TilesetId, frame.SrcCol, frame.SrcRow, frame.W, frame.H)
+			ref := resolveFrame(frame.TilesetId, frame.SrcCol, frame.SrcRow, frame.W, frame.H)
 			if ref != nil {
 				compiled.Frames = append(compiled.Frames, ref)
 			} else {
@@ -298,152 +345,123 @@ func Compile(workspaceDir, outDir, packID, packName string) (*CompileResult, err
 					res.Id, res.Name, frame.TilesetId)
 			}
 		}
-
-		data, err := marshalCompiledJSON(compiled)
-		if err != nil {
-			return nil, fmt.Errorf("marshal resource %s: %w", res.Id, err)
-		}
-		if err := os.WriteFile(filepath.Join(outDir, "resources", res.Id+".json"), data, 0o644); err != nil {
-			return nil, fmt.Errorf("write resource %s: %w", res.Id, err)
-		}
-		manifestResources = append(manifestResources, &manifestResource{
-			ID:   res.Id,
+		compiledResources = append(compiledResources, compiled)
+		resourceEntries = append(resourceEntries, &pb.ResourceEntry{
+			Id:   res.Id,
 			Name: res.Name,
 			Tags: res.Tags,
-			File: res.Id + ".json",
 		})
 	}
 
-	// ── 8. Write compiled rooms ───────────────────────────────────────
-	var manifestRooms []*manifestRoom
+	// Build compiled composites (remap part regions)
+	var compiledComposites []*pb.CompositeObject
+
+	for _, comp := range composites {
+		compiled := &pb.CompositeObject{
+			Id:            comp.Id,
+			Name:          comp.Name,
+			DisplayWidth:  comp.DisplayWidth,
+			DisplayHeight: comp.DisplayHeight,
+		}
+		for _, part := range comp.Parts {
+			cp := &pb.CompositePart{
+				OffsetX: part.OffsetX,
+				OffsetY: part.OffsetY,
+				ZBias:   part.ZBias,
+			}
+			if part.Region != nil {
+				r := part.Region
+				cp.Region = resolveRegion(r.TilesetId, r.SrcCol, r.SrcRow, r.W, r.H)
+			}
+			compiled.Parts = append(compiled.Parts, cp)
+		}
+		compiledComposites = append(compiledComposites, compiled)
+	}
+
+	// Build compiled rooms (remap placement regions, keep composite refs)
+	var compiledRooms []*pb.RoomDefinition
+	var roomEntries []*pb.RoomEntry
 
 	for _, room := range rooms {
-		atlasesUsed := make(map[string]struct{})
-		var compiledPlacements []*compiledPlacement
+		compiled := &pb.RoomDefinition{
+			Name:        room.Name,
+			Width:       room.Width,
+			Height:      room.Height,
+			Walkability: room.Walkability,
+			Doors:       room.Doors, // doors pass through unchanged
+		}
 
 		for _, p := range room.Placements {
+			cp := &pb.TexturePlacement{
+				GridX:       p.GridX,
+				GridY:       p.GridY,
+				Layer:       p.Layer,
+				CompositeId: p.CompositeId,
+				ZBias:       p.ZBias,
+			}
 			if p.Region != nil {
 				r := p.Region
-				ref := resolve(r.TilesetId, r.SrcCol, r.SrcRow, r.W, r.H)
-				if ref != nil {
-					atlasesUsed[ref.Atlas] = struct{}{}
-					cp := &compiledPlacement{
-						GridX:  int(p.GridX),
-						GridY:  int(p.GridY),
-						Layer:  int(p.Layer),
-						Region: ref,
-						ZBias:  int(p.ZBias),
-					}
-					compiledPlacements = append(compiledPlacements, cp)
-				}
-			} else if p.CompositeId != "" {
-				comp := compositeMap[p.CompositeId]
-				if comp != nil {
-					var parts []*compiledCompositePart
-					for _, part := range comp.Parts {
-						if part.Region == nil {
-							continue
-						}
-						r := part.Region
-						ref := resolve(r.TilesetId, r.SrcCol, r.SrcRow, r.W, r.H)
-						if ref != nil {
-							atlasesUsed[ref.Atlas] = struct{}{}
-							parts = append(parts, &compiledCompositePart{
-								Region:  ref,
-								OffsetX: int(part.OffsetX),
-								OffsetY: int(part.OffsetY),
-								ZBias:   int(part.ZBias),
-							})
-						}
-					}
-					if len(parts) > 0 {
-						cp := &compiledPlacement{
-							GridX: int(p.GridX),
-							GridY: int(p.GridY),
-							Layer: int(p.Layer),
-							Parts: parts,
-							ZBias: int(p.ZBias),
-						}
-						compiledPlacements = append(compiledPlacements, cp)
-					}
-				}
+				cp.Region = resolveRegion(r.TilesetId, r.SrcCol, r.SrcRow, r.W, r.H)
 			}
+			// composite_id is preserved as-is; the compiled composite has remapped regions
+			compiled.Placements = append(compiled.Placements, cp)
 		}
 
-		atlasesList := make([]string, 0, len(atlasesUsed))
-		for a := range atlasesUsed {
-			atlasesList = append(atlasesList, a)
-		}
-		sort.Strings(atlasesList)
-
-		compiled := &compiledRoom{
-			Name:        room.Name,
-			Width:       int(room.Width),
-			Height:      int(room.Height),
-			Walkability: room.Walkability,
-			Doors:       make([]*compiledDoor, 0, len(room.Doors)),
-			Placements:  compiledPlacements,
-			Atlases:     atlasesList,
-		}
-		for _, d := range room.Doors {
-			compiled.Doors = append(compiled.Doors, &compiledDoor{
-				ID:     d.Id,
-				Col:    int(d.Col),
-				Row:    int(d.Row),
-				Target: d.Target,
-			})
-		}
-
-		data, err := marshalCompiledJSON(compiled)
-		if err != nil {
-			return nil, fmt.Errorf("marshal room %s: %w", room.Name, err)
-		}
-		if err := os.WriteFile(filepath.Join(outDir, "rooms", room.Name+".json"), data, 0o644); err != nil {
-			return nil, fmt.Errorf("write room %s: %w", room.Name, err)
-		}
-		manifestRooms = append(manifestRooms, &manifestRoom{
+		compiledRooms = append(compiledRooms, compiled)
+		roomEntries = append(roomEntries, &pb.RoomEntry{
 			Name: room.Name,
-			File: room.Name + ".json",
 		})
 	}
 
-	// ── 9. Write manifest ─────────────────────────────────────────────
-	manifest := &compiledManifest{
-		ID:         packID,
-		Name:       packName,
-		CompiledAt: time.Now().UTC().Format(time.RFC3339),
-		Atlases:    manifestAtlases,
-		Rooms:      manifestRooms,
-		Resources:  manifestResources,
-	}
-	data, err := marshalCompiledJSON(manifest)
+	// Compute workspace content hash for staleness detection
+	sourceHash, err := ContentHash(workspaceDir)
 	if err != nil {
-		return nil, fmt.Errorf("marshal manifest: %w", err)
+		return nil, nil, fmt.Errorf("content hash: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(outDir, "manifest.json"), data, 0o644); err != nil {
-		return nil, fmt.Errorf("write manifest: %w", err)
+	log.Printf("[compile] workspace content hash: %s", sourceHash[:12])
+
+	// Build the Pack
+	now := time.Now().UTC()
+	compiledPack := &Pack{
+		Pack: &pb.Pack{
+			Manifest: &pb.PackManifest{
+				Id:              packID,
+				Name:            packName,
+				Created:         now.Format(time.RFC3339),
+				Updated:         now.Format(time.RFC3339),
+				TilesetEntries:  tilesetEntries,
+				RoomEntries:     roomEntries,
+				ResourceEntries: resourceEntries,
+				SourceHash:      sourceHash,
+				CompiledAt:      now.Format(time.RFC3339),
+			},
+			Tilesets:   atlasTilesets,
+			Composites: compiledComposites,
+			Rooms:      compiledRooms,
+			Resources:  compiledResources,
+		},
 	}
 
-	totalKB := 0
-	for _, a := range manifestAtlases {
-		totalKB += a.SizeBytes
+	// ── 7. Write compiled Pack to outDir ──────────────────────────────
+	if err := Write(outDir, compiledPack); err != nil {
+		return nil, nil, fmt.Errorf("write compiled pack: %w", err)
 	}
-	totalKB /= 1024
 
+	totalKB := totalAtlasBytes / 1024
 	result := &CompileResult{
-		AtlasCount:    len(manifestAtlases),
-		RoomCount:     len(manifestRooms),
-		ResourceCount: len(manifestResources),
+		AtlasCount:    len(atlasTilesets),
+		RoomCount:     len(compiledRooms),
+		ResourceCount: len(compiledResources),
 		TotalAtlasKB:  totalKB,
 	}
 	log.Printf("[compile] done: %s", result)
-	return result, nil
+	return compiledPack, result, nil
 }
 
 // ─── Tileset scanning ─────────────────────────────────────────────────────────
 
 type scannedTileset struct {
-	id         string // full SHA256 hex of the PNG file
+	id         string // first 16 hex chars of SHA256 (matches Studio tilesetId format)
 	label      string // filename stem
 	fsPath     string // absolute filesystem path
 	tileWidth  int
@@ -480,25 +498,34 @@ func scanTilesets(dir string) (map[string]*scannedTileset, error) {
 		}
 		defer f.Close()
 
+		// Hash using the same pattern as Studio's tilesets.go:
+		// TeeReader feeds bytes to the hasher during image.DecodeConfig,
+		// then io.Copy(h, tr) writes the remaining bytes to the hasher.
+		// This must match exactly for tileset ID compatibility.
 		h := sha256.New()
-		if _, err := io.Copy(h, f); err != nil {
+		tr := io.TeeReader(f, h)
+		_, _, decErr := image.DecodeConfig(tr)
+		if decErr != nil {
+			return nil // skip non-image files
+		}
+		if _, err := io.Copy(h, tr); err != nil {
 			return nil
 		}
-		fullHash := hex.EncodeToString(h.Sum(nil))
+		shortHash := hex.EncodeToString(h.Sum(nil))[:16]
 
 		stem := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 		tw, th := parseTileDims(stem)
 
 		ts := &scannedTileset{
-			id:         fullHash,
+			id:         shortHash,
 			label:      stem,
 			fsPath:     path,
 			tileWidth:  tw,
 			tileHeight: th,
 		}
 
-		// Key by full hash (matches resource tilesetId format)
-		result[fullHash] = ts
+		// Key by short hash (matches Studio resource tilesetId format)
+		result[shortHash] = ts
 		return nil
 	})
 	return result, err
@@ -607,90 +634,9 @@ func shelfPack(regions []*pixelRegion, maxWidth int) []packedSlot {
 // ─── Atlas entry ──────────────────────────────────────────────────────────────
 
 type atlasEntry struct {
-	atlasFile string
-	x, y      int
-	w, h      int
-}
-
-// ─── Compiled output types (JSON serialization) ───────────────────────────────
-// These are simple structs for JSON output — NOT protobuf types.
-// The compiled format is different from the source format: regions reference
-// atlas files with pixel coordinates instead of tilesets with tile coordinates.
-
-type compiledRegionRef struct {
-	Atlas string `json:"atlas"`
-	X     int    `json:"x"`
-	Y     int    `json:"y"`
-	W     int    `json:"w"`
-	H     int    `json:"h"`
-}
-
-type compiledCompositePart struct {
-	Region  *compiledRegionRef `json:"region"`
-	OffsetX int                `json:"offsetX"`
-	OffsetY int                `json:"offsetY"`
-	ZBias   int                `json:"zBias,omitempty"`
-}
-
-type compiledPlacement struct {
-	GridX  int                      `json:"gridX"`
-	GridY  int                      `json:"gridY"`
-	Layer  int                      `json:"layer"`
-	Region *compiledRegionRef       `json:"region,omitempty"`
-	Parts  []*compiledCompositePart `json:"parts,omitempty"`
-	ZBias  int                      `json:"zBias,omitempty"`
-}
-
-type compiledDoor struct {
-	ID     string `json:"id"`
-	Col    int    `json:"col"`
-	Row    int    `json:"row"`
-	Target string `json:"target"`
-}
-
-type compiledRoom struct {
-	Name        string               `json:"name"`
-	Width       int                  `json:"width"`
-	Height      int                  `json:"height"`
-	Walkability []bool               `json:"walkability"`
-	Doors       []*compiledDoor      `json:"doors"`
-	Placements  []*compiledPlacement `json:"placements"`
-	Atlases     []string             `json:"atlases"`
-}
-
-type compiledResource struct {
-	ID     string               `json:"id"`
-	Name   string               `json:"name"`
-	Tags   []string             `json:"tags"`
-	Frames []*compiledRegionRef `json:"frames"`
-}
-
-type manifestAtlas struct {
-	File      string `json:"file"`
-	TilesetID string `json:"tilesetId"`
-	Regions   int    `json:"regions"`
-	SizeBytes int    `json:"sizeBytes"`
-}
-
-type manifestRoom struct {
-	Name string `json:"name"`
-	File string `json:"file"`
-}
-
-type manifestResource struct {
-	ID   string   `json:"id"`
-	Name string   `json:"name"`
-	Tags []string `json:"tags"`
-	File string   `json:"file"`
-}
-
-type compiledManifest struct {
-	ID         string              `json:"id"`
-	Name       string              `json:"name"`
-	CompiledAt string              `json:"compiledAt"`
-	Atlases    []*manifestAtlas    `json:"atlases"`
-	Rooms      []*manifestRoom     `json:"rooms"`
-	Resources  []*manifestResource `json:"resources"`
+	tilesetID string // atlas tileset ID (e.g. "atlas_a0e448f9b5")
+	x, y      int    // pixel position in atlas
+	w, h      int    // pixel size
 }
 
 // ─── Image helpers ────────────────────────────────────────────────────────────
@@ -715,11 +661,6 @@ func encodePNG(img image.Image) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-// marshalCompiledJSON marshals a compiled output struct to indented JSON.
-func marshalCompiledJSON(v any) ([]byte, error) {
-	return json.MarshalIndent(v, "", "  ")
 }
 
 // ─── Entity reading ───────────────────────────────────────────────────────────

@@ -104,6 +104,7 @@ interface CutterStoreState {
   zoom: number
   showGrid: boolean
   showCuts: boolean
+  showResources: boolean
 
   // --- Drag FSM ---
   drag: DragState
@@ -123,9 +124,6 @@ interface CutterStoreState {
   resizing: ResizeState | null
   moving: MoveState | null
 
-  // --- Shared tags ---
-  sharedTags: string[]
-
   // --- Preview FPS ---
   previewFps: number
 }
@@ -136,11 +134,13 @@ interface CutterStoreActions {
   setZoom: (zoom: number) => void
   setShowGrid: (show: boolean) => void
   setShowCuts: (show: boolean) => void
+  setShowResources: (show: boolean) => void
 
   // --- Drag FSM ---
   startDrag: (anchorCol: number, anchorRow: number) => void
   updateDrag: (col: number, row: number) => void
   lockDrag: () => void
+  lockFromSelection: () => void
   updateLockedDrag: (mouseCol: number, totalCols: number) => void
   resetDrag: () => void
 
@@ -167,8 +167,9 @@ interface CutterStoreActions {
   updateMove: (col: number, row: number) => void
   stopMove: () => void
 
-  // --- Shared tags ---
-  setSharedTags: (tags: string[]) => void
+  // --- Shared tags (derived from intersection of all cuts' tags) ---
+  addSharedTag: (tag: string) => void
+  removeSharedTag: (tag: string) => void
 
   // --- Preview ---
   setPreviewFps: (fps: number) => void
@@ -211,6 +212,7 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
   zoom: 1,
   showGrid: true,
   showCuts: true,
+  showResources: false,
   drag: { ...INITIAL_DRAG },
   pendingSelection: null,
   cuts: [],
@@ -219,7 +221,6 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
   editingResourceId: null,
   resizing: null,
   moving: null,
-  sharedTags: [],
   previewFps: 4,
 
   // --- Tileset ---
@@ -227,6 +228,7 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
   setZoom: (zoom) => set({ zoom }),
   setShowGrid: (show) => set({ showGrid: show }),
   setShowCuts: (show) => set({ showCuts: show }),
+  setShowResources: (show) => set({ showResources: show }),
 
   // --- Drag FSM ---
   startDrag: (anchorCol, anchorRow) =>
@@ -258,6 +260,25 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
           frameRect: rect,
           frameCount: 1,
         },
+      }
+    }),
+
+  lockFromSelection: () =>
+    set((s) => {
+      if (s.drag.mode !== 'idle' || !s.pendingSelection) return s
+      const sel = s.pendingSelection
+      const rect = { col: sel.col, row: sel.row, w: sel.frameWidth, h: sel.frameHeight }
+      return {
+        drag: {
+          mode: 'locked' as DragMode,
+          anchorCol: sel.col,
+          anchorRow: sel.row,
+          currentCol: sel.col + sel.frameWidth - 1,
+          currentRow: sel.row + sel.frameHeight - 1,
+          frameRect: rect,
+          frameCount: sel.frameCount,
+        },
+        pendingSelection: null,
       }
     }),
 
@@ -376,8 +397,21 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
     }),
   stopMove: () => set({ moving: null }),
 
-  // --- Shared tags ---
-  setSharedTags: (tags) => set({ sharedTags: tags }),
+  // --- Shared tags (derived — mutate all cuts) ---
+  addSharedTag: (tag) =>
+    set((s) => ({
+      cuts: s.cuts.map((c) =>
+        c.tags.includes(tag) ? c : { ...c, tags: [...c.tags, tag] },
+      ),
+    })),
+
+  removeSharedTag: (tag) =>
+    set((s) => ({
+      cuts: s.cuts.map((c) => ({
+        ...c,
+        tags: c.tags.filter((t) => t !== tag),
+      })),
+    })),
 
   // --- Preview ---
   setPreviewFps: (fps) => set({ previewFps: fps }),
@@ -407,6 +441,20 @@ export const useCutterStore = create<CutterStore>()((set, get) => ({
 }))
 
 // ─── Derived selectors (for use in components) ─────────────────────
+
+/** Compute shared tags = strict intersection of all cuts' tags.
+ *  Returns empty array when there are 0 cuts. */
+export function getSharedTags(cuts: CutEntry[]): string[] {
+  if (cuts.length === 0) return []
+  // Start with the first cut's tag set, intersect with each subsequent cut
+  let shared = new Set(cuts[0].tags)
+  for (let i = 1; i < cuts.length; i++) {
+    const cutTags = new Set(cuts[i].tags)
+    shared = new Set([...shared].filter((t) => cutTags.has(t)))
+    if (shared.size === 0) return []
+  }
+  return [...shared]
+}
 
 /** Find a cut that contains the given tile coordinate */
 export function findCutAtTile(

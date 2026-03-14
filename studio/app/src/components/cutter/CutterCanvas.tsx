@@ -16,10 +16,11 @@
  * Mutable transient state (image ref, animation frame) uses useRef.
  */
 
-import { useRef, useEffect, useCallback } from 'preact/hooks'
+import { useRef, useEffect, useCallback, useMemo } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
-import { tilesetImageUrl } from '../../api/tilesets'
-import { getCachedImage } from '../TilesetPicker'
+import type { Resource } from '@offisims/pack'
+import { useResources } from '../../api/resources'
+import { loadImage } from '../TilesetPicker'
 import {
   useCutterStore,
   findCutAtTile,
@@ -29,34 +30,10 @@ import {
   type DragState,
 } from '../../store/cutter'
 
-// ─── Image cache (reuses TilesetPicker's cache) ─────────────────
-
-const imageCache = new Map<string, HTMLImageElement>()
-
-function loadImage(hash: string): Promise<HTMLImageElement> {
-  // Check TilesetPicker's exported cache first
-  const tp = getCachedImage(hash)
-  if (tp) {
-    imageCache.set(hash, tp)
-    return Promise.resolve(tp)
-  }
-  const cached = imageCache.get(hash)
-  if (cached) return Promise.resolve(cached)
-
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      imageCache.set(hash, img)
-      resolve(img)
-    }
-    img.onerror = () => reject(new Error(`Failed to load tileset image ${hash}`))
-    img.src = tilesetImageUrl(hash)
-  })
-}
-
 // ─── Constants ──────────────────────────────────────────────────
 
 const HANDLE_HIT = 8 // pixels, resize handle hit-test radius
+const MAX_CANVAS_DIM = 16384 // max canvas dimension (browser GPU texture limit)
 
 // ─── Component ──────────────────────────────────────────────────
 
@@ -76,12 +53,23 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
   const zoom = useCutterStore((s) => s.zoom)
   const showGrid = useCutterStore((s) => s.showGrid)
   const showCuts = useCutterStore((s) => s.showCuts)
+  const showResources = useCutterStore((s) => s.showResources)
   const cuts = useCutterStore((s) => s.cuts)
   const selectedCutId = useCutterStore((s) => s.selectedCutId)
   const pendingSelection = useCutterStore((s) => s.pendingSelection)
   const drag = useCutterStore((s) => s.drag)
   const resizing = useCutterStore((s) => s.resizing)
   const moving = useCutterStore((s) => s.moving)
+  const tilesetId = useCutterStore((s) => s.tilesetId)
+
+  // Saved resources for this tileset (for RESOURCES overlay)
+  const { data: allResources } = useResources()
+  const tilesetResources = useMemo(() => {
+    if (!allResources || !tilesetId) return []
+    return allResources.filter(
+      (r) => r.frames.length > 0 && r.frames[0].tilesetId === tilesetId,
+    )
+  }, [allResources, tilesetId])
 
   // ── Store actions (stable references) ──
   const storeRef = useRef(useCutterStore.getState())
@@ -103,10 +91,17 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
     if (!canvas || !img || !tileset) return
 
     const z = effectiveZoom
-    const tw = tileset.tileWidth * z
-    const th = tileset.tileHeight * z
-    const w = tileset.cols * tw
-    const h = tileset.rows * th
+    const tw = (tileset.tileWidth || 1) * z
+    const th = (tileset.tileHeight || 1) * z
+    let w = (tileset.cols || 1) * tw
+    let h = (tileset.rows || 1) * th
+
+    // Safety: clamp canvas to GPU texture limit to avoid drawImage errors
+    if (w > MAX_CANVAS_DIM || h > MAX_CANVAS_DIM) {
+      const scale = Math.min(MAX_CANVAS_DIM / w, MAX_CANVAS_DIM / h)
+      w = Math.floor(w * scale)
+      h = Math.floor(h * scale)
+    }
 
     canvas.width = w
     canvas.height = h
@@ -119,6 +114,11 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
     // Tileset image
     ctx.drawImage(img, 0, 0, w, h)
 
+    // Saved resource overlays (drawn below cuts so cuts appear on top)
+    if (showResources && tilesetResources.length > 0) {
+      drawResourceOverlays(ctx, tilesetResources, tw, th, z)
+    }
+
     // Cut overlays
     if (showCuts) {
       drawCutOverlays(ctx, cuts, selectedCutId, tw, th, z)
@@ -128,28 +128,28 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
     if (showGrid) {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
       ctx.lineWidth = 1
-      for (let c = 0; c <= tileset.cols; c++) {
+      for (let c = 0; c <= (tileset.cols || 1); c++) {
         ctx.beginPath()
         ctx.moveTo(c * tw + 0.5, 0)
         ctx.lineTo(c * tw + 0.5, h)
         ctx.stroke()
       }
-      for (let r = 0; r <= tileset.rows; r++) {
+      for (let r = 0; r <= (tileset.rows || 1); r++) {
         ctx.beginPath()
         ctx.moveTo(0, r * th + 0.5)
         ctx.lineTo(w, r * th + 0.5)
         ctx.stroke()
       }
     }
-  }, [tileset, effectiveZoom, showGrid, showCuts, cuts, selectedCutId])
+  }, [tileset, effectiveZoom, showGrid, showCuts, showResources, tilesetResources, cuts, selectedCutId])
 
   // ─── Update overlays ──────────────────────────────────────────
 
   const updateOverlays = useCallback(() => {
     if (!tileset) return
     const z = effectiveZoom
-    const tw = tileset.tileWidth * z
-    const th = tileset.tileHeight * z
+    const tw = (tileset.tileWidth || 1) * z
+    const th = (tileset.tileHeight || 1) * z
     const st = storeRef.current
 
     // Drag overlay
@@ -166,11 +166,16 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
       imgRef.current = null
       return
     }
+    let cancelled = false
     loadImage(tileset.id).then((img) => {
+      if (cancelled) return
       imgRef.current = img
       draw()
       updateOverlays()
-    })
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [tileset?.id])
 
   // ─── Redraw on state changes ──────────────────────────────────
@@ -189,11 +194,11 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
       const rect = canvas.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
-      const tw = tileset.tileWidth * effectiveZoom
-      const th = tileset.tileHeight * effectiveZoom
+      const tw = (tileset.tileWidth || 1) * effectiveZoom
+      const th = (tileset.tileHeight || 1) * effectiveZoom
       const col = Math.floor(x / tw)
       const row = Math.floor(y / th)
-      if (col < 0 || col >= tileset.cols || row < 0 || row >= tileset.rows) return null
+      if (col < 0 || col >= (tileset.cols || 1) || row < 0 || row >= (tileset.rows || 1)) return null
       return { col, row }
     },
     [tileset, effectiveZoom],
@@ -361,6 +366,8 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
       const st = storeRef.current
       if (st.drag.mode === 'dragging') {
         st.lockDrag()
+      } else if (st.drag.mode === 'idle' && st.pendingSelection) {
+        st.lockFromSelection()
       }
     },
     [],
@@ -382,14 +389,20 @@ export function CutterCanvas({ tileset }: CutterCanvasProps) {
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       if (!e.metaKey && !e.ctrlKey) return
+      if (!tileset) return
       e.preventDefault()
       const delta = -e.deltaY * 0.001
       const st = storeRef.current
       const curZoom = st.zoom === -1 ? effectiveZoom : st.zoom
-      const next = Math.min(Math.max(curZoom * (1 + delta), 0.1), 8)
+      let next = Math.min(Math.max(curZoom * (1 + delta), 0.1), 8)
+      // Clamp so canvas doesn't exceed GPU texture limit
+      const imgW = (tileset.cols || 1) * (tileset.tileWidth || 1)
+      const imgH = (tileset.rows || 1) * (tileset.tileHeight || 1)
+      const maxZoom = Math.min(MAX_CANVAS_DIM / imgW, MAX_CANVAS_DIM / imgH)
+      next = Math.min(next, maxZoom)
       st.setZoom(next)
     },
-    [effectiveZoom],
+    [tileset, effectiveZoom],
   )
 
   // ─── Register global listeners ────────────────────────────────
@@ -446,12 +459,57 @@ function useEffectiveZoom(
   const wrap = wrapRef.current
   if (!wrap) return 1
   const available = wrap.clientWidth - 24
-  const imgW = tileset.cols * tileset.tileWidth
+  const imgW = (tileset.cols || 1) * (tileset.tileWidth || 1)
+  const imgH = (tileset.rows || 1) * (tileset.tileHeight || 1)
   if (imgW <= 0) return 1
-  return Math.min(Math.max(available / imgW, 0.05), 8)
+  let z = Math.min(Math.max(available / imgW, 0.05), 8)
+  // Clamp so neither dimension exceeds browser GPU texture limit
+  if (imgW * z > MAX_CANVAS_DIM) z = MAX_CANVAS_DIM / imgW
+  if (imgH * z > MAX_CANVAS_DIM) z = Math.min(z, MAX_CANVAS_DIM / imgH)
+  return z
 }
 
 // ─── Pure helpers: canvas drawing ───────────────────────────────
+
+const RESOURCE_COLOR = '#56b6c2' // distinct teal for saved resources
+
+function drawResourceOverlays(
+  ctx: CanvasRenderingContext2D,
+  resources: Resource[],
+  tw: number,
+  th: number,
+  z: number,
+) {
+  for (const res of resources) {
+    if (res.frames.length === 0) continue
+    const f0 = res.frames[0]
+    const x = (f0.srcCol || 0) * tw
+    const y = (f0.srcRow || 0) * th
+    const w = f0.w || 1
+    const h = f0.h || 1
+    const totalW = w * res.frames.length * tw
+    const totalH = h * th
+
+    // Semi-transparent fill
+    ctx.fillStyle = RESOURCE_COLOR + '15'
+    ctx.fillRect(x, y, totalW, totalH)
+
+    // Dashed border
+    ctx.strokeStyle = RESOURCE_COLOR + '60'
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 3])
+    ctx.strokeRect(x + 0.5, y + 0.5, totalW - 1, totalH - 1)
+    ctx.setLineDash([])
+
+    // Label
+    ctx.fillStyle = RESOURCE_COLOR + '80'
+    ctx.font = `${Math.max(9, z * 2.5)}px monospace`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'bottom'
+    const label = res.name || res.tags.join(', ') || 'resource'
+    ctx.fillText(label, x + 2, y + totalH - 2)
+  }
+}
 
 function drawCutOverlays(
   ctx: CanvasRenderingContext2D,
@@ -576,8 +634,8 @@ function hitTestHandle(
   meta: TilesetMeta,
   zoom: number,
 ): { cutId: string; handle: ResizeHandle } | null {
-  const tw = meta.tileWidth * zoom
-  const th = meta.tileHeight * zoom
+  const tw = (meta.tileWidth || 1) * zoom
+  const th = (meta.tileHeight || 1) * zoom
 
   let best: { cutId: string; handle: ResizeHandle; dist: number } | null = null
 

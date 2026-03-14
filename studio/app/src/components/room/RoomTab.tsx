@@ -17,6 +17,7 @@ import { RoomCanvas } from './RoomCanvas'
 import { LayoutPanel } from './LayoutPanel'
 import { TexturePanel } from './TexturePanel'
 import { RoomRightPanel } from './RoomRightPanel'
+import { ResizablePanel } from '../ResizablePanel'
 
 export function RoomTab() {
   const mode = useRoomStore((s) => s.mode)
@@ -39,9 +40,11 @@ export function RoomTab() {
   return (
     <div class="room-tab">
       {/* Left panel — mode-dependent */}
-      <div class="room-left">
-        {mode === 'layout' ? <LayoutPanel /> : <TexturePanel />}
-      </div>
+      <ResizablePanel side="right" defaultWidth={200} minWidth={160} maxWidth={420}>
+        <div class="room-left">
+          {mode === 'layout' ? <LayoutPanel /> : <TexturePanel />}
+        </div>
+      </ResizablePanel>
 
       {/* Center — toolbar + canvas */}
       <div class="room-center" ref={wrapRef}>
@@ -50,7 +53,9 @@ export function RoomTab() {
       </div>
 
       {/* Right panel */}
-      <RoomRightPanel />
+      <ResizablePanel side="left" defaultWidth={220} minWidth={180} maxWidth={400}>
+        <RoomRightPanel />
+      </ResizablePanel>
     </div>
   )
 }

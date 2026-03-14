@@ -158,10 +158,35 @@ message Mask {
   repeated MaskCut cuts = 5;
 }
 
+// ─── Manifest inventory entries ────────────────────────────────────
+//
+// Lightweight summaries included in PackManifest so consumers can
+// discover pack contents without reading every entity file.
+
+// TilesetEntry is a manifest reference to a tileset in the pack.
+message TilesetEntry {
+  string id = 1;
+  string label = 2;
+  string path = 3;  // image path, e.g. "atlas/atlas_a0e448f9.png"
+}
+
+// RoomEntry is a manifest reference to a room in the pack.
+message RoomEntry {
+  string name = 1;
+}
+
+// ResourceEntry is a manifest reference to a resource in the pack.
+message ResourceEntry {
+  string id = 1;
+  string name = 2;
+  repeated string tags = 3;
+}
+
 // ─── Pack ──────────────────────────────────────────────────────────
 
 // PackManifest is the identity and metadata of a pack.
 // Stored as manifest.json (human-readable) alongside the binary data.
+// Inventory fields list the pack's contents for discovery/preloading.
 message PackManifest {
   string id = 1;
   string name = 2;
@@ -170,6 +195,11 @@ message PackManifest {
   string author = 5;
   string created = 6;  // ISO-8601
   string updated = 7;  // ISO-8601
+  repeated TilesetEntry tileset_entries = 8;
+  repeated RoomEntry room_entries = 9;
+  repeated ResourceEntry resource_entries = 10;
+  string source_hash = 11;   // SHA-256 content hash of workspace at compile time
+  string compiled_at = 12;   // ISO-8601 timestamp of compilation
 }
 
 // Pack is the top-level container — a bundle of rooms, resources,

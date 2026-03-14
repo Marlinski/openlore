@@ -76,12 +76,27 @@ func NewRouter(cfg *config.Config, h *Handlers, frontendFS fs.FS) http.Handler {
 
 		// ── Status ────────────────────────────────────────────────────
 		ws.Get("/api/status", func(w http.ResponseWriter, req *http.Request) {
+			ctx := req.Context()
+			owner := ownerID(req)
 			ragOK := h.rag != nil
-			payload := map[string]any{"ok": true, "rag": ragOK}
-			if ragOK {
-				if stats, err := h.rag.Stats(req.Context(), ownerID(req)); err == nil {
-					payload["stats"] = stats
-				}
+
+			// Count entities from the stores.
+			entityStats := map[string]int{}
+			if res, err := h.resources.List(ctx, store.Filter{OwnerID: owner}); err == nil {
+				entityStats["resource"] = len(res)
+			}
+			if comp, err := h.composites.List(ctx, store.Filter{OwnerID: owner}); err == nil {
+				entityStats["composite"] = len(comp)
+			}
+			if rooms, err := h.rooms.List(ctx, store.Filter{OwnerID: owner}); err == nil {
+				entityStats["room"] = len(rooms)
+			}
+			entityStats["tileset"] = len(h.tilesets.All(owner))
+
+			payload := map[string]any{
+				"ok":    true,
+				"rag":   ragOK,
+				"stats": entityStats,
 			}
 			writeJSON(w, http.StatusOK, payload)
 		})
@@ -114,6 +129,11 @@ func NewRouter(cfg *config.Config, h *Handlers, frontendFS fs.FS) http.Handler {
 		ws.Get("/api/tilesets", h.listTilesets)
 		ws.Get("/api/tilesets/{hash}", h.getTileset)
 		ws.Get("/api/tilesets/{hash}/image", h.getTilesetImage)
+
+		// ── Pack ─────────────────────────────────────────────────────
+		ws.Post("/api/pack/build", h.packBuild)
+		ws.Get("/api/pack/status", h.packStatus)
+		ws.Get("/api/pack/download", h.packDownload)
 
 		// ── RAG ──────────────────────────────────────────────────────
 		ws.Get("/api/search", h.search)

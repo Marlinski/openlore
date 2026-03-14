@@ -14,13 +14,15 @@
  *   - Add Cut / Edit Cut / Update + Cancel + Delete buttons
  */
 
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
 import { getCachedImage } from '../TilesetPicker'
 import { TagInput } from '../TagInput'
+import { useResources } from '../../api/resources'
 import {
   useCutterStore,
   suggestCutName,
+  getSharedTags,
   type PendingSelection,
 } from '../../store/cutter'
 
@@ -33,13 +35,15 @@ export function AssignForm({ tileset }: AssignFormProps) {
   const editingCutId = useCutterStore((s) => s.editingCutId)
   const editingResourceId = useCutterStore((s) => s.editingResourceId)
   const cuts = useCutterStore((s) => s.cuts)
-  const sharedTags = useCutterStore((s) => s.sharedTags)
+  const sharedTags = useMemo(() => getSharedTags(cuts), [cuts])
   const previewFps = useCutterStore((s) => s.previewFps)
 
   const addCut = useCutterStore((s) => s.addCut)
   const updateCut = useCutterStore((s) => s.updateCut)
   const removeCut = useCutterStore((s) => s.removeCut)
   const clearSelection = useCutterStore((s) => s.clearSelection)
+
+  const { data: allResources } = useResources()
 
   const [name, setName] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -50,6 +54,12 @@ export function AssignForm({ tileset }: AssignFormProps) {
   const editingCut = editingCutId
     ? cuts.find((c) => c.id === editingCutId) ?? null
     : null
+
+  // Whether we're editing an existing saved resource
+  const editingResource = useMemo(() => {
+    if (!editingResourceId || !allResources) return null
+    return allResources.find((r) => r.id === editingResourceId) ?? null
+  }, [editingResourceId, allResources])
 
   // Determine if form should be visible
   const isVisible = !!pendingSelection || !!editingCut || !!editingResourceId
@@ -62,12 +72,15 @@ export function AssignForm({ tileset }: AssignFormProps) {
       // Show per-cut tags (exclude shared tags)
       const perCutTags = editingCut.tags.filter((t) => !sharedTags.includes(t))
       setTags(perCutTags)
+    } else if (editingResource) {
+      setName(editingResource.name)
+      setTags([...editingResource.tags])
     } else if (pendingSelection && !editingResourceId) {
       // Auto-suggest name for new selections
       setName(suggestCutName(tileset?.label, pendingSelection.row, pendingSelection.col))
       setTags([])
     }
-  }, [editingCutId, pendingSelection?.col, pendingSelection?.row])
+  }, [editingCutId, editingResourceId, editingResource, pendingSelection?.col, pendingSelection?.row])
 
   // ─── Animated preview ─────────────────────────────────────────
 
@@ -84,8 +97,8 @@ export function AssignForm({ tileset }: AssignFormProps) {
     if (!img) return
 
     const sel = pendingSelection
-    const tw = tileset.tileWidth
-    const th = tileset.tileHeight
+    const tw = tileset.tileWidth || 1
+    const th = tileset.tileHeight || 1
     const fw = sel.frameWidth * tw
     const fh = sel.frameHeight * th
 

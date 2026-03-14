@@ -1,11 +1,9 @@
 /**
  * ResourceCard — thumbnail card for a resource with animated canvas preview.
  *
- * Renders frame 0 immediately. If the resource has multiple frames,
- * registers with a shared requestAnimationFrame loop at 8fps.
- *
- * The shared rAF loop is module-level — all visible ResourceCards share one
- * timer. Cards register/unregister on mount/unmount.
+ * Uses loadImage() (async, cached) to avoid the getCachedImage() race condition
+ * that caused flickering and blank canvases. Each card manages its own
+ * setInterval for animation — simple, predictable, no shared rAF complexity.
  *
  * Props:
  *   resource — the Resource to display
@@ -15,76 +13,10 @@
 
 import { useRef, useEffect } from 'preact/hooks'
 import type { Resource, ResourceFrame } from '@offisims/pack'
-import { useTileset, tilesetImageUrl } from '../api/tilesets'
-import { getCachedImage } from './TilesetPicker'
+import { useTileset } from '../api/tilesets'
+import { loadImage } from './TilesetPicker'
 
-// ─── Shared animation loop ──────────────────────────────────────────
-
-interface AnimEntry {
-  canvas: HTMLCanvasElement
-  ctx: CanvasRenderingContext2D
-  img: HTMLImageElement
-  frames: ResourceFrame[]
-  tw: number
-  th: number
-  frameIdx: number
-}
-
-const animEntries = new Set<AnimEntry>()
-let animId = 0
-let lastAnimTime = 0
 const ANIM_FPS = 8
-const MS_PER_FRAME = 1000 / ANIM_FPS
-
-function animLoop(time: number) {
-  if (animEntries.size === 0) {
-    animId = 0
-    return
-  }
-
-  if (time - lastAnimTime >= MS_PER_FRAME) {
-    lastAnimTime = time
-    for (const entry of animEntries) {
-      entry.frameIdx = (entry.frameIdx + 1) % entry.frames.length
-      const f = entry.frames[entry.frameIdx]
-      const fw = f.w * entry.tw
-      const fh = f.h * entry.th
-      entry.ctx.clearRect(0, 0, entry.canvas.width, entry.canvas.height)
-      entry.ctx.drawImage(
-        entry.img,
-        f.srcCol * entry.tw,
-        f.srcRow * entry.th,
-        fw,
-        fh,
-        0,
-        0,
-        entry.canvas.width,
-        entry.canvas.height,
-      )
-    }
-  }
-
-  animId = requestAnimationFrame(animLoop)
-}
-
-function startLoop() {
-  if (animId) return
-  lastAnimTime = 0
-  animId = requestAnimationFrame(animLoop)
-}
-
-function registerAnim(entry: AnimEntry) {
-  animEntries.add(entry)
-  startLoop()
-}
-
-function unregisterAnim(entry: AnimEntry) {
-  animEntries.delete(entry)
-  if (animEntries.size === 0 && animId) {
-    cancelAnimationFrame(animId)
-    animId = 0
-  }
-}
 
 // ─── Component ──────────────────────────────────────────────────────
 
@@ -98,66 +30,58 @@ export interface ResourceCardProps {
 export function ResourceCard(props: ResourceCardProps) {
   const { resource, selected = false, onClick } = props
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animRef = useRef<AnimEntry | null>(null)
 
   const frame0 = resource.frames[0]
   const { data: meta } = useTileset(frame0?.tilesetId ?? null)
 
-  // ─── Draw initial frame + register animation ─────────────────
+  // ─── Size canvas + draw + animate ────────────────────────────
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !frame0 || !meta) return
 
-    const img = getCachedImage(frame0.tilesetId)
-    if (!img) {
-      // Image not cached — load it then re-trigger via dependency change
-      const tempImg = new Image()
-      tempImg.onload = () => {
-        // Store in the TilesetPicker's cache so getCachedImage works next time
-        // We do a minimal trick: just re-draw once loaded
-        drawFrame(canvas, tempImg, frame0, meta.tileWidth, meta.tileHeight)
-        if (resource.frames.length > 1) {
-          const entry: AnimEntry = {
-            canvas,
-            ctx: canvas.getContext('2d')!,
-            img: tempImg,
-            frames: resource.frames,
-            tw: meta.tileWidth,
-            th: meta.tileHeight,
-            frameIdx: 0,
-          }
-          animRef.current = entry
-          registerAnim(entry)
-        }
-      }
-      tempImg.src = tilesetImageUrl(frame0.tilesetId)
-      return () => {
-        if (animRef.current) unregisterAnim(animRef.current)
-        animRef.current = null
-      }
-    }
+    const tw = meta.tileWidth || 1
+    const th = meta.tileHeight || 1
 
-    drawFrame(canvas, img, frame0, meta.tileWidth, meta.tileHeight)
+    // Size the canvas based on frame0 dimensions
+    const fw = (frame0.w || 1) * tw
+    const fh = (frame0.h || 1) * th
+    const maxH = 64
+    const scale = fh > maxH ? maxH / fh : 1
+    canvas.width = Math.round(fw * scale)
+    canvas.height = Math.round(fh * scale)
+    canvas.style.width = `${canvas.width}px`
+    canvas.style.height = `${canvas.height}px`
 
-    // Multi-frame: register for animation
-    if (resource.frames.length > 1) {
-      const entry: AnimEntry = {
-        canvas,
-        ctx: canvas.getContext('2d')!,
-        img,
-        frames: resource.frames,
-        tw: meta.tileWidth,
-        th: meta.tileHeight,
-        frameIdx: 0,
+    let cancelled = false
+    let timerId: number | null = null
+
+    loadImage(frame0.tilesetId).then((img) => {
+      if (cancelled) return
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false
+
+      // Draw first frame immediately
+      drawFrame(ctx, canvas, img, frame0, tw, th)
+
+      // Animate if multi-frame
+      if (resource.frames.length > 1) {
+        let frameIdx = 0
+        timerId = window.setInterval(() => {
+          frameIdx = (frameIdx + 1) % resource.frames.length
+          const f = resource.frames[frameIdx]
+          drawFrame(ctx, canvas, img, f, tw, th)
+        }, 1000 / ANIM_FPS)
       }
-      animRef.current = entry
-      registerAnim(entry)
-    }
+    }).catch(() => {})
 
     return () => {
-      if (animRef.current) unregisterAnim(animRef.current)
-      animRef.current = null
+      cancelled = true
+      if (timerId !== null) {
+        clearInterval(timerId)
+      }
     }
   }, [frame0, meta, resource.frames])
 
@@ -170,16 +94,6 @@ export function ResourceCard(props: ResourceCardProps) {
     )
   }
 
-  // Compute canvas size — scale to max 64px height
-  const tw = meta?.tileWidth ?? 48
-  const th = meta?.tileHeight ?? 48
-  const fw = frame0.w * tw
-  const fh = frame0.h * th
-  const maxH = 64
-  const scale = fh > maxH ? maxH / fh : 1
-  const cw = Math.round(fw * scale)
-  const ch = Math.round(fh * scale)
-
   return (
     <div
       class={`resource-card ${selected ? 'selected' : ''} ${props.class ?? ''}`}
@@ -188,9 +102,6 @@ export function ResourceCard(props: ResourceCardProps) {
       <canvas
         ref={canvasRef}
         class="resource-card-canvas"
-        width={cw}
-        height={ch}
-        style={{ width: `${cw}px`, height: `${ch}px` }}
       />
       <div class="resource-card-name" title={resource.name}>
         {resource.name}
@@ -205,26 +116,17 @@ export function ResourceCard(props: ResourceCardProps) {
 // ─── Helpers ────────────────────────────────────────────────────────
 
 function drawFrame(
+  ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
   frame: ResourceFrame,
   tw: number,
   th: number,
 ) {
-  const ctx = canvas.getContext('2d')!
-  ctx.imageSmoothingEnabled = false
-  const fw = frame.w * tw
-  const fh = frame.h * th
+  const fw = (frame.w || 1) * tw
+  const fh = (frame.h || 1) * th
+  const sx = (frame.srcCol || 0) * tw
+  const sy = (frame.srcRow || 0) * th
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(
-    img,
-    frame.srcCol * tw,
-    frame.srcRow * th,
-    fw,
-    fh,
-    0,
-    0,
-    canvas.width,
-    canvas.height,
-  )
+  ctx.drawImage(img, sx, sy, fw, fh, 0, 0, canvas.width, canvas.height)
 }

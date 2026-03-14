@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file offisims/pack/v1/pack.proto.
  */
 export const file_offisims_pack_v1_pack: GenFile = /*@__PURE__*/
-  fileDesc("ChtvZmZpc2ltcy9wYWNrL3YxL3BhY2sucHJvdG8SEG9mZmlzaW1zLnBhY2sudjEigQEKEVRpbGVzZXREZWZpbml0aW9uEgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEgwKBHBhdGgYAyABKAkSEgoKdGlsZV93aWR0aBgEIAEoBRITCgt0aWxlX2hlaWdodBgFIAEoBRIMCgRjb2xzGAYgASgFEgwKBHJvd3MYByABKAUiWwoNVGlsZXNldFJlZ2lvbhISCgp0aWxlc2V0X2lkGAEgASgJEg8KB3NyY19jb2wYAiABKAUSDwoHc3JjX3JvdxgDIAEoBRIJCgF3GAQgASgFEgkKAWgYBSABKAUidAoNQ29tcG9zaXRlUGFydBIvCgZyZWdpb24YASABKAsyHy5vZmZpc2ltcy5wYWNrLnYxLlRpbGVzZXRSZWdpb24SEAoIb2Zmc2V0X3gYAiABKAUSEAoIb2Zmc2V0X3kYAyABKAUSDgoGel9iaWFzGAQgASgFIpABCg9Db21wb3NpdGVPYmplY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIuCgVwYXJ0cxgEIAMoCzIfLm9mZmlzaW1zLnBhY2sudjEuQ29tcG9zaXRlUGFydBIVCg1kaXNwbGF5X3dpZHRoGAUgASgFEhYKDmRpc3BsYXlfaGVpZ2h0GAYgASgFSgQIAxAEIkYKDkRvb3JEZWZpbml0aW9uEgoKAmlkGAEgASgJEgsKA2NvbBgCIAEoBRILCgNyb3cYAyABKAUSDgoGdGFyZ2V0GAQgASgJIroBChBUZXh0dXJlUGxhY2VtZW50Eg4KBmdyaWRfeBgBIAEoBRIOCgZncmlkX3kYAiABKAUSLwoFbGF5ZXIYAyABKA4yIC5vZmZpc2ltcy5wYWNrLnYxLlBsYWNlbWVudExheWVyEi8KBnJlZ2lvbhgEIAEoCzIfLm9mZmlzaW1zLnBhY2sudjEuVGlsZXNldFJlZ2lvbhIUCgxjb21wb3NpdGVfaWQYBSABKAkSDgoGel9iaWFzGAYgASgFIrsBCg5Sb29tRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBRITCgt3YWxrYWJpbGl0eRgEIAMoCBIvCgVkb29ycxgFIAMoCzIgLm9mZmlzaW1zLnBhY2sudjEuRG9vckRlZmluaXRpb24SNgoKcGxhY2VtZW50cxgGIAMoCzIiLm9mZmlzaW1zLnBhY2sudjEuVGV4dHVyZVBsYWNlbWVudCJbCg1SZXNvdXJjZUZyYW1lEhIKCnRpbGVzZXRfaWQYASABKAkSDwoHc3JjX2NvbBgCIAEoBRIPCgdzcmNfcm93GAMgASgFEgkKAXcYBCABKAUSCQoBaBgFIAEoBSJjCghSZXNvdXJjZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHRhZ3MYAyADKAkSLwoGZnJhbWVzGAQgAygLMh8ub2ZmaXNpbXMucGFjay52MS5SZXNvdXJjZUZyYW1lInkKB01hc2tDdXQSDAoEdGFncxgBIAMoCRILCgNyb3cYAiABKAUSEwoLc3RhcnRfZnJhbWUYAyABKAUSEwoLZnJhbWVfY291bnQYBCABKAUSEwoLZnJhbWVfd2lkdGgYBSABKAUSFAoMZnJhbWVfaGVpZ2h0GAYgASgFInIKBE1hc2sSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRISCgp0aWxlX3dpZHRoGAMgASgFEhMKC3RpbGVfaGVpZ2h0GAQgASgFEicKBGN1dHMYBSADKAsyGS5vZmZpc2ltcy5wYWNrLnYxLk1hc2tDdXQigAEKDFBhY2tNYW5pZmVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEg8KB3ZlcnNpb24YBCABKAkSDgoGYXV0aG9yGAUgASgJEg8KB2NyZWF0ZWQYBiABKAkSDwoHdXBkYXRlZBgHIAEoCSKtAgoEUGFjaxIwCghtYW5pZmVzdBgBIAEoCzIeLm9mZmlzaW1zLnBhY2sudjEuUGFja01hbmlmZXN0EjUKCHRpbGVzZXRzGAIgAygLMiMub2ZmaXNpbXMucGFjay52MS5UaWxlc2V0RGVmaW5pdGlvbhI1Cgpjb21wb3NpdGVzGAMgAygLMiEub2ZmaXNpbXMucGFjay52MS5Db21wb3NpdGVPYmplY3QSLwoFcm9vbXMYBCADKAsyIC5vZmZpc2ltcy5wYWNrLnYxLlJvb21EZWZpbml0aW9uEi0KCXJlc291cmNlcxgFIAMoCzIaLm9mZmlzaW1zLnBhY2sudjEuUmVzb3VyY2USJQoFbWFza3MYBiADKAsyFi5vZmZpc2ltcy5wYWNrLnYxLk1hc2sqaAoOUGxhY2VtZW50TGF5ZXISHwobUExBQ0VNRU5UX0xBWUVSX1VOU1BFQ0lGSUVEEAASGQoVUExBQ0VNRU5UX0xBWUVSX0ZMT09SEAESGgoWUExBQ0VNRU5UX0xBWUVSX09CSkVDVBACQq4BChRjb20ub2ZmaXNpbXMucGFjay52MUIJUGFja1Byb3RvUAFaKWdpdGh1Yi5jb20vb2ZmaXNpbXMvc2hhcmVkL3BhY2svcGIvcGFja3YxogIDT1BYqgIQT2ZmaXNpbXMuUGFjay5WMcoCEE9mZmlzaW1zXFBhY2tcVjHiAhxPZmZpc2ltc1xQYWNrXFYxXEdQQk1ldGFkYXRh6gIST2ZmaXNpbXM6OlBhY2s6OlYxYgZwcm90bzM");
+  fileDesc("ChtvZmZpc2ltcy9wYWNrL3YxL3BhY2sucHJvdG8SEG9mZmlzaW1zLnBhY2sudjEigQEKEVRpbGVzZXREZWZpbml0aW9uEgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEgwKBHBhdGgYAyABKAkSEgoKdGlsZV93aWR0aBgEIAEoBRITCgt0aWxlX2hlaWdodBgFIAEoBRIMCgRjb2xzGAYgASgFEgwKBHJvd3MYByABKAUiWwoNVGlsZXNldFJlZ2lvbhISCgp0aWxlc2V0X2lkGAEgASgJEg8KB3NyY19jb2wYAiABKAUSDwoHc3JjX3JvdxgDIAEoBRIJCgF3GAQgASgFEgkKAWgYBSABKAUidAoNQ29tcG9zaXRlUGFydBIvCgZyZWdpb24YASABKAsyHy5vZmZpc2ltcy5wYWNrLnYxLlRpbGVzZXRSZWdpb24SEAoIb2Zmc2V0X3gYAiABKAUSEAoIb2Zmc2V0X3kYAyABKAUSDgoGel9iaWFzGAQgASgFIpABCg9Db21wb3NpdGVPYmplY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIuCgVwYXJ0cxgEIAMoCzIfLm9mZmlzaW1zLnBhY2sudjEuQ29tcG9zaXRlUGFydBIVCg1kaXNwbGF5X3dpZHRoGAUgASgFEhYKDmRpc3BsYXlfaGVpZ2h0GAYgASgFSgQIAxAEIkYKDkRvb3JEZWZpbml0aW9uEgoKAmlkGAEgASgJEgsKA2NvbBgCIAEoBRILCgNyb3cYAyABKAUSDgoGdGFyZ2V0GAQgASgJIroBChBUZXh0dXJlUGxhY2VtZW50Eg4KBmdyaWRfeBgBIAEoBRIOCgZncmlkX3kYAiABKAUSLwoFbGF5ZXIYAyABKA4yIC5vZmZpc2ltcy5wYWNrLnYxLlBsYWNlbWVudExheWVyEi8KBnJlZ2lvbhgEIAEoCzIfLm9mZmlzaW1zLnBhY2sudjEuVGlsZXNldFJlZ2lvbhIUCgxjb21wb3NpdGVfaWQYBSABKAkSDgoGel9iaWFzGAYgASgFIrsBCg5Sb29tRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBRITCgt3YWxrYWJpbGl0eRgEIAMoCBIvCgVkb29ycxgFIAMoCzIgLm9mZmlzaW1zLnBhY2sudjEuRG9vckRlZmluaXRpb24SNgoKcGxhY2VtZW50cxgGIAMoCzIiLm9mZmlzaW1zLnBhY2sudjEuVGV4dHVyZVBsYWNlbWVudCJbCg1SZXNvdXJjZUZyYW1lEhIKCnRpbGVzZXRfaWQYASABKAkSDwoHc3JjX2NvbBgCIAEoBRIPCgdzcmNfcm93GAMgASgFEgkKAXcYBCABKAUSCQoBaBgFIAEoBSJjCghSZXNvdXJjZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHRhZ3MYAyADKAkSLwoGZnJhbWVzGAQgAygLMh8ub2ZmaXNpbXMucGFjay52MS5SZXNvdXJjZUZyYW1lInkKB01hc2tDdXQSDAoEdGFncxgBIAMoCRILCgNyb3cYAiABKAUSEwoLc3RhcnRfZnJhbWUYAyABKAUSEwoLZnJhbWVfY291bnQYBCABKAUSEwoLZnJhbWVfd2lkdGgYBSABKAUSFAoMZnJhbWVfaGVpZ2h0GAYgASgFInIKBE1hc2sSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRISCgp0aWxlX3dpZHRoGAMgASgFEhMKC3RpbGVfaGVpZ2h0GAQgASgFEicKBGN1dHMYBSADKAsyGS5vZmZpc2ltcy5wYWNrLnYxLk1hc2tDdXQiNwoMVGlsZXNldEVudHJ5EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEgwKBHBhdGgYAyABKAkiGQoJUm9vbUVudHJ5EgwKBG5hbWUYASABKAkiNwoNUmVzb3VyY2VFbnRyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHRhZ3MYAyADKAki0QIKDFBhY2tNYW5pZmVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEg8KB3ZlcnNpb24YBCABKAkSDgoGYXV0aG9yGAUgASgJEg8KB2NyZWF0ZWQYBiABKAkSDwoHdXBkYXRlZBgHIAEoCRI3Cg90aWxlc2V0X2VudHJpZXMYCCADKAsyHi5vZmZpc2ltcy5wYWNrLnYxLlRpbGVzZXRFbnRyeRIxCgxyb29tX2VudHJpZXMYCSADKAsyGy5vZmZpc2ltcy5wYWNrLnYxLlJvb21FbnRyeRI5ChByZXNvdXJjZV9lbnRyaWVzGAogAygLMh8ub2ZmaXNpbXMucGFjay52MS5SZXNvdXJjZUVudHJ5EhMKC3NvdXJjZV9oYXNoGAsgASgJEhMKC2NvbXBpbGVkX2F0GAwgASgJIq0CCgRQYWNrEjAKCG1hbmlmZXN0GAEgASgLMh4ub2ZmaXNpbXMucGFjay52MS5QYWNrTWFuaWZlc3QSNQoIdGlsZXNldHMYAiADKAsyIy5vZmZpc2ltcy5wYWNrLnYxLlRpbGVzZXREZWZpbml0aW9uEjUKCmNvbXBvc2l0ZXMYAyADKAsyIS5vZmZpc2ltcy5wYWNrLnYxLkNvbXBvc2l0ZU9iamVjdBIvCgVyb29tcxgEIAMoCzIgLm9mZmlzaW1zLnBhY2sudjEuUm9vbURlZmluaXRpb24SLQoJcmVzb3VyY2VzGAUgAygLMhoub2ZmaXNpbXMucGFjay52MS5SZXNvdXJjZRIlCgVtYXNrcxgGIAMoCzIWLm9mZmlzaW1zLnBhY2sudjEuTWFzaypoCg5QbGFjZW1lbnRMYXllchIfChtQTEFDRU1FTlRfTEFZRVJfVU5TUEVDSUZJRUQQABIZChVQTEFDRU1FTlRfTEFZRVJfRkxPT1IQARIaChZQTEFDRU1FTlRfTEFZRVJfT0JKRUNUEAJCrgEKFGNvbS5vZmZpc2ltcy5wYWNrLnYxQglQYWNrUHJvdG9QAVopZ2l0aHViLmNvbS9vZmZpc2ltcy9zaGFyZWQvcGFjay9wYi9wYWNrdjGiAgNPUFiqAhBPZmZpc2ltcy5QYWNrLlYxygIQT2ZmaXNpbXNcUGFja1xWMeICHE9mZmlzaW1zXFBhY2tcVjFcR1BCTWV0YWRhdGHqAhJPZmZpc2ltczo6UGFjazo6VjFiBnByb3RvMw");
 
 /**
  * TilesetDefinition describes a tileset image and its grid layout.
@@ -495,8 +495,88 @@ export const MaskSchema: GenMessage<Mask> = /*@__PURE__*/
   messageDesc(file_offisims_pack_v1_pack, 10);
 
 /**
+ * TilesetEntry is a manifest reference to a tileset in the pack.
+ *
+ * @generated from message offisims.pack.v1.TilesetEntry
+ */
+export type TilesetEntry = Message<"offisims.pack.v1.TilesetEntry"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string label = 2;
+   */
+  label: string;
+
+  /**
+   * image path, e.g. "atlas/atlas_a0e448f9.png"
+   *
+   * @generated from field: string path = 3;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message offisims.pack.v1.TilesetEntry.
+ * Use `create(TilesetEntrySchema)` to create a new message.
+ */
+export const TilesetEntrySchema: GenMessage<TilesetEntry> = /*@__PURE__*/
+  messageDesc(file_offisims_pack_v1_pack, 11);
+
+/**
+ * RoomEntry is a manifest reference to a room in the pack.
+ *
+ * @generated from message offisims.pack.v1.RoomEntry
+ */
+export type RoomEntry = Message<"offisims.pack.v1.RoomEntry"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message offisims.pack.v1.RoomEntry.
+ * Use `create(RoomEntrySchema)` to create a new message.
+ */
+export const RoomEntrySchema: GenMessage<RoomEntry> = /*@__PURE__*/
+  messageDesc(file_offisims_pack_v1_pack, 12);
+
+/**
+ * ResourceEntry is a manifest reference to a resource in the pack.
+ *
+ * @generated from message offisims.pack.v1.ResourceEntry
+ */
+export type ResourceEntry = Message<"offisims.pack.v1.ResourceEntry"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated string tags = 3;
+   */
+  tags: string[];
+};
+
+/**
+ * Describes the message offisims.pack.v1.ResourceEntry.
+ * Use `create(ResourceEntrySchema)` to create a new message.
+ */
+export const ResourceEntrySchema: GenMessage<ResourceEntry> = /*@__PURE__*/
+  messageDesc(file_offisims_pack_v1_pack, 13);
+
+/**
  * PackManifest is the identity and metadata of a pack.
  * Stored as manifest.json (human-readable) alongside the binary data.
+ * Inventory fields list the pack's contents for discovery/preloading.
  *
  * @generated from message offisims.pack.v1.PackManifest
  */
@@ -539,6 +619,35 @@ export type PackManifest = Message<"offisims.pack.v1.PackManifest"> & {
    * @generated from field: string updated = 7;
    */
   updated: string;
+
+  /**
+   * @generated from field: repeated offisims.pack.v1.TilesetEntry tileset_entries = 8;
+   */
+  tilesetEntries: TilesetEntry[];
+
+  /**
+   * @generated from field: repeated offisims.pack.v1.RoomEntry room_entries = 9;
+   */
+  roomEntries: RoomEntry[];
+
+  /**
+   * @generated from field: repeated offisims.pack.v1.ResourceEntry resource_entries = 10;
+   */
+  resourceEntries: ResourceEntry[];
+
+  /**
+   * SHA-256 content hash of workspace at compile time
+   *
+   * @generated from field: string source_hash = 11;
+   */
+  sourceHash: string;
+
+  /**
+   * ISO-8601 timestamp of compilation
+   *
+   * @generated from field: string compiled_at = 12;
+   */
+  compiledAt: string;
 };
 
 /**
@@ -546,7 +655,7 @@ export type PackManifest = Message<"offisims.pack.v1.PackManifest"> & {
  * Use `create(PackManifestSchema)` to create a new message.
  */
 export const PackManifestSchema: GenMessage<PackManifest> = /*@__PURE__*/
-  messageDesc(file_offisims_pack_v1_pack, 11);
+  messageDesc(file_offisims_pack_v1_pack, 14);
 
 /**
  * Pack is the top-level container — a bundle of rooms, resources,
@@ -592,7 +701,7 @@ export type Pack = Message<"offisims.pack.v1.Pack"> & {
  * Use `create(PackSchema)` to create a new message.
  */
 export const PackSchema: GenMessage<Pack> = /*@__PURE__*/
-  messageDesc(file_offisims_pack_v1_pack, 12);
+  messageDesc(file_offisims_pack_v1_pack, 15);
 
 /**
  * @generated from enum offisims.pack.v1.PlacementLayer

@@ -1,7 +1,7 @@
 /**
- * BrowserTab — faceted tag browser over the resource pool.
+ * ResourcesTab — faceted tag browser over the resource pool.
  *
- * Layout: FacetPanel (left sidebar) + BrowserMain (toolbar + paginated grid).
+ * Layout: FacetPanel (left sidebar) + ResourcesMain (toolbar + paginated grid) + ResourceDetail (right panel).
  * All filtering/pagination state is local — no Zustand needed since this
  * tab's state doesn't persist across reloads.
  */
@@ -11,6 +11,8 @@ import type { Resource } from '@offisims/pack'
 import { useResources } from '../../api/resources'
 import { FacetPanel } from './FacetPanel'
 import { ResourceGrid } from './ResourceGrid'
+import { ResourceDetail } from './ResourceDetail'
+import { ResizablePanel } from '../ResizablePanel'
 
 const PAGE_SIZE = 24
 
@@ -54,13 +56,14 @@ export function sortNamespaces(keys: string[]): string[] {
   })
 }
 
-export function BrowserTab() {
+export function ResourcesTab() {
   const { data: resources = [], isLoading } = useResources()
 
   // Active filters: namespace -> value (single-select per namespace)
   const [filters, setFilters] = useState<Map<string, string>>(new Map())
   const [searchText, setSearchText] = useState('')
   const [currentPage, setCurrentPage] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Filter resources
   const filtered = useMemo(() => {
@@ -77,6 +80,17 @@ export function BrowserTab() {
 
   // Build facets from filtered resources (post-filter)
   const facets = useMemo(() => buildFacets(filtered), [filtered])
+
+  // Look up selected resource from the full list (not just current page)
+  const selectedResource = useMemo(() => {
+    if (!selectedId) return null
+    return resources.find((r) => r.id === selectedId) ?? null
+  }, [selectedId, resources])
+
+  // Clear selection if the resource was deleted
+  useMemo(() => {
+    if (selectedId && !selectedResource) setSelectedId(null)
+  }, [selectedId, selectedResource])
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -123,24 +137,34 @@ export function BrowserTab() {
     [],
   )
 
+  const handleSelect = useCallback((resource: Resource) => {
+    setSelectedId((prev) => (prev === resource.id ? null : resource.id))
+  }, [])
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedId(null)
+  }, [])
+
   if (isLoading) {
     return (
-      <div class="browser-tab browser-tab--loading">
-        <div class="browser-loading">Loading resources...</div>
+      <div class="resources-tab resources-tab--loading">
+        <div class="resources-loading">Loading resources...</div>
       </div>
     )
   }
 
   return (
-    <div class="browser-tab">
-      <FacetPanel
-        facets={facets}
-        filters={filters}
-        onAddFilter={addFilter}
-        onRemoveFilter={removeFilter}
-        onClearFilters={clearFilters}
-      />
-      <div class="browser-main">
+    <div class="resources-tab">
+      <ResizablePanel side="right" defaultWidth={200} minWidth={160} maxWidth={360}>
+        <FacetPanel
+          facets={facets}
+          filters={filters}
+          onAddFilter={addFilter}
+          onRemoveFilter={removeFilter}
+          onClearFilters={clearFilters}
+        />
+      </ResizablePanel>
+      <div class="resources-main">
         <ResourceGrid
           items={pageItems}
           totalCount={filtered.length}
@@ -150,8 +174,18 @@ export function BrowserTab() {
           onSearchChange={onSearchChange}
           onPageChange={setCurrentPage}
           hasFilters={filters.size > 0}
+          selectedId={selectedId}
+          onSelect={handleSelect}
         />
       </div>
+      {selectedResource && (
+        <ResizablePanel side="left" defaultWidth={280} minWidth={220} maxWidth={420}>
+          <ResourceDetail
+            resource={selectedResource}
+            onClose={handleCloseDetail}
+          />
+        </ResizablePanel>
+      )}
     </div>
   )
 }

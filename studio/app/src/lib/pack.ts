@@ -80,11 +80,11 @@ export function getPlacementSize(
   getComposite: (id: string) => CompositeObject | undefined,
 ): { w: number; h: number } | null {
   if (p.region) {
-    return { w: p.region.w, h: p.region.h };
+    return { w: p.region.w || 1, h: p.region.h || 1 };
   }
   if (p.compositeId) {
     const comp = getComposite(p.compositeId);
-    return comp ? { w: comp.displayWidth, h: comp.displayHeight } : null;
+    return comp ? { w: comp.displayWidth || 1, h: comp.displayHeight || 1 } : null;
   }
   return null;
 }

@@ -1,30 +1,15 @@
 /**
- * TesterToolbar — Room/character selection, overlays, zoom.
+ * TesterToolbar — Room/character selection, overlays.
  *
  * Sits at the top of the tester tab.
  */
 
-import { useCallback } from 'preact/hooks'
 import { useTesterStore } from '../../store/tester'
 
-const ZOOM_OPTIONS = [
-  { label: '0.25x', value: '0.25' },
-  { label: '0.5x', value: '0.5' },
-  { label: '1x', value: '1' },
-  { label: '2x', value: '2' },
-  { label: '4x', value: '4' },
-  { label: 'Fit', value: 'fit' },
-]
-
-export interface TesterToolbarProps {
-  onFitZoom: () => number
-}
-
-export function TesterToolbar({ onFitZoom }: TesterToolbarProps) {
+export function TesterToolbar() {
   const manifest = useTesterStore((s) => s.manifest)
   const selectedRoom = useTesterStore((s) => s.selectedRoom)
   const selectedChar = useTesterStore((s) => s.selectedChar)
-  const zoom = useTesterStore((s) => s.zoom)
   const showGrid = useTesterStore((s) => s.showGrid)
   const showWalkability = useTesterStore((s) => s.showWalkability)
   const loaded = useTesterStore((s) => s.loaded)
@@ -32,36 +17,19 @@ export function TesterToolbar({ onFitZoom }: TesterToolbarProps) {
   const currentRoom = useTesterStore((s) => s.currentRoom)
   const setSelectedRoom = useTesterStore((s) => s.setSelectedRoom)
   const setSelectedChar = useTesterStore((s) => s.setSelectedChar)
-  const setZoom = useTesterStore((s) => s.setZoom)
   const toggleGrid = useTesterStore((s) => s.toggleGrid)
   const toggleWalkability = useTesterStore((s) => s.toggleWalkability)
   const loadRoom = useTesterStore((s) => s.loadRoom)
 
-  const rooms = manifest?.rooms ?? []
-  const characters = manifest?.resources.filter((r) =>
-    r.tags.some((t) => t === 'type:character'),
-  ) ?? []
-  // Deduplicate character names
-  const charNames = [...new Set(characters.map((c) => c.name))]
-
-  const handleZoomChange = useCallback(
-    (e: Event) => {
-      const val = (e.target as HTMLSelectElement).value
-      if (val === 'fit') {
-        setZoom(onFitZoom())
-      } else {
-        setZoom(parseFloat(val))
-      }
-    },
-    [setZoom, onFitZoom],
+  const rooms = manifest?.roomEntries ?? []
+  const resourceEntries = manifest?.resourceEntries ?? []
+  const characters = resourceEntries.filter((r) =>
+    (r.tags ?? []).some((t: string) => t === 'entity:character'),
   )
-
-  const closestZoom = ZOOM_OPTIONS.reduce((prev, opt) => {
-    if (opt.value === 'fit') return prev
-    const diff = Math.abs(parseFloat(opt.value) - zoom)
-    const prevDiff = Math.abs(parseFloat(prev) - zoom)
-    return diff < prevDiff ? opt.value : prev
-  }, '1')
+  // Extract unique character names from name: tags
+  const charNames = [...new Set(characters.flatMap((c) =>
+    (c.tags ?? []).filter((t: string) => t.startsWith('name:')).map((t: string) => t.slice(5))
+  ))].sort()
 
   return (
     <div class="tester-toolbar">
@@ -119,21 +87,9 @@ export function TesterToolbar({ onFitZoom }: TesterToolbarProps) {
         Walkability
       </label>
 
-      <select
-        class="tester-select"
-        value={closestZoom}
-        onChange={handleZoomChange}
-      >
-        {ZOOM_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
       {loaded && currentRoom && (
         <span class="tester-mode-hint">
-          {currentRoom.name} — {currentRoom.width}x{currentRoom.height}
+          {currentRoom.name || ''} — {currentRoom.width || 0}x{currentRoom.height || 0}
           {selectedChar ? ` — ${selectedChar}` : ''}
         </span>
       )}

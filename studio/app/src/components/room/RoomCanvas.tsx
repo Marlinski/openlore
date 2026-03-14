@@ -421,10 +421,10 @@ export function RoomCanvas() {
             class={`room-item-overlay${selectedPlacements.has(i) ? ' selected' : ''}`}
             style={{
               position: 'absolute',
-              left: `${p.gridX * ts}px`,
-              top: `${p.gridY * ts}px`,
-              width: `${size.w * ts}px`,
-              height: `${size.h * ts}px`,
+              left: `${(p.gridX || 0) * ts}px`,
+              top: `${(p.gridY || 0) * ts}px`,
+              width: `${(size.w || 1) * ts}px`,
+              height: `${(size.h || 1) * ts}px`,
               pointerEvents: mode === 'layout' ? 'none' : 'auto',
             }}
             onMouseDown={(e) => handleOverlayMouseDown(e as any, i)}

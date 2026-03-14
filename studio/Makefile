@@ -1,7 +1,7 @@
 # Studio — local development targets
 # Run from the studio/ directory, or from repo root via `make -C studio`.
 
-.PHONY: help dev server app embedder build check proto clean pack-js
+.PHONY: help dev run server app embedder build check proto clean kill pack-js
 
 REPO_ROOT := $(shell cd .. && pwd)
 
@@ -43,6 +43,15 @@ build: pack-js ## Production build (frontend → embedded in Go binary)
 	cp -r app/dist server/cmd/studio/dist
 	cd server && CGO_ENABLED=1 go build -o studio ./cmd/studio
 
+run: build ## Build & serve everything from a single Go process (port 4000)
+	@echo "Studio (static mode)"
+	@echo "  App + API:  http://localhost:4000"
+	@echo "  Embedder:   http://localhost:7997"
+	@trap 'kill 0' INT TERM EXIT; \
+		$(MAKE) embedder & \
+		server/studio serve --studio-dir $(REPO_ROOT)/data/studio & \
+		wait
+
 # ─── Quality ─────────────────────────────────────────────────
 
 check: pack-js ## Type-check Go + TypeScript
@@ -68,3 +77,10 @@ pack: ## Build a .offpack from workspace
 clean: ## Remove build artifacts
 	rm -rf app/dist server/cmd/studio/dist server/studio
 	mkdir -p server/cmd/studio/dist && touch server/cmd/studio/dist/.gitkeep
+
+kill: ## Kill all studio-related processes (server, vite, embedder)
+	@echo "Killing studio processes..."
+	@-lsof -i :4000 -t 2>/dev/null | xargs kill 2>/dev/null; true
+	@-lsof -i :5173 -t 2>/dev/null | xargs kill 2>/dev/null; true
+	@-lsof -i :7997 -t 2>/dev/null | xargs kill 2>/dev/null; true
+	@echo "Done."

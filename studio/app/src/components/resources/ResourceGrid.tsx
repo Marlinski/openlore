@@ -15,6 +15,8 @@ interface ResourceGridProps {
   onSearchChange: (text: string) => void
   onPageChange: (page: number) => void
   hasFilters: boolean
+  selectedId?: string | null
+  onSelect?: (resource: Resource) => void
 }
 
 export function ResourceGrid(props: ResourceGridProps) {
@@ -27,10 +29,12 @@ export function ResourceGrid(props: ResourceGridProps) {
     onSearchChange,
     onPageChange,
     hasFilters,
+    selectedId,
+    onSelect,
   } = props
 
   return (
-    <div class="browser-grid-container">
+    <div class="resources-grid-container">
       <Toolbar
         totalCount={totalCount}
         currentPage={currentPage}
@@ -39,7 +43,7 @@ export function ResourceGrid(props: ResourceGridProps) {
         onSearchChange={onSearchChange}
         onPageChange={onPageChange}
       />
-      <Grid items={items} hasFilters={hasFilters} />
+      <Grid items={items} hasFilters={hasFilters} selectedId={selectedId} onSelect={onSelect} />
     </div>
   )
 }
@@ -66,31 +70,31 @@ function Toolbar(props: ToolbarProps) {
   } = props
 
   return (
-    <div class="browser-toolbar">
+    <div class="resources-toolbar">
       <input
         type="text"
-        class="browser-search-input"
+        class="resources-search-input"
         placeholder="Search by name..."
         value={searchText}
         onInput={(e) => onSearchChange((e.target as HTMLInputElement).value)}
       />
-      <span class="browser-result-count">
+      <span class="resources-result-count">
         {totalCount} resource{totalCount !== 1 ? 's' : ''}
       </span>
       {totalPages > 1 && (
-        <div class="browser-pagination">
+        <div class="resources-pagination">
           <button
-            class="btn browser-page-btn"
+            class="btn resources-page-btn"
             disabled={currentPage === 0}
             onClick={() => onPageChange(currentPage - 1)}
           >
             &lsaquo;
           </button>
-          <span class="browser-page-label">
+          <span class="resources-page-label">
             {currentPage + 1} / {totalPages}
           </span>
           <button
-            class="btn browser-page-btn"
+            class="btn resources-page-btn"
             disabled={currentPage >= totalPages - 1}
             onClick={() => onPageChange(currentPage + 1)}
           >
@@ -107,12 +111,14 @@ function Toolbar(props: ToolbarProps) {
 interface GridProps {
   items: Resource[]
   hasFilters: boolean
+  selectedId?: string | null
+  onSelect?: (resource: Resource) => void
 }
 
-function Grid({ items, hasFilters }: GridProps) {
+function Grid({ items, hasFilters, selectedId, onSelect }: GridProps) {
   if (items.length === 0) {
     return (
-      <div class="browser-grid-empty">
+      <div class="resources-grid-empty">
         {hasFilters
           ? 'No resources match the current filters.'
           : 'No resources available.'}
@@ -121,12 +127,14 @@ function Grid({ items, hasFilters }: GridProps) {
   }
 
   return (
-    <div class="browser-grid">
+    <div class="resources-grid">
       {items.map((resource) => (
         <ResourceCard
           key={resource.id}
           resource={resource}
-          class="browser-grid-card"
+          selected={resource.id === selectedId}
+          onClick={onSelect ? () => onSelect(resource) : undefined}
+          class="resources-grid-card"
         />
       ))}
     </div>

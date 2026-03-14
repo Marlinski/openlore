@@ -61,6 +61,8 @@ export class ApiError extends Error {
  * - Prepends `/{workspaceId}/api/` to the path (do NOT include it in the argument).
  * - Parses JSON on success, throws `ApiError` on non-2xx.
  * - DELETE returning 204 returns `undefined`.
+ * - After any successful mutation (PUT/POST/DELETE), schedules a debounced
+ *   pack status refresh so the UI can detect stale packs.
  */
 export async function apiFetch<T>(
   path: string,
@@ -87,8 +89,33 @@ export async function apiFetch<T>(
     throw new ApiError(message, code, res.status)
   }
 
+  // Schedule a pack status refresh after any mutation
+  const method = (options?.method || 'GET').toUpperCase()
+  if (method === 'PUT' || method === 'POST' || method === 'DELETE' || method === 'PATCH') {
+    schedulePackStatusRefresh()
+  }
+
   // 204 No Content (DELETE responses)
   if (res.status === 204) return undefined as T
 
   return res.json() as Promise<T>
+}
+
+// ─── Debounced pack status refresh ──────────────────────────────────
+
+let _packStatusTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Schedule a debounced fetchStatus() call. Coalesces rapid mutations
+ * (e.g. multiple tag edits) into a single server round-trip.
+ */
+function schedulePackStatusRefresh() {
+  if (_packStatusTimer) clearTimeout(_packStatusTimer)
+  _packStatusTimer = setTimeout(() => {
+    _packStatusTimer = null
+    // Dynamic import to avoid circular dependency
+    import('../store/pack').then(({ usePackStore }) => {
+      usePackStore.getState().fetchStatus()
+    })
+  }, 1000) // 1 second debounce
 }

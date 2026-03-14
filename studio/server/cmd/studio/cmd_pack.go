@@ -64,7 +64,7 @@ func packCompile(wsDir string) error {
 	}
 
 	log.Printf("compiling workspace: %s → %s", wsDir, outDir)
-	result, err := pack.Compile(wsDir, outDir, flagPackID, flagPackName)
+	_, result, err := pack.Compile(wsDir, outDir, flagPackID, flagPackName)
 	if err != nil {
 		return fmt.Errorf("compile: %w", err)
 	}

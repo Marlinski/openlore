@@ -37,13 +37,23 @@ export function SavedCompositesList() {
       }
 
       // Convert CompositeParts to WorkspaceParts, offset at (1,1) for padding
-      const wsParts: WorkspacePart[] = comp.parts.map((p) => ({
-        uid: generateId(),
-        region: p.region!,
-        gridX: 1 + p.offsetX,
-        gridY: 1 + p.offsetY,
-        zBias: p.zBias ?? 0,
-      }))
+      // Guard against protojson zero-value omission (offsetX/offsetY/zBias = 0 → undefined)
+      const wsParts: WorkspacePart[] = comp.parts.map((p) => {
+        const r = p.region!
+        return {
+          uid: generateId(),
+          region: {
+            ...r,
+            srcCol: r.srcCol || 0,
+            srcRow: r.srcRow || 0,
+            w: r.w || 1,
+            h: r.h || 1,
+          },
+          gridX: 1 + (p.offsetX || 0),
+          gridY: 1 + (p.offsetY || 0),
+          zBias: p.zBias || 0,
+        }
+      })
 
       loadComposite(comp.id, comp.name, '', wsParts)
       setStatusText(`Loaded "${comp.name}" for editing`)

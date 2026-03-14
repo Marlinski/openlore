@@ -2,9 +2,9 @@
  * CutterTab — shell layout for the Tile Cutter tab.
  *
  * Three-column layout:
- *   Left:   Tileset selector (FilterableList) + SharedTags + CutList
- *   Center: CutterToolbar + CutterCanvas
- *   Right:  AssignForm + CutPreviews + SaveControls + MaskPanel + SavedResourceList
+ *   Left:   Tileset selector (FilterableList, shorter) + SavedResourceList
+ *   Center: CutterToolbar (toggles, tags, masks) + CutterCanvas
+ *   Right:  SaveControls (top) + CutList (WIP cuts stash) + AssignForm + CutPreviews
  *
  * Wires the tileset selector to the cutter store and provides
  * shared tileset metadata to child components via context.
@@ -16,13 +16,12 @@ import { useTilesets } from '../../api/tilesets'
 import type { TilesetMeta } from '../../api/tilesets'
 import { FilterableList } from '../FilterableList'
 import type { FilterableItem } from '../FilterableList'
+import { ResizablePanel } from '../ResizablePanel'
 import { CutterToolbar } from './CutterToolbar'
 import { CutterCanvas } from './CutterCanvas'
 import { AssignForm } from './AssignForm'
 import { CutList } from './CutList'
 import { CutPreviews } from './CutPreviews'
-import { SharedTags } from './SharedTags'
-import { MaskPanel } from './MaskPanel'
 import { SavedResourceList } from './SavedResourceList'
 import { SaveControls } from './SaveControls'
 
@@ -39,6 +38,7 @@ export function CutterTab() {
     return tilesets.map((t: TilesetMeta) => ({
       id: t.id,
       label: t.label,
+      path: t.path,
       meta: `${t.cols}x${t.rows} ${t.tileWidth}x${t.tileHeight}`,
       area: t.cols * t.rows,
     }))
@@ -59,35 +59,39 @@ export function CutterTab() {
 
   return (
     <div class="cutter-layout">
-      {/* ── Left sidebar ── */}
-      <div class="cutter-left">
-        <div class="cutter-left__tilesets">
-          <FilterableList
-            items={tilesetItems}
-            value={tilesetId}
-            onSelect={handleTilesetSelect}
-            placeholder="Search tilesets..."
-            showAreaFilter
-          />
+      {/* ── Left sidebar: tileset tree (shorter) + saved resources ── */}
+      <ResizablePanel side="right" defaultWidth={200} minWidth={160} maxWidth={420}>
+        <div class="cutter-left">
+          <div class="cutter-left__tilesets">
+            <FilterableList
+              items={tilesetItems}
+              value={tilesetId}
+              onSelect={handleTilesetSelect}
+              placeholder="Search tilesets..."
+              showAreaFilter
+            />
+          </div>
+          <div class="cutter-left__resources">
+            <SavedResourceList tileset={currentTileset} />
+          </div>
         </div>
-        <SharedTags tileset={currentTileset} />
-        <CutList tileset={currentTileset} />
-      </div>
+      </ResizablePanel>
 
-      {/* ── Center: canvas area ── */}
+      {/* ── Center: toolbar + canvas ── */}
       <div class="cutter-center">
-        <CutterToolbar />
+        <CutterToolbar tileset={currentTileset} />
         <CutterCanvas tileset={currentTileset} />
       </div>
 
-      {/* ── Right sidebar ── */}
-      <div class="cutter-right">
-        <AssignForm tileset={currentTileset} />
-        <CutPreviews tileset={currentTileset} />
-        <SaveControls tileset={currentTileset} />
-        <MaskPanel tileset={currentTileset} />
-        <SavedResourceList tileset={currentTileset} />
-      </div>
+      {/* ── Right sidebar: save + assign + cuts list + previews ── */}
+      <ResizablePanel side="left" defaultWidth={220} minWidth={180} maxWidth={420}>
+        <div class="cutter-right">
+          <SaveControls tileset={currentTileset} />
+          <AssignForm tileset={currentTileset} />
+          <CutList tileset={currentTileset} />
+          <CutPreviews tileset={currentTileset} />
+        </div>
+      </ResizablePanel>
     </div>
   )
 }

@@ -968,24 +968,197 @@ func (x *Mask) GetCuts() []*MaskCut {
 	return nil
 }
 
-// PackManifest is the identity and metadata of a pack.
-// Stored as manifest.json (human-readable) alongside the binary data.
-type PackManifest struct {
+// TilesetEntry is a manifest reference to a tileset in the pack.
+type TilesetEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Version       string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	Author        string                 `protobuf:"bytes,5,opt,name=author,proto3" json:"author,omitempty"`
-	Created       string                 `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"` // ISO-8601
-	Updated       string                 `protobuf:"bytes,7,opt,name=updated,proto3" json:"updated,omitempty"` // ISO-8601
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	Path          string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"` // image path, e.g. "atlas/atlas_a0e448f9.png"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *TilesetEntry) Reset() {
+	*x = TilesetEntry{}
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TilesetEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TilesetEntry) ProtoMessage() {}
+
+func (x *TilesetEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TilesetEntry.ProtoReflect.Descriptor instead.
+func (*TilesetEntry) Descriptor() ([]byte, []int) {
+	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TilesetEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TilesetEntry) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *TilesetEntry) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+// RoomEntry is a manifest reference to a room in the pack.
+type RoomEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RoomEntry) Reset() {
+	*x = RoomEntry{}
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RoomEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RoomEntry) ProtoMessage() {}
+
+func (x *RoomEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RoomEntry.ProtoReflect.Descriptor instead.
+func (*RoomEntry) Descriptor() ([]byte, []int) {
+	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RoomEntry) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// ResourceEntry is a manifest reference to a resource in the pack.
+type ResourceEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Tags          []string               `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResourceEntry) Reset() {
+	*x = ResourceEntry{}
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourceEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceEntry) ProtoMessage() {}
+
+func (x *ResourceEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceEntry.ProtoReflect.Descriptor instead.
+func (*ResourceEntry) Descriptor() ([]byte, []int) {
+	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ResourceEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ResourceEntry) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ResourceEntry) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+// PackManifest is the identity and metadata of a pack.
+// Stored as manifest.json (human-readable) alongside the binary data.
+// Inventory fields list the pack's contents for discovery/preloading.
+type PackManifest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Version         string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	Author          string                 `protobuf:"bytes,5,opt,name=author,proto3" json:"author,omitempty"`
+	Created         string                 `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"` // ISO-8601
+	Updated         string                 `protobuf:"bytes,7,opt,name=updated,proto3" json:"updated,omitempty"` // ISO-8601
+	TilesetEntries  []*TilesetEntry        `protobuf:"bytes,8,rep,name=tileset_entries,json=tilesetEntries,proto3" json:"tileset_entries,omitempty"`
+	RoomEntries     []*RoomEntry           `protobuf:"bytes,9,rep,name=room_entries,json=roomEntries,proto3" json:"room_entries,omitempty"`
+	ResourceEntries []*ResourceEntry       `protobuf:"bytes,10,rep,name=resource_entries,json=resourceEntries,proto3" json:"resource_entries,omitempty"`
+	SourceHash      string                 `protobuf:"bytes,11,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"` // SHA-256 content hash of workspace at compile time
+	CompiledAt      string                 `protobuf:"bytes,12,opt,name=compiled_at,json=compiledAt,proto3" json:"compiled_at,omitempty"` // ISO-8601 timestamp of compilation
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
 func (x *PackManifest) Reset() {
 	*x = PackManifest{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -997,7 +1170,7 @@ func (x *PackManifest) String() string {
 func (*PackManifest) ProtoMessage() {}
 
 func (x *PackManifest) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1010,7 +1183,7 @@ func (x *PackManifest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackManifest.ProtoReflect.Descriptor instead.
 func (*PackManifest) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{11}
+	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PackManifest) GetId() string {
@@ -1062,6 +1235,41 @@ func (x *PackManifest) GetUpdated() string {
 	return ""
 }
 
+func (x *PackManifest) GetTilesetEntries() []*TilesetEntry {
+	if x != nil {
+		return x.TilesetEntries
+	}
+	return nil
+}
+
+func (x *PackManifest) GetRoomEntries() []*RoomEntry {
+	if x != nil {
+		return x.RoomEntries
+	}
+	return nil
+}
+
+func (x *PackManifest) GetResourceEntries() []*ResourceEntry {
+	if x != nil {
+		return x.ResourceEntries
+	}
+	return nil
+}
+
+func (x *PackManifest) GetSourceHash() string {
+	if x != nil {
+		return x.SourceHash
+	}
+	return ""
+}
+
+func (x *PackManifest) GetCompiledAt() string {
+	if x != nil {
+		return x.CompiledAt
+	}
+	return ""
+}
+
 // Pack is the top-level container — a bundle of rooms, resources,
 // tilesets, composites and masks. Studio authors packs; the game
 // server loads them and runs sessions on top of them.
@@ -1079,7 +1287,7 @@ type Pack struct {
 
 func (x *Pack) Reset() {
 	*x = Pack{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1091,7 +1299,7 @@ func (x *Pack) String() string {
 func (*Pack) ProtoMessage() {}
 
 func (x *Pack) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	mi := &file_offisims_pack_v1_pack_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1104,7 +1312,7 @@ func (x *Pack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pack.ProtoReflect.Descriptor instead.
 func (*Pack) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{12}
+	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Pack) GetManifest() *PackManifest {
@@ -1232,7 +1440,17 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"tile_width\x18\x03 \x01(\x05R\ttileWidth\x12\x1f\n" +
 	"\vtile_height\x18\x04 \x01(\x05R\n" +
 	"tileHeight\x12-\n" +
-	"\x04cuts\x18\x05 \x03(\v2\x19.offisims.pack.v1.MaskCutR\x04cuts\"\xba\x01\n" +
+	"\x04cuts\x18\x05 \x03(\v2\x19.offisims.pack.v1.MaskCutR\x04cuts\"H\n" +
+	"\fTilesetEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\"\x1f\n" +
+	"\tRoomEntry\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"G\n" +
+	"\rResourceEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04tags\x18\x03 \x03(\tR\x04tags\"\xd1\x03\n" +
 	"\fPackManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1240,7 +1458,15 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12\x16\n" +
 	"\x06author\x18\x05 \x01(\tR\x06author\x12\x18\n" +
 	"\acreated\x18\x06 \x01(\tR\acreated\x12\x18\n" +
-	"\aupdated\x18\a \x01(\tR\aupdated\"\xe6\x02\n" +
+	"\aupdated\x18\a \x01(\tR\aupdated\x12G\n" +
+	"\x0ftileset_entries\x18\b \x03(\v2\x1e.offisims.pack.v1.TilesetEntryR\x0etilesetEntries\x12>\n" +
+	"\froom_entries\x18\t \x03(\v2\x1b.offisims.pack.v1.RoomEntryR\vroomEntries\x12J\n" +
+	"\x10resource_entries\x18\n" +
+	" \x03(\v2\x1f.offisims.pack.v1.ResourceEntryR\x0fresourceEntries\x12\x1f\n" +
+	"\vsource_hash\x18\v \x01(\tR\n" +
+	"sourceHash\x12\x1f\n" +
+	"\vcompiled_at\x18\f \x01(\tR\n" +
+	"compiledAt\"\xe6\x02\n" +
 	"\x04Pack\x12:\n" +
 	"\bmanifest\x18\x01 \x01(\v2\x1e.offisims.pack.v1.PackManifestR\bmanifest\x12?\n" +
 	"\btilesets\x18\x02 \x03(\v2#.offisims.pack.v1.TilesetDefinitionR\btilesets\x12A\n" +
@@ -1269,7 +1495,7 @@ func file_offisims_pack_v1_pack_proto_rawDescGZIP() []byte {
 }
 
 var file_offisims_pack_v1_pack_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_offisims_pack_v1_pack_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_offisims_pack_v1_pack_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_offisims_pack_v1_pack_proto_goTypes = []any{
 	(PlacementLayer)(0),       // 0: offisims.pack.v1.PlacementLayer
 	(*TilesetDefinition)(nil), // 1: offisims.pack.v1.TilesetDefinition
@@ -1283,8 +1509,11 @@ var file_offisims_pack_v1_pack_proto_goTypes = []any{
 	(*Resource)(nil),          // 9: offisims.pack.v1.Resource
 	(*MaskCut)(nil),           // 10: offisims.pack.v1.MaskCut
 	(*Mask)(nil),              // 11: offisims.pack.v1.Mask
-	(*PackManifest)(nil),      // 12: offisims.pack.v1.PackManifest
-	(*Pack)(nil),              // 13: offisims.pack.v1.Pack
+	(*TilesetEntry)(nil),      // 12: offisims.pack.v1.TilesetEntry
+	(*RoomEntry)(nil),         // 13: offisims.pack.v1.RoomEntry
+	(*ResourceEntry)(nil),     // 14: offisims.pack.v1.ResourceEntry
+	(*PackManifest)(nil),      // 15: offisims.pack.v1.PackManifest
+	(*Pack)(nil),              // 16: offisims.pack.v1.Pack
 }
 var file_offisims_pack_v1_pack_proto_depIdxs = []int32{
 	2,  // 0: offisims.pack.v1.CompositePart.region:type_name -> offisims.pack.v1.TilesetRegion
@@ -1295,17 +1524,20 @@ var file_offisims_pack_v1_pack_proto_depIdxs = []int32{
 	6,  // 5: offisims.pack.v1.RoomDefinition.placements:type_name -> offisims.pack.v1.TexturePlacement
 	8,  // 6: offisims.pack.v1.Resource.frames:type_name -> offisims.pack.v1.ResourceFrame
 	10, // 7: offisims.pack.v1.Mask.cuts:type_name -> offisims.pack.v1.MaskCut
-	12, // 8: offisims.pack.v1.Pack.manifest:type_name -> offisims.pack.v1.PackManifest
-	1,  // 9: offisims.pack.v1.Pack.tilesets:type_name -> offisims.pack.v1.TilesetDefinition
-	4,  // 10: offisims.pack.v1.Pack.composites:type_name -> offisims.pack.v1.CompositeObject
-	7,  // 11: offisims.pack.v1.Pack.rooms:type_name -> offisims.pack.v1.RoomDefinition
-	9,  // 12: offisims.pack.v1.Pack.resources:type_name -> offisims.pack.v1.Resource
-	11, // 13: offisims.pack.v1.Pack.masks:type_name -> offisims.pack.v1.Mask
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	12, // 8: offisims.pack.v1.PackManifest.tileset_entries:type_name -> offisims.pack.v1.TilesetEntry
+	13, // 9: offisims.pack.v1.PackManifest.room_entries:type_name -> offisims.pack.v1.RoomEntry
+	14, // 10: offisims.pack.v1.PackManifest.resource_entries:type_name -> offisims.pack.v1.ResourceEntry
+	15, // 11: offisims.pack.v1.Pack.manifest:type_name -> offisims.pack.v1.PackManifest
+	1,  // 12: offisims.pack.v1.Pack.tilesets:type_name -> offisims.pack.v1.TilesetDefinition
+	4,  // 13: offisims.pack.v1.Pack.composites:type_name -> offisims.pack.v1.CompositeObject
+	7,  // 14: offisims.pack.v1.Pack.rooms:type_name -> offisims.pack.v1.RoomDefinition
+	9,  // 15: offisims.pack.v1.Pack.resources:type_name -> offisims.pack.v1.Resource
+	11, // 16: offisims.pack.v1.Pack.masks:type_name -> offisims.pack.v1.Mask
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_offisims_pack_v1_pack_proto_init() }
@@ -1319,7 +1551,7 @@ func file_offisims_pack_v1_pack_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_offisims_pack_v1_pack_proto_rawDesc), len(file_offisims_pack_v1_pack_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -371,15 +371,15 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
     newX = Math.max(0, Math.min(roomWidth - anchorSize.w, newX))
     newY = Math.max(0, Math.min(roomHeight - anchorSize.h, newY))
 
-    const dx = newX - anchor.gridX
-    const dy = newY - anchor.gridY
+    const dx = newX - (anchor.gridX || 0)
+    const dy = newY - (anchor.gridY || 0)
     if (dx === 0 && dy === 0) return
 
     const newPlacements = placements.map((p, i) => {
       if (!selectedPlacements.has(i)) return p
       const size = getPlacementSize(p, getComposite) ?? { w: 1, h: 1 }
-      let gx = p.gridX + dx
-      let gy = p.gridY + dy
+      let gx = (p.gridX || 0) + dx
+      let gy = (p.gridY || 0) + dy
       gx = Math.max(0, Math.min(roomWidth - size.w, gx))
       gy = Math.max(0, Math.min(roomHeight - size.h, gy))
       return { ...p, gridX: gx, gridY: gy }
@@ -450,7 +450,7 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
     const newPlacements = placements.filter((p) => {
       const size = getPlacementSize(p, getComposite)
       if (!size) return false
-      return p.gridX + size.w <= newW && p.gridY + size.h <= newH
+      return (p.gridX || 0) + size.w <= newW && (p.gridY || 0) + size.h <= newH
     })
 
     set({
@@ -477,7 +477,11 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
       roomHeight: room.height,
       walkability: [...room.walkability],
       doors: room.doors.map((d) => ({ ...d })),
-      placements: room.placements.map((p) => ({ ...p })),
+      placements: room.placements.map((p) => ({
+        ...p,
+        gridX: p.gridX || 0,
+        gridY: p.gridY || 0,
+      })),
       doorIdCounter: maxDoorNum + 1,
       editingRoomName: room.name,
       selectedDoorId: null,
@@ -615,7 +619,7 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
       const p = placements[i]
       const size = getPlacementSize(p, getComposite)
       if (!size) continue
-      if (col >= p.gridX && col < p.gridX + size.w && row >= p.gridY && row < p.gridY + size.h) {
+      if (col >= (p.gridX || 0) && col < (p.gridX || 0) + size.w && row >= (p.gridY || 0) && row < (p.gridY || 0) + size.h) {
         indices.push(i)
       }
     }
@@ -624,10 +628,10 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
 
   getBrushSize: (brush, getComposite) => {
     if (brush.type === 'region') {
-      return { w: brush.region.w, h: brush.region.h }
+      return { w: brush.region.w || 1, h: brush.region.h || 1 }
     }
     const comp = getComposite(brush.compositeId)
-    return comp ? { w: comp.displayWidth, h: comp.displayHeight } : { w: 1, h: 1 }
+    return comp ? { w: comp.displayWidth || 1, h: comp.displayHeight || 1 } : { w: 1, h: 1 }
   },
 }))
 

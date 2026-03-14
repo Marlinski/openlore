@@ -57,8 +57,8 @@ export function CutPreviews({ tileset }: CutPreviewsProps) {
     const img = getCachedImage(tileset.id)
     if (!img) return
 
-    const tw = tileset.tileWidth
-    const th = tileset.tileHeight
+    const tw = tileset.tileWidth || 1
+    const th = tileset.tileHeight || 1
 
     // Initial draw
     for (const cut of animatedCuts) {
@@ -87,8 +87,8 @@ export function CutPreviews({ tileset }: CutPreviewsProps) {
   // Size canvases when cuts change
   useEffect(() => {
     if (!tileset) return
-    const tw = tileset.tileWidth
-    const th = tileset.tileHeight
+    const tw = tileset.tileWidth || 1
+    const th = tileset.tileHeight || 1
 
     for (const cut of animatedCuts) {
       const cvs = canvasRefs.current.get(cut.id)
