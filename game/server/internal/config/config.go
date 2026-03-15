@@ -13,7 +13,8 @@ type Config struct {
 	DefaultPack string
 
 	// Derived paths
-	PacksDir string // {DataDir}/packs/
+	PacksDir    string // {DataDir}/packs/
+	ChannelsDir string // {DataDir}/channels/
 }
 
 func Load() *Config {
@@ -29,6 +30,7 @@ func Load() *Config {
 		DefaultRoom: *defaultRoom,
 		DefaultPack: *defaultPack,
 		PacksDir:    filepath.Join(*dataDir, "packs"),
+		ChannelsDir: filepath.Join(*dataDir, "channels"),
 	}
 }
 

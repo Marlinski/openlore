@@ -43,11 +43,20 @@ export class Connection {
   /**
    * Connect to the game server.
    * The URL defaults to the same host (works with Vite proxy).
+   *
+   * @param channel  IRC-style channel name, e.g. "#lobby". Appended as
+   *                 `?channel=<name>` so the server routes to the right world.
    */
-  connect(url?: string): void {
-    this._url =
-      url ||
+  connect(channel?: string): void {
+    const base =
       `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
+
+    if (channel) {
+      const params = new URLSearchParams({ channel });
+      this._url = `${base}?${params.toString()}`;
+    } else {
+      this._url = base;
+    }
 
     this.autoReconnect = true;
     this.doConnect();

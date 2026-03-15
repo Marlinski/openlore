@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/offisims/game/internal/channelstore"
 	"github.com/offisims/game/internal/config"
 	"github.com/offisims/game/internal/game"
 	"github.com/offisims/game/internal/packstore"
@@ -14,14 +15,15 @@ import (
 
 // Handlers holds all injected dependencies for HTTP handlers.
 type Handlers struct {
-	cfg     *config.Config
-	packs   *packstore.Store
-	worlds  *game.Store
-	players *game.PlayerStore
+	cfg      *config.Config
+	packs    *packstore.Store
+	worlds   *game.Store
+	players  *game.PlayerStore
+	channels channelstore.Store
 }
 
-func NewHandlers(cfg *config.Config, packs *packstore.Store, worlds *game.Store, players *game.PlayerStore) *Handlers {
-	return &Handlers{cfg: cfg, packs: packs, worlds: worlds, players: players}
+func NewHandlers(cfg *config.Config, packs *packstore.Store, worlds *game.Store, players *game.PlayerStore, channels channelstore.Store) *Handlers {
+	return &Handlers{cfg: cfg, packs: packs, worlds: worlds, players: players, channels: channels}
 }
 
 // NewRouter wires all HTTP handlers onto a chi router.
@@ -38,19 +40,20 @@ func NewRouter(cfg *config.Config, h *Handlers) http.Handler {
 			"ok":       true,
 			"phase":    5,
 			"packs":    h.packs.Count(),
-			"sessions": h.worlds.Count(),
+			"channels": h.worlds.Count(),
 		})
 	})
 
-	// ── Sessions (backed by game.Store of Worlds) ────────────────────────
-	r.Get("/api/sessions", h.listSessions)
-	r.Post("/api/sessions", h.createSession)
-	r.Delete("/api/sessions/{id}", h.deleteSession)
+	// ── Channels (backed by game.Store of Worlds) ────────────────────────
+	// Channel name in the URL path omits the "#" prefix (e.g. /api/channels/lobby → "#lobby").
+	r.Get("/api/channels", h.listChannels)
+	r.Post("/api/channels", h.createChannel)
+	r.Delete("/api/channels/{channel}", h.deleteChannel)
 
-	// ── Session-scoped game data ─────────────────────────────────────────
-	r.Get("/api/sessions/{id}/game-data", h.getSessionGameData)
-	r.Get("/api/sessions/{id}/rooms", h.listSessionRooms)
-	r.Get("/api/sessions/{id}/rooms/{name}", h.getSessionRoom)
+	// ── Channel-scoped game data ─────────────────────────────────────────
+	r.Get("/api/channels/{channel}/game-data", h.getChannelGameData)
+	r.Get("/api/channels/{channel}/rooms", h.listChannelRooms)
+	r.Get("/api/channels/{channel}/rooms/{name}", h.getChannelRoom)
 
 	// ── Player ────────────────────────────────────────────────────────────
 	r.Post("/api/register", h.registerPlayer)
@@ -104,8 +107,8 @@ func (h *Handlers) registerPlayer(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// getSession validates a player token and returns player info + the default world metadata.
-// GET /api/session?token=<token> → { token, name, characterId, session }
+// getSession validates a player token and returns player info + the default channel metadata.
+// GET /api/session?token=<token> → { token, name, characterId, channel }
 func (h *Handlers) getSession(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
@@ -125,9 +128,9 @@ func (h *Handlers) getSession(w http.ResponseWriter, r *http.Request) {
 		"characterId": rec.CharacterID,
 	}
 
-	// Include default world metadata if available
+	// Include default channel metadata if available
 	if dw := h.worlds.Default(); dw != nil {
-		result["session"] = dw.Meta()
+		result["channel"] = dw.Meta()
 	}
 
 	writeJSON(w, http.StatusOK, result)
@@ -136,28 +139,37 @@ func (h *Handlers) getSession(w http.ResponseWriter, r *http.Request) {
 // ─── WebSocket ───────────────────────────────────────────────────────────────
 
 // serveWS upgrades the connection to WebSocket and starts a read loop.
-// Reads ?session= query param to route to the correct world.
+// Reads ?channel= query param to route to the correct world.
 // Falls back to the single running world if no param is given.
 func (h *Handlers) serveWS(w http.ResponseWriter, r *http.Request) {
-	// Resolve the target world
-	sessionID := r.URL.Query().Get("session")
+	// Resolve the target world — try ?channel= first, then ?session= for compat
+	channelParam := r.URL.Query().Get("channel")
+	if channelParam == "" {
+		channelParam = r.URL.Query().Get("session")
+	}
+
 	var world *game.World
-	if sessionID != "" {
-		world = h.worlds.Get(sessionID)
+	if channelParam != "" {
+		// Normalise: add # prefix if missing
+		ch := channelParam
+		if len(ch) > 0 && ch[0] != '#' {
+			ch = "#" + ch
+		}
+		world = h.worlds.Get(ch)
 		if world == nil {
-			http.Error(w, "session not found", http.StatusNotFound)
+			http.Error(w, "channel not found", http.StatusNotFound)
 			return
 		}
 	} else {
 		world = h.worlds.Default()
 		if world == nil {
-			http.Error(w, "no session specified and no default session available", http.StatusBadRequest)
+			http.Error(w, "no channel specified and no default channel available", http.StatusBadRequest)
 			return
 		}
 	}
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		OriginPatterns: []string{"localhost:3002", "localhost:*"},
+		OriginPatterns: []string{"*"},
 	})
 	if err != nil {
 		return

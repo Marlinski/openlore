@@ -200,6 +200,7 @@ message PackManifest {
   repeated ResourceEntry resource_entries = 10;
   string source_hash = 11;   // SHA-256 content hash of workspace at compile time
   string compiled_at = 12;   // ISO-8601 timestamp of compilation
+  repeated string tags = 13; // Discoverable tags for filtering/browsing in game
 }
 
 // Pack is the top-level container — a bundle of rooms, resources,

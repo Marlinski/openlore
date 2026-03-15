@@ -36,12 +36,17 @@ export interface SelectedAvatar {
 
 // ─── App-level state (screens, boot) ─────────────────────────────
 
-export type AppScreen = "join" | "game";
+export type AppScreen = "join" | "channels" | "game";
 
 export const screen = signal<AppScreen>("join");
 export const joinStatus = signal("Loading...");
 export const joinReady = signal(false);
 export const gameData = signal<Pack | null>(null);
+
+// ─── Channel state ────────────────────────────────────────────────
+
+/** The channel the player has joined (e.g. "#lobby"). Set before entering game screen. */
+export const currentChannel = signal<string | null>(null);
 
 // ─── Connection state ─────────────────────────────────────────────
 

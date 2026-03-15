@@ -7,12 +7,14 @@ import (
 	pack "github.com/offisims/shared/pack"
 )
 
-// Store manages the set of running Worlds. Thread-safe via RWMutex.
-// Replaces session.Store — every "session" is now a World.
+// Store manages the set of running Worlds keyed by channel name (e.g. "#lobby").
+// Thread-safe via RWMutex.
+//
+// Each channel maps to exactly one World. The channel name is the primary key,
+// matching the IRC model where each game room = one IRC channel.
 type Store struct {
 	mu      sync.RWMutex
-	worlds  map[string]*World
-	nextID  int
+	worlds  map[string]*World // channel name → World
 	chat    ChatProvider
 	players *PlayerStore
 }
@@ -27,53 +29,37 @@ func NewStore(chat ChatProvider, players *PlayerStore) *Store {
 	}
 }
 
-// Create starts a new World backed by the given pack and launches its Run loop.
-// If name is empty, a default name is derived from the pack manifest.
-func (s *Store) Create(id, name, packID string, p *pack.Pack) (*World, error) {
+// Create starts a new World for the given channel, backed by the given pack,
+// and launches its Run loop. The channel name (e.g. "#lobby") is the primary key.
+func (s *Store) Create(channel, packID string, p *pack.Pack) (*World, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.worlds[id]; exists {
-		return nil, fmt.Errorf("world %q already exists", id)
+	if _, exists := s.worlds[channel]; exists {
+		return nil, fmt.Errorf("channel %q already exists", channel)
 	}
 
-	if name == "" {
-		if p.Manifest != nil && p.Manifest.Name != "" {
-			name = p.Manifest.Name
-		} else {
-			name = packID
-		}
-	}
-
-	w := NewWorld(id, name, packID, p, s.chat, s.players)
-	s.worlds[id] = w
+	w := NewWorld(channel, packID, p, s.chat, s.players)
+	s.worlds[channel] = w
 
 	go w.Run()
 
 	return w, nil
 }
 
-// GenerateID returns the next unique world ID.
-func (s *Store) GenerateID() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.nextID++
-	return fmt.Sprintf("world-%d", s.nextID)
-}
-
-// Get returns a world by ID, or nil if not found.
-func (s *Store) Get(id string) *World {
+// Get returns a world by channel name, or nil if not found.
+func (s *Store) Get(channel string) *World {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.worlds[id]
+	return s.worlds[channel]
 }
 
 // List returns metadata for all running worlds.
-func (s *Store) List() []WorldMeta {
+func (s *Store) List() []ChannelMeta {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	result := make([]WorldMeta, 0, len(s.worlds))
+	result := make([]ChannelMeta, 0, len(s.worlds))
 	for _, w := range s.worlds {
 		result = append(result, w.Meta())
 	}
@@ -88,17 +74,17 @@ func (s *Store) Count() int {
 }
 
 // Stop shuts down a world and removes it from the store.
-func (s *Store) Stop(id string) error {
+func (s *Store) Stop(channel string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	w, ok := s.worlds[id]
+	w, ok := s.worlds[channel]
 	if !ok {
-		return fmt.Errorf("world %q not found", id)
+		return fmt.Errorf("channel %q not found", channel)
 	}
 
 	w.Stop()
-	delete(s.worlds, id)
+	delete(s.worlds, channel)
 	return nil
 }
 
@@ -107,14 +93,14 @@ func (s *Store) StopAll() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for id, w := range s.worlds {
+	for ch, w := range s.worlds {
 		w.Stop()
-		delete(s.worlds, id)
+		delete(s.worlds, ch)
 	}
 }
 
 // Default returns the single world if there is exactly one, or nil.
-// Supports the single-world shorthand: WS connects without ?session= param.
+// Supports the single-world shorthand: WS connects without ?channel= param.
 func (s *Store) Default() *World {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

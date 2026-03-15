@@ -233,26 +233,6 @@ html, body {
   pointer-events: none;
 }
 
-.hud-status {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.hud-status.connected {
-  background: rgba(74, 222, 128, 0.2);
-  color: #4ade80;
-}
-
-.hud-status.disconnected {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
 .hud-zoom {
   position: absolute;
   top: 8px;
@@ -293,6 +273,75 @@ html, body {
   min-width: 32px;
   text-align: center;
   user-select: none;
+}
+
+/* ─── Status bar (bottom of game screen) ─────── */
+
+.status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  background: rgba(12, 12, 22, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.status-bar-lights {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-bar-light {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-bar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-bar-dot.on {
+  background: #4ade80;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.6);
+}
+
+.status-bar-dot.off {
+  background: #555;
+}
+
+.status-bar-light-label {
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.status-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.status-bar-channel {
+  color: #a0c4ff;
+}
+
+.status-bar-room {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* ─── Character card (right panel) ──────────── */
@@ -660,4 +709,209 @@ html, body {
 .channel-panel-input:focus {
   border-color: #a0c4ff;
   background: rgba(0, 0, 0, 0.6);
+}
+
+/* ─── Channel browser ────────────────────────── */
+
+.channel-browser {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+  padding: 32px;
+}
+
+.channel-browser h1 {
+  font-size: 1.6rem;
+  color: #a0c4ff;
+  margin-bottom: 4px;
+}
+
+.channel-browser-error {
+  font-size: 0.85rem;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 4px;
+  padding: 8px 14px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.channel-browser-loading {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.channel-browser-empty {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.channel-browser-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.channel-browser-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.channel-browser-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.channel-browser-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.channel-browser-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.channel-browser-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.channel-browser-item-name {
+  font-size: 0.95rem;
+  color: #e0e0e0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-browser-item-pack {
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-browser-item-meta {
+  flex-shrink: 0;
+}
+
+.channel-browser-item-players {
+  font-size: 0.8rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.channel-browser-join-btn {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  background: #3a5a8a;
+  border: none;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.channel-browser-join-btn:hover {
+  background: #4a6a9a;
+}
+
+/* Create channel form */
+
+.channel-browser-create {
+  width: 100%;
+  max-width: 440px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
+}
+
+.channel-browser-create-title {
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.channel-browser-create-row {
+  display: flex;
+  gap: 8px;
+}
+
+.channel-browser-create-input {
+  flex: 1;
+  padding: 8px 10px;
+  background: #2a2a3e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  outline: none;
+  min-width: 0;
+}
+
+.channel-browser-create-input:focus {
+  border-color: #a0c4ff;
+}
+
+.channel-browser-create-input::placeholder {
+  color: #666;
+}
+
+.channel-browser-create-select {
+  width: 140px;
+  padding: 8px 10px;
+  background: #2a2a3e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.channel-browser-create-select:focus {
+  border-color: #a0c4ff;
+}
+
+.channel-browser-create-btn {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  background: #3a5a8a;
+  border: none;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.channel-browser-create-btn:hover:not(:disabled) {
+  background: #4a6a9a;
+}
+
+.channel-browser-create-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

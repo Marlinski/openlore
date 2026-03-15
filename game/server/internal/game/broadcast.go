@@ -65,7 +65,7 @@ func (w *World) sendToConn(connID string, msg any) {
 		return
 	}
 	if err := t.Send(msg); err != nil {
-		log.Printf("[World %s] send to %s failed: %v", w.ID, connID, err)
+		log.Printf("[World %s] send to %s failed: %v", w.Channel, connID, err)
 	}
 }
 
@@ -78,7 +78,7 @@ func (w *World) sendToAvatar(avatarID string, msg any) {
 	// Pre-marshal once for efficiency when there are multiple connections.
 	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("[World %s] marshal error for avatar %s: %v", w.ID, avatarID, err)
+		log.Printf("[World %s] marshal error for avatar %s: %v", w.Channel, avatarID, err)
 		return
 	}
 	for connID := range conns {
@@ -91,7 +91,7 @@ func (w *World) sendToAvatar(avatarID string, msg any) {
 		// so we wrap the raw JSON to avoid double-marshalling.
 		if err := t.Send(json.RawMessage(data)); err != nil {
 			log.Printf("[World %s] send to %s (avatar %s) failed: %v",
-				w.ID, connID, avatarID, err)
+				w.Channel, connID, avatarID, err)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func (w *World) broadcastToRoom(roomName string, msg any, exc *exclusion) {
 	// Pre-marshal once for the whole room.
 	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("[World %s] marshal error for room broadcast: %v", w.ID, err)
+		log.Printf("[World %s] marshal error for room broadcast: %v", w.Channel, err)
 		return
 	}
 	raw := json.RawMessage(data)
@@ -132,7 +132,7 @@ func (w *World) broadcastToRoom(roomName string, msg any, exc *exclusion) {
 				continue
 			}
 			if err := t.Send(raw); err != nil {
-				log.Printf("[World %s] broadcast to %s failed: %v", w.ID, connID, err)
+				log.Printf("[World %s] broadcast to %s failed: %v", w.Channel, connID, err)
 			}
 		}
 	}
@@ -178,7 +178,7 @@ func (w *World) handleGraceExpiry(avatarID string) {
 	}
 
 	log.Printf("[World %s] %s (%s) grace period expired, removing",
-		w.ID, avatar.Name, avatarID)
+		w.Channel, avatar.Name, avatarID)
 
 	w.removeAvatar(avatarID)
 }

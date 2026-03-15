@@ -2,12 +2,14 @@ package api
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/offisims/shared/pack"
@@ -220,4 +222,124 @@ func writeOffpack(path string, p *pack.Pack) error {
 	}
 
 	return os.Rename(tmp, path)
+}
+
+// publishRequest is the JSON body for POST /api/pack/publish.
+type publishRequest struct {
+	Name string   `json:"name"` // pack name on the game server (used as pack ID)
+	Tags []string `json:"tags"` // optional discoverable tags
+}
+
+// packPublish forwards the latest .offpack to the configured game server.
+// The request body provides the pack name (used as the ID on the game server)
+// and optional tags. Tags are injected into the .offpack manifest before sending.
+//
+// POST /{workspaceId}/api/pack/publish  body: {"name":"my-pack","tags":["office","modern"]}
+func (h *Handlers) packPublish(w http.ResponseWriter, r *http.Request) {
+	if h.cfg.GameServerURL == "" {
+		writeError(w, http.StatusServiceUnavailable, "NO_GAME_SERVER", "game server URL not configured")
+		return
+	}
+
+	// Parse request body
+	var req publishRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "invalid JSON body: "+err.Error())
+		return
+	}
+	r.Body.Close()
+
+	req.Name = strings.TrimSpace(req.Name)
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "name is required")
+		return
+	}
+
+	// Sanitise name → pack ID (lowercase, hyphens, no spaces)
+	packID := sanitizePackID(req.Name)
+
+	wsID := ownerID(r)
+	packPath := filepath.Join(h.cfg.WorkspaceDir(wsID), "packs", "latest.offpack")
+
+	// Read the .offpack, inject tags into the manifest, re-write as a temp file
+	p, err := pack.ReadZip(packPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			writeError(w, http.StatusNotFound, "NO_PACK", "no pack has been built yet — build first")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "READ_FAILED", err.Error())
+		return
+	}
+
+	// Update manifest with publish metadata
+	p.Manifest.Name = req.Name
+	p.Manifest.Id = packID
+	p.Manifest.Tags = req.Tags
+
+	// Write to temp .offpack with updated manifest
+	tmp, err := os.CreateTemp("", "publish-*.offpack")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "TEMP_FAILED", err.Error())
+		return
+	}
+	tmpPath := tmp.Name()
+	tmp.Close()
+	defer os.Remove(tmpPath)
+
+	if err := writeOffpack(tmpPath, p); err != nil {
+		writeError(w, http.StatusInternalServerError, "REWRITE_FAILED", err.Error())
+		return
+	}
+
+	// POST to game server
+	f, err := os.Open(tmpPath)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "OPEN_FAILED", err.Error())
+		return
+	}
+	defer f.Close()
+
+	installURL := fmt.Sprintf("%s/api/packs/%s/install", strings.TrimRight(h.cfg.GameServerURL, "/"), packID)
+	log.Printf("publish: posting pack %q to %s", packID, installURL)
+
+	resp, err := http.Post(installURL, "application/octet-stream", f)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "GAME_SERVER_ERROR", "failed to reach game server: "+err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		writeError(w, http.StatusBadGateway, "INSTALL_FAILED",
+			fmt.Sprintf("game server returned %d: %s", resp.StatusCode, string(body)))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"packId": packID,
+		"name":   req.Name,
+		"tags":   req.Tags,
+	})
+}
+
+// sanitizePackID converts a human-friendly name into a URL-safe pack ID.
+func sanitizePackID(name string) string {
+	s := strings.ToLower(strings.TrimSpace(name))
+	s = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' {
+			return r
+		}
+		if r == ' ' || r == '_' {
+			return '-'
+		}
+		return -1 // drop
+	}, s)
+	// Collapse multiple hyphens
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+	return strings.Trim(s, "-")
 }

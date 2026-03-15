@@ -4,6 +4,7 @@ import { requireWorkspaceId } from '../api/client'
 // ─── Types ──────────────────────────────────────────────────────────
 
 export type PackBuildStatus = 'idle' | 'building' | 'done' | 'error'
+export type PublishStatus = 'idle' | 'publishing' | 'done' | 'error'
 
 export interface PackInfo {
   exists: boolean
@@ -22,6 +23,13 @@ export interface PackBuildResult {
   sourceHash: string
 }
 
+export interface PublishResult {
+  ok: boolean
+  packId: string
+  name: string
+  tags: string[]
+}
+
 interface PackState {
   // Build state
   status: PackBuildStatus
@@ -38,11 +46,20 @@ interface PackState {
   // Derived: whether the pack is stale (workspace changed since last compile)
   isStale: boolean
 
+  // Publish state
+  publishDialogOpen: boolean
+  publishStatus: PublishStatus
+  publishError: string | null
+  publishResult: PublishResult | null
+
   // Actions
   startBuild: () => void
   fetchStatus: () => Promise<void>
   openPanel: () => void
   closePanel: () => void
+  openPublishDialog: () => void
+  closePublishDialog: () => void
+  publish: (name: string, tags: string[]) => Promise<void>
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -66,8 +83,38 @@ export const usePackStore = create<PackState>()((set, get) => ({
   panelOpen: false,
   isStale: false,
 
+  // Publish state
+  publishDialogOpen: false,
+  publishStatus: 'idle',
+  publishError: null,
+  publishResult: null,
+
   openPanel: () => set({ panelOpen: true }),
   closePanel: () => set({ panelOpen: false }),
+
+  openPublishDialog: () => set({ publishDialogOpen: true, publishStatus: 'idle', publishError: null, publishResult: null }),
+  closePublishDialog: () => set({ publishDialogOpen: false, publishStatus: 'idle', publishError: null, publishResult: null }),
+
+  publish: async (name: string, tags: string[]) => {
+    set({ publishStatus: 'publishing', publishError: null, publishResult: null })
+    try {
+      const wsId = requireWorkspaceId()
+      const res = await fetch(`/${wsId}/api/pack/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, tags }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: res.statusText }))
+        set({ publishStatus: 'error', publishError: body.error || `HTTP ${res.status}` })
+        return
+      }
+      const result = await res.json() as PublishResult
+      set({ publishStatus: 'done', publishResult: result })
+    } catch (err: any) {
+      set({ publishStatus: 'error', publishError: err.message || 'Network error' })
+    }
+  },
 
   fetchStatus: async () => {
     try {

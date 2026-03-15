@@ -27,6 +27,8 @@ import {
 interface GameScreenProps {
   token: string;
   gameData: Pack;
+  /** IRC-style channel name, e.g. "#lobby" */
+  channel: string;
   /** Called when the session is invalidated (server rejected token) */
   onSessionInvalid: () => void;
 }
@@ -149,7 +151,7 @@ export function GameScreen(props: GameScreenProps) {
       inputSig.value = inp;
       sceneSig.value = scn;
 
-      conn.connect();
+      conn.connect(props.channel);
     })();
 
     return () => {

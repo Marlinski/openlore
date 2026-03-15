@@ -1,7 +1,26 @@
 package game
 
 // ChatProvider is the chat backend interface.
-// V1 is in-memory; future versions may use IRC.
+//
+// V1 uses MemoryChatProvider (below) — a simple in-process implementation.
+//
+// In the target architecture, IRC is the source of truth for all chat.
+// An IRCChatProvider would implement this interface by mapping each method
+// to IRC protocol operations:
+//
+//   - CreateChannel / DestroyChannel → managed by the IRC server, not the game.
+//     IRCChatProvider may no-op here (channels are created when `@offisim` JOINs).
+//   - Join / Leave → PRIVMSG or internal tracking only; actual IRC JOIN/PART
+//     is handled by the player's own IRC connection, not the game server.
+//   - Send → PRIVMSG #channel :text  (sent by `@offisim` relaying from the game,
+//     or the player's own IRC client directly).
+//   - OnMessage → listen for PRIVMSG events on channels `@offisim` has joined.
+//   - GetMembers → IRC NAMES #channel or cached WHO list.
+//
+// The game server (@offisim) is a privileged IRC service user. Players connect
+// to IRC independently via WebSocket (aircd). The game server only needs to
+// observe messages and relay visual events — it does NOT own channel lifecycle,
+// presence, modes, passwords, or invites. Those are IRC's domain.
 type ChatProvider interface {
 	CreateChannel(name string)
 	DestroyChannel(name string)

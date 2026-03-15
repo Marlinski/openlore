@@ -134,6 +134,7 @@ func NewRouter(cfg *config.Config, h *Handlers, frontendFS fs.FS) http.Handler {
 		ws.Post("/api/pack/build", h.packBuild)
 		ws.Get("/api/pack/status", h.packStatus)
 		ws.Get("/api/pack/download", h.packDownload)
+		ws.Post("/api/pack/publish", h.packPublish)
 
 		// ── RAG ──────────────────────────────────────────────────────
 		ws.Get("/api/search", h.search)

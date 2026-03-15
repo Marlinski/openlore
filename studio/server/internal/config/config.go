@@ -20,15 +20,24 @@ type Config struct {
 
 	// EmbedderModel is the model identifier sent in embedding requests.
 	EmbedderModel string
+
+	// GameServerURL is the base URL of the game server for publishing packs.
+	// (e.g. "http://localhost:3001"). Empty = publish disabled.
+	GameServerURL string
 }
 
 // New creates a Config from a studio root directory.
 func New(port int, studioDir string) *Config {
+	gameURL := os.Getenv("GAME_SERVER_URL")
+	if gameURL == "" {
+		gameURL = "https://app.openlore.xyz"
+	}
 	return &Config{
 		Port:          port,
 		StudioDir:     studioDir,
 		EmbedderURL:   "http://localhost:7997",
 		EmbedderModel: "openai/clip-vit-base-patch32",
+		GameServerURL: gameURL,
 	}
 }
 

@@ -38,10 +38,10 @@ func (w *World) reconnectAvatar(connID, avatarID string, avatar *Avatar) {
 		timer.Stop()
 		delete(w.graceTimers, avatarID)
 		log.Printf("[World %s] %s (%s) reconnected within grace period",
-			w.ID, avatar.Name, avatarID)
+			w.Channel, avatar.Name, avatarID)
 	} else {
 		log.Printf("[World %s] %s (%s) added connection (multi-tab)",
-			w.ID, avatar.Name, avatarID)
+			w.Channel, avatar.Name, avatarID)
 	}
 
 	w.addConn(connID, avatarID)
@@ -83,6 +83,7 @@ func (w *World) spawnAvatar(connID, token string) {
 	w.tokenAvatars[token] = avatar.ID
 	w.addConn(connID, avatar.ID)
 	room.AvatarIDs[avatar.ID] = struct{}{}
+	w.players_.Add(1)
 
 	w.chat.Join(w.defaultRoom, avatar.ID)
 	w.chat.Join(globalChannel, avatar.ID)
@@ -102,7 +103,7 @@ func (w *World) spawnAvatar(connID, token string) {
 	}, excludeAvatar(avatar.ID))
 
 	log.Printf("[World %s] %s (%s) joined room %q",
-		w.ID, avatar.Name, avatar.ID, w.defaultRoom)
+		w.Channel, avatar.Name, avatar.ID, w.defaultRoom)
 }
 
 // handleDisconnect handles a WebSocket close.
@@ -122,7 +123,7 @@ func (w *World) handleDisconnect(connID string) {
 
 	if conns := w.avatarConns[avatarID]; len(conns) > 0 {
 		log.Printf("[World %s] %s (%s) lost a connection, %d remaining",
-			w.ID, avatar.Name, avatarID, len(conns))
+			w.Channel, avatar.Name, avatarID, len(conns))
 		return
 	}
 
@@ -140,7 +141,7 @@ func (w *World) handleDisconnect(connID string) {
 	}, nil)
 
 	log.Printf("[World %s] %s (%s) disconnected, grace period %ds",
-		w.ID, avatar.Name, avatarID, disconnectGraceMS/1000)
+		w.Channel, avatar.Name, avatarID, disconnectGraceMS/1000)
 
 	w.startGraceTimer(avatarID)
 }
@@ -194,8 +195,9 @@ func (w *World) removeAvatar(avatarID string) {
 	}
 	delete(w.avatarConns, avatarID)
 	delete(w.avatars, avatarID)
+	w.players_.Add(-1)
 
-	log.Printf("[World %s] %s (%s) removed", w.ID, avatar.Name, avatarID)
+	log.Printf("[World %s] %s (%s) removed", w.Channel, avatar.Name, avatarID)
 }
 
 // ─── Position updates ────────────────────────────────────────────
@@ -341,7 +343,7 @@ func (w *World) handleUseDoor(connID, doorID string) {
 		Avatar: avatar.toSnapshot(),
 	}, excludeAvatar(avatarID))
 
-	log.Printf("[World %s] %s transitioned to %q", w.ID, avatar.Name, targetRoomName)
+	log.Printf("[World %s] %s transitioned to %q", w.Channel, avatar.Name, targetRoomName)
 }
 
 // ─── Chat ────────────────────────────────────────────────────────

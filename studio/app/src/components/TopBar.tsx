@@ -3,6 +3,7 @@ import { useUIStore, TAB_LIST } from '../store/ui'
 import type { TabId } from '../store/ui'
 import { usePackStore } from '../store/pack'
 import { AgentToggle } from './agent/AgentToggle'
+import { PublishDialog } from './PublishDialog'
 import { requireWorkspaceId } from '../api/client'
 
 function formatSize(bytes: number): string {
@@ -30,6 +31,7 @@ export function TopBar() {
   const isStale = usePackStore((s) => s.isStale)
   const startBuild = usePackStore((s) => s.startBuild)
   const fetchStatus = usePackStore((s) => s.fetchStatus)
+  const openPublishDialog = usePackStore((s) => s.openPublishDialog)
 
   // Check for existing pack on mount and on tab visibility change
   useEffect(() => {
@@ -92,8 +94,21 @@ export function TopBar() {
             </svg>
           </button>
         </div>
+        <button
+          class="pack-publish-btn"
+          onClick={openPublishDialog}
+          disabled={!hasDownload || isBuilding}
+          title={hasDownload ? 'Publish pack to game server' : 'Build a pack first'}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 10V2M4.5 5 8 1.5 11.5 5" />
+            <path d="M2 13h12" />
+          </svg>
+          PUBLISH
+        </button>
         <AgentToggle />
       </div>
+      <PublishDialog />
     </header>
   )
 }

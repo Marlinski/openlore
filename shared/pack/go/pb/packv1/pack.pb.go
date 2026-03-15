@@ -1152,6 +1152,7 @@ type PackManifest struct {
 	ResourceEntries []*ResourceEntry       `protobuf:"bytes,10,rep,name=resource_entries,json=resourceEntries,proto3" json:"resource_entries,omitempty"`
 	SourceHash      string                 `protobuf:"bytes,11,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"` // SHA-256 content hash of workspace at compile time
 	CompiledAt      string                 `protobuf:"bytes,12,opt,name=compiled_at,json=compiledAt,proto3" json:"compiled_at,omitempty"` // ISO-8601 timestamp of compilation
+	Tags            []string               `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty"`                               // Discoverable tags for filtering/browsing in game
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1268,6 +1269,13 @@ func (x *PackManifest) GetCompiledAt() string {
 		return x.CompiledAt
 	}
 	return ""
+}
+
+func (x *PackManifest) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
 }
 
 // Pack is the top-level container — a bundle of rooms, resources,
@@ -1450,7 +1458,7 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\rResourceEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04tags\x18\x03 \x03(\tR\x04tags\"\xd1\x03\n" +
+	"\x04tags\x18\x03 \x03(\tR\x04tags\"\xe5\x03\n" +
 	"\fPackManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1466,7 +1474,8 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\vsource_hash\x18\v \x01(\tR\n" +
 	"sourceHash\x12\x1f\n" +
 	"\vcompiled_at\x18\f \x01(\tR\n" +
-	"compiledAt\"\xe6\x02\n" +
+	"compiledAt\x12\x12\n" +
+	"\x04tags\x18\r \x03(\tR\x04tags\"\xe6\x02\n" +
 	"\x04Pack\x12:\n" +
 	"\bmanifest\x18\x01 \x01(\v2\x1e.offisims.pack.v1.PackManifestR\bmanifest\x12?\n" +
 	"\btilesets\x18\x02 \x03(\v2#.offisims.pack.v1.TilesetDefinitionR\btilesets\x12A\n" +

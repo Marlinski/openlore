@@ -2,34 +2,46 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/offisims/game/internal/channelstore"
 	pb "github.com/offisims/shared/pack/pb/packv1"
 	"google.golang.org/protobuf/proto"
 )
 
-// ── Session-scoped endpoints (backed by game.Store of Worlds) ────────────────
+// ── Channel endpoints (backed by game.Store of Worlds) ───────────────────────
 
-// listSessions returns all active worlds (still called "sessions" in the API).
-// GET /api/sessions → []WorldMeta
-func (h *Handlers) listSessions(w http.ResponseWriter, r *http.Request) {
+// listChannels returns all active channels.
+// GET /api/channels → []ChannelMeta
+func (h *Handlers) listChannels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.worlds.List())
 }
 
-// createSession starts a new world backed by a pack.
-// POST /api/sessions  body: { packId, name? } → WorldMeta
-func (h *Handlers) createSession(w http.ResponseWriter, r *http.Request) {
+// createChannel starts a new world for a channel, backed by a pack.
+// POST /api/channels  body: { channel, packId } → ChannelMeta
+func (h *Handlers) createChannel(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		PackID string `json:"packId"`
-		Name   string `json:"name"`
+		Channel string `json:"channel"`
+		PackID  string `json:"packId"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "invalid JSON: "+err.Error())
 		return
 	}
+	if req.Channel == "" {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "channel is required")
+		return
+	}
 	if req.PackID == "" {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "packId is required")
 		return
+	}
+
+	// Normalise: ensure channel name starts with #
+	channel := req.Channel
+	if !strings.HasPrefix(channel, "#") {
+		channel = "#" + channel
 	}
 
 	// Verify the pack exists
@@ -39,48 +51,56 @@ func (h *Handlers) createSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := h.worlds.GenerateID()
-	world, err := h.worlds.Create(id, req.Name, req.PackID, p)
+	world, err := h.worlds.Create(channel, req.PackID, p)
 	if err != nil {
-		writeError(w, http.StatusConflict, "SESSION_EXISTS", err.Error())
+		writeError(w, http.StatusConflict, "CHANNEL_EXISTS", err.Error())
+		return
+	}
+
+	// Persist to disk so it survives restarts
+	if err := h.channels.Save(channelstore.NewChannelConfig(channel, req.PackID)); err != nil {
+		// World is running but config failed to save — log but don't fail the request
+		writeJSON(w, http.StatusCreated, world.Meta())
 		return
 	}
 
 	writeJSON(w, http.StatusCreated, world.Meta())
 }
 
-// deleteSession stops a running world.
-// DELETE /api/sessions/{id} → 204
-func (h *Handlers) deleteSession(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	if err := h.worlds.Stop(id); err != nil {
+// deleteChannel stops a running channel world and removes its persisted config.
+// DELETE /api/channels/{channel} → 204
+func (h *Handlers) deleteChannel(w http.ResponseWriter, r *http.Request) {
+	channel := "#" + chi.URLParam(r, "channel")
+	if err := h.worlds.Stop(channel); err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", err.Error())
 		return
 	}
+	// Remove persisted config (best-effort)
+	_ = h.channels.Remove(channel)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ── Session-scoped game data ─────────────────────────────────────────────────
+// ── Channel-scoped game data ─────────────────────────────────────────────────
 
-// getSessionGameData returns the full Pack from a world's pack as protojson.
-// GET /api/sessions/{id}/game-data → Pack
-func (h *Handlers) getSessionGameData(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	world := h.worlds.Get(id)
+// getChannelGameData returns the full Pack from a channel's world as protojson.
+// GET /api/channels/{channel}/game-data → Pack
+func (h *Handlers) getChannelGameData(w http.ResponseWriter, r *http.Request) {
+	channel := "#" + chi.URLParam(r, "channel")
+	world := h.worlds.Get(channel)
 	if world == nil {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "session not found: "+id)
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "channel not found: "+channel)
 		return
 	}
 	writeProtoJSON(w, http.StatusOK, world.Pack.Pack)
 }
 
-// listSessionRooms returns all room definitions from a world's pack.
-// GET /api/sessions/{id}/rooms → RoomDefinition[]
-func (h *Handlers) listSessionRooms(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	world := h.worlds.Get(id)
+// listChannelRooms returns all room definitions from a channel's pack.
+// GET /api/channels/{channel}/rooms → RoomDefinition[]
+func (h *Handlers) listChannelRooms(w http.ResponseWriter, r *http.Request) {
+	channel := "#" + chi.URLParam(r, "channel")
+	world := h.worlds.Get(channel)
 	if world == nil {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "session not found: "+id)
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "channel not found: "+channel)
 		return
 	}
 	rooms := world.Pack.GetRooms()
@@ -91,13 +111,13 @@ func (h *Handlers) listSessionRooms(w http.ResponseWriter, r *http.Request) {
 	writeProtoJSONList(w, http.StatusOK, msgs)
 }
 
-// getSessionRoom returns a single room by name from a world's pack.
-// GET /api/sessions/{id}/rooms/{name} → RoomDefinition
-func (h *Handlers) getSessionRoom(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	world := h.worlds.Get(id)
+// getChannelRoom returns a single room by name from a channel's pack.
+// GET /api/channels/{channel}/rooms/{name} → RoomDefinition
+func (h *Handlers) getChannelRoom(w http.ResponseWriter, r *http.Request) {
+	channel := "#" + chi.URLParam(r, "channel")
+	world := h.worlds.Get(channel)
 	if world == nil {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "session not found: "+id)
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "channel not found: "+channel)
 		return
 	}
 

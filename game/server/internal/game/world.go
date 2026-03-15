@@ -31,25 +31,28 @@ const globalChannel = "#global"
 // before being removed. Matches Node.js server's 30-second window.
 const disconnectGraceMS = 30_000
 
-// WorldMeta is the public-facing metadata returned by the API.
-type WorldMeta struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
+// ChannelMeta is the public-facing metadata returned by the API.
+// Each channel maps 1:1 with an IRC channel; the Channel field is the
+// canonical name (e.g. "#lobby").
+type ChannelMeta struct {
+	Channel string `json:"channel"`
 	PackID  string `json:"packId"`
+	Players int    `json:"players"`
 	Created string `json:"created"`
 }
 
 // World is one running game instance backed by a pack.
+// Each World corresponds to one IRC channel.
 type World struct {
 	// ── Identity & lifecycle ─────────────────────────────────
-	ID      string
-	Name    string
+	Channel string // IRC channel name, e.g. "#lobby"
 	PackID  string
 	Pack    *pack.Pack
 	Created time.Time
 
 	dispatch chan transport.Envelope
 	stopped  atomic.Bool
+	players_ atomic.Int32 // player count, safe for concurrent reads from HTTP
 
 	// ── Game state (owned by the Run goroutine) ──────────────
 	rooms        map[string]*Room
@@ -66,12 +69,11 @@ type World struct {
 	defaultRoom string
 }
 
-// NewWorld creates a World, loads game data from the pack, and returns it
-// ready to be started with Run.
-func NewWorld(id, name, packID string, p *pack.Pack, chat ChatProvider, players *PlayerStore) *World {
+// NewWorld creates a World for the given channel, loads game data from the
+// pack, and returns it ready to be started with Run.
+func NewWorld(channel, packID string, p *pack.Pack, chat ChatProvider, players *PlayerStore) *World {
 	w := &World{
-		ID:      id,
-		Name:    name,
+		Channel: channel,
 		PackID:  packID,
 		Pack:    p,
 		Created: time.Now(),
@@ -103,11 +105,12 @@ func NewWorld(id, name, packID string, p *pack.Pack, chat ChatProvider, players 
 }
 
 // Meta returns a JSON-friendly snapshot of the world.
-func (w *World) Meta() WorldMeta {
-	return WorldMeta{
-		ID:      w.ID,
-		Name:    w.Name,
+// Safe to call from any goroutine.
+func (w *World) Meta() ChannelMeta {
+	return ChannelMeta{
+		Channel: w.Channel,
 		PackID:  w.PackID,
+		Players: int(w.players_.Load()),
 		Created: w.Created.Format(time.RFC3339),
 	}
 }
@@ -121,7 +124,7 @@ func (w *World) Dispatch(env transport.Envelope) {
 	select {
 	case w.dispatch <- env:
 	default:
-		log.Printf("[World %s] dispatch channel full, dropping envelope from %s", w.ID, env.ConnID)
+		log.Printf("[World %s] dispatch channel full, dropping envelope from %s", w.Channel, env.ConnID)
 	}
 }
 
@@ -151,7 +154,7 @@ func (w *World) loadRooms(p *pack.Pack) {
 	}
 
 	log.Printf("[World %s] loaded %d rooms, %d composites, %d tilesets",
-		w.ID, len(p.Rooms), len(p.Composites), len(p.Tilesets))
+		w.Channel, len(p.Rooms), len(p.Composites), len(p.Tilesets))
 }
 
 // ─── Run loop ────────────────────────────────────────────────────
@@ -159,7 +162,7 @@ func (w *World) loadRooms(p *pack.Pack) {
 // Run is the main event loop. Blocks until the dispatch channel is closed.
 // Call in a goroutine: go world.Run()
 func (w *World) Run() {
-	log.Printf("[World %s] started", w.ID)
+	log.Printf("[World %s] started", w.Channel)
 
 	for env := range w.dispatch {
 		w.handleEnvelope(env)
@@ -171,7 +174,7 @@ func (w *World) Run() {
 		delete(w.graceTimers, id)
 	}
 
-	log.Printf("[World %s] stopped", w.ID)
+	log.Printf("[World %s] stopped", w.Channel)
 }
 
 func (w *World) handleEnvelope(env transport.Envelope) {
@@ -191,7 +194,7 @@ func (w *World) handleEnvelope(env transport.Envelope) {
 
 	var msg ClientMessage
 	if err := json.Unmarshal(env.Raw, &msg); err != nil {
-		log.Printf("[World %s] bad message from %s: %v", w.ID, env.ConnID, err)
+		log.Printf("[World %s] bad message from %s: %v", w.Channel, env.ConnID, err)
 		return
 	}
 
@@ -213,6 +216,6 @@ func (w *World) routeMessage(connID string, msg *ClientMessage) {
 	case "leave":
 		w.handleLeave(connID)
 	default:
-		log.Printf("[World %s] unknown message type %q from %s", w.ID, msg.Type, connID)
+		log.Printf("[World %s] unknown message type %q from %s", w.Channel, msg.Type, connID)
 	}
 }
