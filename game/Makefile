@@ -21,10 +21,10 @@ dev: ## Start server + client in parallel
 		wait
 
 server: ## Start Go game server (port 3001)
-	cd server && go run ./cmd/game
+	cd server && go run ./cmd/game --data-dir $(REPO_ROOT)/data/game --default-room main_office
 
 client: ## Start Vite dev server (port 3002, proxies to :3001)
-	yarn workspace @offisims/client dev
+	VITE_IRC_URL=ws://localhost:8080/ws yarn workspace @offisims/client dev
 
 # ─── Build ───────────────────────────────────────────────────
 
