@@ -1,13 +1,13 @@
 module github.com/offisims/studio
 
-go 1.24
+go 1.25.0
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/offisims/shared/pack v0.0.0-local
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/image v0.37.0
+	golang.org/x/image v0.23.0
 	google.golang.org/protobuf v1.36.11
 )
 

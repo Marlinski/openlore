@@ -75,7 +75,7 @@ func (h *Handlers) packBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	packPath := filepath.Join(packsDir, "latest.offpack")
-	if err := writeOffpack(packPath, compiledPack); err != nil {
+	if err := writeOffpack(packPath, compiledPack, compileOutDir); err != nil {
 		send("error", fmt.Sprintf("Failed to write pack: %s", err))
 		return
 	}
@@ -173,8 +173,9 @@ func (h *Handlers) packStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// writeOffpack writes a Pack to a .offpack ZIP file (manifest.json + pack.pb).
-func writeOffpack(path string, p *pack.Pack) error {
+// writeOffpack writes a Pack to a .offpack ZIP file (manifest.json + pack.pb + atlas PNGs).
+// outDir is the compile output directory containing the atlas/ subdirectory.
+func writeOffpack(path string, p *pack.Pack, outDir string) error {
 	tmp := path + ".tmp"
 	f, err := os.Create(tmp)
 	if err != nil {
@@ -212,6 +213,27 @@ func writeOffpack(path string, p *pack.Pack) error {
 	}
 	if _, err := pw.Write(packData); err != nil {
 		return err
+	}
+
+	// atlas/*.png — include all atlas images from the compile output
+	atlasDir := filepath.Join(outDir, "atlas")
+	if entries, err := os.ReadDir(atlasDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".png" {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(atlasDir, entry.Name()))
+			if err != nil {
+				return fmt.Errorf("read atlas %s: %w", entry.Name(), err)
+			}
+			aw, err := zw.Create("atlas/" + entry.Name())
+			if err != nil {
+				return err
+			}
+			if _, err := aw.Write(data); err != nil {
+				return err
+			}
+		}
 	}
 
 	if err := zw.Close(); err != nil {
@@ -287,7 +309,9 @@ func (h *Handlers) packPublish(w http.ResponseWriter, r *http.Request) {
 	tmp.Close()
 	defer os.Remove(tmpPath)
 
-	if err := writeOffpack(tmpPath, p); err != nil {
+	compileOutDir := filepath.Join(h.cfg.WorkspaceDir(wsID), "pack")
+
+	if err := writeOffpack(tmpPath, p, compileOutDir); err != nil {
 		writeError(w, http.StatusInternalServerError, "REWRITE_FAILED", err.Error())
 		return
 	}

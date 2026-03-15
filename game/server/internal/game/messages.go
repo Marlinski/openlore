@@ -34,15 +34,13 @@ type RoomSnapshot struct {
 // ClientMessage is the raw JSON envelope from the client.
 // The Type field determines which fields are populated.
 type ClientMessage struct {
-	Type           string  `json:"type"`
-	Token          string  `json:"token,omitempty"`          // join
-	X              float64 `json:"x,omitempty"`              // position
-	Y              float64 `json:"y,omitempty"`              // position
-	Direction      string  `json:"direction,omitempty"`      // position
-	Moving         bool    `json:"moving,omitempty"`         // position
-	DoorID         string  `json:"doorId,omitempty"`         // use-door
-	Text           string  `json:"text,omitempty"`           // chat, private-message
-	TargetAvatarID string  `json:"targetAvatarId,omitempty"` // private-message
+	Type      string  `json:"type"`
+	Token     string  `json:"token,omitempty"`     // join
+	X         float64 `json:"x,omitempty"`         // position
+	Y         float64 `json:"y,omitempty"`         // position
+	Direction string  `json:"direction,omitempty"` // position
+	Moving    bool    `json:"moving,omitempty"`    // position
+	DoorID    string  `json:"doorId,omitempty"`    // use-door
 }
 
 // ─── Server → Client ─────────────────────────────────────────────
@@ -86,23 +84,6 @@ type ServerRoomChange struct {
 	SpawnX  float64          `json:"spawnX"`
 	SpawnY  float64          `json:"spawnY"`
 	Avatars []AvatarSnapshot `json:"avatars"`
-}
-
-// ServerChatMessage is a chat message from an avatar.
-type ServerChatMessage struct {
-	Type     string `json:"type"`
-	AvatarID string `json:"avatarId"`
-	Name     string `json:"name"`
-	Text     string `json:"text"`
-}
-
-// ServerPrivateMessage is a private message between avatars.
-type ServerPrivateMessage struct {
-	Type         string `json:"type"`
-	FromAvatarID string `json:"fromAvatarId"`
-	FromName     string `json:"fromName"`
-	ToAvatarID   string `json:"toAvatarId"`
-	Text         string `json:"text"`
 }
 
 // ServerSnap corrects the client's avatar position.

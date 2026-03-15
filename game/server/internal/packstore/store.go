@@ -7,11 +7,13 @@
 package packstore
 
 import (
+	"archive/zip"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/offisims/shared/pack"
@@ -179,6 +181,11 @@ func (s *Store) Install(id string, r io.Reader) error {
 		return fmt.Errorf("write pack: %w", err)
 	}
 
+	// Extract atlas PNGs from the ZIP (they aren't in the protobuf)
+	if err := extractAtlas(tmpPath, dir); err != nil {
+		return fmt.Errorf("extract atlas: %w", err)
+	}
+
 	// Update index
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -210,4 +217,44 @@ func (s *Store) Remove(id string) error {
 // PackDir returns the on-disk directory for a pack ID.
 func (s *Store) PackDir(id string) string {
 	return filepath.Join(s.root, id)
+}
+
+// extractAtlas reads a .offpack ZIP and extracts any atlas/*.png files
+// into the pack directory on disk.
+func extractAtlas(zipPath, packDir string) error {
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		if !strings.HasPrefix(f.Name, "atlas/") || filepath.Ext(f.Name) != ".png" {
+			continue
+		}
+
+		// Ensure atlas directory exists
+		atlasDir := filepath.Join(packDir, "atlas")
+		if err := os.MkdirAll(atlasDir, 0o755); err != nil {
+			return err
+		}
+
+		// Extract the PNG
+		rc, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("open %s: %w", f.Name, err)
+		}
+		data, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			return fmt.Errorf("read %s: %w", f.Name, err)
+		}
+
+		outPath := filepath.Join(packDir, filepath.FromSlash(f.Name))
+		if err := os.WriteFile(outPath, data, 0o644); err != nil {
+			return fmt.Errorf("write %s: %w", f.Name, err)
+		}
+		log.Printf("packstore: extracted %s", f.Name)
+	}
+	return nil
 }

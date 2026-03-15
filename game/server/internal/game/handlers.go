@@ -9,8 +9,8 @@ import (
 
 // handleJoin handles a client joining the game.
 // The token identifies a registered player. If the token maps to a live avatar
-// (or one in grace period), the connection reattaches. Otherwise a new avatar
-// is spawned.
+// (still connected via another tab), the connection reattaches. Otherwise a new
+// avatar is spawned.
 func (w *World) handleJoin(connID, token string) {
 	// Prevent double-join from the same connection
 	if _, already := w.connAvatars[connID]; already {
@@ -34,15 +34,8 @@ func (w *World) handleJoin(connID, token string) {
 }
 
 func (w *World) reconnectAvatar(connID, avatarID string, avatar *Avatar) {
-	if timer, ok := w.graceTimers[avatarID]; ok {
-		timer.Stop()
-		delete(w.graceTimers, avatarID)
-		log.Printf("[World %s] %s (%s) reconnected within grace period",
-			w.Channel, avatar.Name, avatarID)
-	} else {
-		log.Printf("[World %s] %s (%s) added connection (multi-tab)",
-			w.Channel, avatar.Name, avatarID)
-	}
+	log.Printf("[World %s] %s (%s) added connection (multi-tab)",
+		w.Channel, avatar.Name, avatarID)
 
 	w.addConn(connID, avatarID)
 
@@ -85,9 +78,6 @@ func (w *World) spawnAvatar(connID, token string) {
 	room.AvatarIDs[avatar.ID] = struct{}{}
 	w.players_.Add(1)
 
-	w.chat.Join(w.defaultRoom, avatar.ID)
-	w.chat.Join(globalChannel, avatar.ID)
-
 	w.sendToConn(connID, &ServerWelcome{
 		Type:     "welcome",
 		AvatarID: avatar.ID,
@@ -108,7 +98,7 @@ func (w *World) spawnAvatar(connID, token string) {
 
 // handleDisconnect handles a WebSocket close.
 // Removes the connection from the avatar. If it was the last connection,
-// starts a grace timer — the avatar stays frozen in the room.
+// the avatar is removed immediately.
 func (w *World) handleDisconnect(connID string) {
 	avatarID, ok := w.connAvatars[connID]
 	if !ok {
@@ -127,36 +117,20 @@ func (w *World) handleDisconnect(connID string) {
 		return
 	}
 
-	// Last connection gone — freeze and start grace timer
-	avatar.Moving = false
-	avatar.Family = "idle"
+	// Last connection gone — remove avatar immediately
+	log.Printf("[World %s] %s (%s) disconnected, removing",
+		w.Channel, avatar.Name, avatarID)
 
-	w.broadcastToRoom(avatar.Room, &ServerAvatarMove{
-		Type:      "avatar-move",
-		AvatarID:  avatarID,
-		X:         avatar.X,
-		Y:         avatar.Y,
-		Direction: avatar.Direction,
-		Moving:    false,
-	}, nil)
-
-	log.Printf("[World %s] %s (%s) disconnected, grace period %ds",
-		w.Channel, avatar.Name, avatarID, disconnectGraceMS/1000)
-
-	w.startGraceTimer(avatarID)
+	delete(w.avatarConns, avatarID)
+	w.removeAvatar(avatarID)
 }
 
 // handleLeave handles an explicit leave message.
-// Immediately removes the avatar (no grace period).
+// Immediately removes the avatar.
 func (w *World) handleLeave(connID string) {
 	avatarID, ok := w.connAvatars[connID]
 	if !ok {
 		return
-	}
-
-	if timer, ok := w.graceTimers[avatarID]; ok {
-		timer.Stop()
-		delete(w.graceTimers, avatarID)
 	}
 
 	// Remove ALL connections for this avatar
@@ -185,7 +159,6 @@ func (w *World) removeAvatar(avatarID string) {
 		}, nil)
 	}
 
-	w.chat.LeaveAll(avatarID)
 	delete(w.tokenAvatars, avatar.Token)
 
 	if conns, ok := w.avatarConns[avatarID]; ok {
@@ -317,7 +290,6 @@ func (w *World) handleUseDoor(connID, doorID string) {
 		Type:     "avatar-leave",
 		AvatarID: avatarID,
 	}, nil)
-	w.chat.Leave(avatar.Room, avatarID)
 
 	// Enter new room
 	avatar.Room = targetRoomName
@@ -326,7 +298,6 @@ func (w *World) handleUseDoor(connID, doorID string) {
 	avatar.Moving = false
 	avatar.Family = "idle"
 	targetRoom.AvatarIDs[avatarID] = struct{}{}
-	w.chat.Join(targetRoomName, avatarID)
 
 	// Send room change to ALL connections of this avatar
 	w.sendToAvatar(avatarID, &ServerRoomChange{
@@ -347,68 +318,6 @@ func (w *World) handleUseDoor(connID, doorID string) {
 }
 
 // ─── Chat ────────────────────────────────────────────────────────
-
-func (w *World) handleChat(connID, text string) {
-	avatarID, ok := w.connAvatars[connID]
-	if !ok {
-		return
-	}
-	avatar := w.avatars[avatarID]
-	if avatar == nil {
-		return
-	}
-	w.chat.Send(avatar.Room, avatarID, text)
-}
-
-func (w *World) handlePrivateMessage(connID, targetAvatarID, text string) {
-	senderID, ok := w.connAvatars[connID]
-	if !ok {
-		return
-	}
-	sender := w.avatars[senderID]
-	if sender == nil {
-		return
-	}
-	if w.avatars[targetAvatarID] == nil {
-		w.sendToConn(connID, &ServerError{
-			Type:    "error",
-			Message: "That player is no longer online.",
-		})
-		return
-	}
-
-	pm := &ServerPrivateMessage{
-		Type:         "private-message",
-		FromAvatarID: senderID,
-		FromName:     sender.Name,
-		ToAvatarID:   targetAvatarID,
-		Text:         text,
-	}
-
-	w.sendToAvatar(targetAvatarID, pm)
-	if targetAvatarID != senderID {
-		w.sendToAvatar(senderID, pm)
-	}
-}
-
-// handleChatMessage is called by the ChatProvider when a message is sent to
-// a channel. Broadcasts to all members' connections.
-func (w *World) handleChatMessage(channel, avatarID, text string) {
-	avatar := w.avatars[avatarID]
-	if avatar == nil {
-		return
-	}
-
-	msg := &ServerChatMessage{
-		Type:     "chat-message",
-		AvatarID: avatarID,
-		Name:     avatar.Name,
-		Text:     text,
-	}
-
-	for _, memberID := range w.chat.GetMembers(channel) {
-		if w.avatars[memberID] != nil {
-			w.sendToAvatar(memberID, msg)
-		}
-	}
-}
+// Chat is handled entirely by IRC — the game server no longer relays
+// chat or private messages. See @airc/client integration in the
+// game client (GameScreen.tsx, ChannelPanel.tsx, CharacterCard.tsx).

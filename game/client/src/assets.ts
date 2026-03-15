@@ -1,7 +1,7 @@
 /**
  * Asset loader — fetches and caches tileset/character images from the server.
  *
- * All images are loaded via the server's /data/* endpoint.
+ * All images are loaded via the server's /data/packs/{packId}/ endpoint.
  * Images are cached by path so they're only fetched once.
  */
 
@@ -34,16 +34,27 @@ export function getCachedImage(path: string): HTMLImageElement | undefined {
 
 /**
  * Preload all tileset images referenced by the game data.
+ * Resolves tileset paths relative to /data/packs/{packId}/.
  * Returns when all images are loaded (or logs errors for failures).
  */
 export async function preloadGameAssets(
   data: Pack,
 ): Promise<void> {
+  const packId = data.manifest?.id;
+  if (!packId) {
+    console.warn("[Assets] Pack has no manifest ID — cannot resolve asset paths");
+    return;
+  }
+
+  const baseUrl = `/data/packs/${encodeURIComponent(packId)}`;
   const paths = new Set<string>();
 
-  // Collect all tileset image paths
+  // Collect all tileset image paths, resolved against the pack's data directory
   for (const ts of data.tilesets) {
-    paths.add(ts.path);
+    const url = `${baseUrl}/${ts.path}`;
+    paths.add(url);
+    // Rewrite the tileset path in-place so the renderer uses the resolved URL
+    ts.path = url;
   }
 
   const results = await Promise.allSettled(

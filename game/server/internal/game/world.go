@@ -1,35 +1,25 @@
 // World is the authoritative game state for one running instance.
 //
-// It owns everything needed to run a game: rooms, avatars, chat, transports,
+// It owns everything needed to run a game: rooms, avatars, transports,
 // the dispatch channel, and lifecycle. The Store manages multiple Worlds.
 //
 // All mutable game state is owned by a single goroutine (Run) that reads
 // from the dispatch channel. No mutexes inside the World — access is serialized.
 //
-// Reconnection model: each avatar has a persistent token (UUID). When all
-// connections disconnect, the avatar enters a 30-second grace period. If a
-// connection reconnects with the same token within the window, the avatar is
-// reattached. Multiple concurrent connections per avatar are allowed (multi-tab).
+// Multiple concurrent connections per avatar are allowed (multi-tab).
+// When all connections disconnect, the avatar is removed immediately.
 
 package game
 
 import (
 	"encoding/json"
 	"log"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/offisims/game/internal/transport"
 	pack "github.com/offisims/shared/pack"
 )
-
-// globalChannel is the name of the global chat channel.
-const globalChannel = "#global"
-
-// disconnectGraceMS is how long (ms) a disconnected avatar stays in-world
-// before being removed. Matches Node.js server's 30-second window.
-const disconnectGraceMS = 30_000
 
 // ChannelMeta is the public-facing metadata returned by the API.
 // Each channel maps 1:1 with an IRC channel; the Channel field is the
@@ -60,10 +50,8 @@ type World struct {
 	tokenAvatars map[string]string              // token → avatar ID
 	avatarConns  map[string]map[string]struct{} // avatar ID → set of connIDs
 	connAvatars  map[string]string              // connID → avatar ID
-	graceTimers  map[string]*time.Timer         // avatar ID → timer
 	transports   map[string]transport.Transport // connID → transport
 
-	chat    ChatProvider
 	players *PlayerStore
 
 	defaultRoom string
@@ -71,7 +59,7 @@ type World struct {
 
 // NewWorld creates a World for the given channel, loads game data from the
 // pack, and returns it ready to be started with Run.
-func NewWorld(channel, packID string, p *pack.Pack, chat ChatProvider, players *PlayerStore) *World {
+func NewWorld(channel, packID string, p *pack.Pack, players *PlayerStore) *World {
 	w := &World{
 		Channel: channel,
 		PackID:  packID,
@@ -85,18 +73,10 @@ func NewWorld(channel, packID string, p *pack.Pack, chat ChatProvider, players *
 		tokenAvatars: make(map[string]string),
 		avatarConns:  make(map[string]map[string]struct{}),
 		connAvatars:  make(map[string]string),
-		graceTimers:  make(map[string]*time.Timer),
 		transports:   make(map[string]transport.Transport),
 
-		chat:    chat,
 		players: players,
 	}
-
-	// Wire up chat message delivery
-	chat.OnMessage(func(channel, avatarID, text string) {
-		w.handleChatMessage(channel, avatarID, text)
-	})
-	chat.CreateChannel(globalChannel)
 
 	// Load rooms from pack
 	w.loadRooms(p)
@@ -146,7 +126,6 @@ func (w *World) loadRooms(p *pack.Pack) {
 	for _, def := range p.Rooms {
 		room := NewRoom(def)
 		w.rooms[room.Name] = room
-		w.chat.CreateChannel(room.Name)
 	}
 
 	if w.defaultRoom == "" && len(p.Rooms) > 0 {
@@ -168,24 +147,14 @@ func (w *World) Run() {
 		w.handleEnvelope(env)
 	}
 
-	// Channel closed — clean up grace timers
-	for id, timer := range w.graceTimers {
-		timer.Stop()
-		delete(w.graceTimers, id)
-	}
-
 	log.Printf("[World %s] stopped", w.Channel)
 }
 
 func (w *World) handleEnvelope(env transport.Envelope) {
-	// Nil Raw + nil Transport = disconnect or grace timer expiry
+	// Nil Raw + nil Transport = disconnect
 	if env.Raw == nil && env.Transport == nil {
-		if strings.HasPrefix(env.ConnID, gracePrefix) {
-			w.handleGraceExpiry(strings.TrimPrefix(env.ConnID, gracePrefix))
-		} else {
-			w.handleDisconnect(env.ConnID)
-			delete(w.transports, env.ConnID)
-		}
+		w.handleDisconnect(env.ConnID)
+		delete(w.transports, env.ConnID)
 		return
 	}
 
@@ -209,10 +178,6 @@ func (w *World) routeMessage(connID string, msg *ClientMessage) {
 		w.handlePosition(connID, msg.X, msg.Y, msg.Direction, msg.Moving)
 	case "use-door":
 		w.handleUseDoor(connID, msg.DoorID)
-	case "chat":
-		w.handleChat(connID, msg.Text)
-	case "private-message":
-		w.handlePrivateMessage(connID, msg.TargetAvatarID, msg.Text)
 	case "leave":
 		w.handleLeave(connID)
 	default:

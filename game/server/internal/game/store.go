@@ -15,16 +15,14 @@ import (
 type Store struct {
 	mu      sync.RWMutex
 	worlds  map[string]*World // channel name → World
-	chat    ChatProvider
 	players *PlayerStore
 }
 
-// NewStore creates an empty world store. The chat provider and player store
-// are injected and shared across all worlds created by this store.
-func NewStore(chat ChatProvider, players *PlayerStore) *Store {
+// NewStore creates an empty world store. The player store is injected and
+// shared across all worlds created by this store.
+func NewStore(players *PlayerStore) *Store {
 	return &Store{
 		worlds:  make(map[string]*World),
-		chat:    chat,
 		players: players,
 	}
 }
@@ -39,7 +37,7 @@ func (s *Store) Create(channel, packID string, p *pack.Pack) (*World, error) {
 		return nil, fmt.Errorf("channel %q already exists", channel)
 	}
 
-	w := NewWorld(channel, packID, p, s.chat, s.players)
+	w := NewWorld(channel, packID, p, s.players)
 	s.worlds[channel] = w
 
 	go w.Run()

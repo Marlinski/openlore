@@ -1,8 +1,11 @@
 /**
  * CharacterCard — right-side slide-out panel for avatar interaction + PM chat.
+ *
+ * Private messages are sent via IRC (AircClient), not the game WebSocket.
  */
 
 import { useEffect, useRef } from "preact/hooks";
+import type { AircClient } from "@airc/client";
 import type { Input } from "../../input";
 import type { Connection } from "../../connection";
 import {
@@ -14,6 +17,7 @@ import type { PmMessage } from "../../store";
 interface CharacterCardProps {
   connection: Connection;
   input: Input;
+  irc: AircClient | null;
 }
 
 function formatTime(ts: number): string {
@@ -60,12 +64,9 @@ export function CharacterCard(props: CharacterCardProps) {
     if (!el) return;
     const text = el.value.trim();
     const av = avatar();
-    if (text && av) {
-      props.connection.send({
-        type: "private-message",
-        targetAvatarId: av.avatarId,
-        text,
-      });
+    if (text && av && props.irc) {
+      // Send PM via IRC — target is the avatar's name (IRC nick)
+      props.irc.say(av.name, text);
     }
     el.value = "";
     // Keep focus for quick follow-up

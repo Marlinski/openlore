@@ -61,6 +61,9 @@ export class RoomScene {
   /** Tileset textures loaded as PixiJS textures */
   private textureCache: Map<string, Texture>;
 
+  /** Pack data (needed to resolve tileset definitions) */
+  private gameData: Pack;
+
   constructor(
     room: RoomDefinition,
     gameData: Pack,
@@ -73,6 +76,7 @@ export class RoomScene {
     this.walkability = [...room.walkability];
     this.doors = [...room.doors];
     this.textureCache = textureCache;
+    this.gameData = gameData;
 
     // Create containers
     this.root = new Container();
@@ -214,8 +218,8 @@ export class RoomScene {
 
     // Floor: top-to-bottom, left-to-right
     floors.sort((a, b) => {
-      if (a.gridY !== b.gridY) return a.gridY - b.gridY;
-      return a.gridX - b.gridX;
+      if ((a.gridY || 0) !== (b.gridY || 0)) return (a.gridY || 0) - (b.gridY || 0);
+      return (a.gridX || 0) - (b.gridX || 0);
     });
 
     for (const p of floors) {
@@ -232,10 +236,10 @@ export class RoomScene {
       const comp = gameData.composites.find((c) => c.id === p.compositeId);
       if (!comp) return;
       const sorted = [...comp.parts].sort((a, b) => {
-        const anchorA = a.offsetY + (a.region?.h ?? 0) + (a.zBias ?? 0);
-        const anchorB = b.offsetY + (b.region?.h ?? 0) + (b.zBias ?? 0);
+        const anchorA = (a.offsetY || 0) + (a.region?.h ?? 0) + (a.zBias ?? 0);
+        const anchorB = (b.offsetY || 0) + (b.region?.h ?? 0) + (b.zBias ?? 0);
         if (anchorA !== anchorB) return anchorA - anchorB;
-        return a.offsetX - b.offsetX;
+        return (a.offsetX || 0) - (b.offsetX || 0);
       });
       for (const part of sorted) {
         if (!part.region) continue;
@@ -244,8 +248,8 @@ export class RoomScene {
           part.region.w, part.region.h,
         );
         if (sprite) {
-          sprite.x = (p.gridX + part.offsetX) * TILE_SIZE;
-          sprite.y = (p.gridY + part.offsetY) * TILE_SIZE;
+          sprite.x = ((p.gridX || 0) + (part.offsetX || 0)) * TILE_SIZE;
+          sprite.y = ((p.gridY || 0) + (part.offsetY || 0)) * TILE_SIZE;
           this.floorContainer.addChild(sprite);
         }
       }
@@ -255,8 +259,8 @@ export class RoomScene {
         p.region.w, p.region.h,
       );
       if (sprite) {
-        sprite.x = p.gridX * TILE_SIZE;
-        sprite.y = p.gridY * TILE_SIZE;
+        sprite.x = (p.gridX || 0) * TILE_SIZE;
+        sprite.y = (p.gridY || 0) * TILE_SIZE;
         this.floorContainer.addChild(sprite);
       }
     }
@@ -273,9 +277,9 @@ export class RoomScene {
           part.region.w, part.region.h,
         );
         if (sprite) {
-          sprite.x = (p.gridX + part.offsetX) * TILE_SIZE;
-          sprite.y = (p.gridY + part.offsetY) * TILE_SIZE;
-          const anchorY = p.gridY + part.offsetY + part.region.h + (part.zBias ?? 0) + (p.zBias ?? 0);
+          sprite.x = ((p.gridX || 0) + (part.offsetX || 0)) * TILE_SIZE;
+          sprite.y = ((p.gridY || 0) + (part.offsetY || 0)) * TILE_SIZE;
+          const anchorY = (p.gridY || 0) + (part.offsetY || 0) + (part.region.h || 0) + (part.zBias ?? 0) + (p.zBias ?? 0);
           this.objectContainer.addChild(sprite);
           this.objectEntries.push({ sprite, anchorY });
         }
@@ -286,9 +290,9 @@ export class RoomScene {
         p.region.w, p.region.h,
       );
       if (sprite) {
-        sprite.x = p.gridX * TILE_SIZE;
-        sprite.y = p.gridY * TILE_SIZE;
-        const anchorY = p.gridY + p.region.h + (p.zBias ?? 0);
+        sprite.x = (p.gridX || 0) * TILE_SIZE;
+        sprite.y = (p.gridY || 0) * TILE_SIZE;
+        const anchorY = (p.gridY || 0) + (p.region.h || 0) + (p.zBias ?? 0);
         this.objectContainer.addChild(sprite);
         this.objectEntries.push({ sprite, anchorY });
       }
@@ -305,12 +309,19 @@ export class RoomScene {
     const baseTexture = this.textureCache.get(tilesetId);
     if (!baseTexture) return null;
 
-    // Room tilesets always use TILE_SIZE (48×48) per cell.
+    // Use tileset's actual tile dimensions for source rectangle.
+    // Atlas tilesets have tileWidth=1/tileHeight=1 (coords are pixels),
+    // while legacy tilesets use TILE_SIZE (48) per cell.
+    const tsDef = findTilesetDef(this.gameData, tilesetId);
+    const tw = tsDef?.tileWidth || TILE_SIZE;
+    const th = tsDef?.tileHeight || TILE_SIZE;
+
+    // Guard against protojson zero-value omission (srcCol/srcRow may be undefined)
     const frame = new Rectangle(
-      srcCol * TILE_SIZE,
-      srcRow * TILE_SIZE,
-      w * TILE_SIZE,
-      h * TILE_SIZE,
+      (srcCol || 0) * tw,
+      (srcRow || 0) * th,
+      (w || 0) * tw,
+      (h || 0) * th,
     );
     const texture = new Texture({ source: baseTexture.source, frame });
     return new Sprite(texture);

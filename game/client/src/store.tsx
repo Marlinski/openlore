@@ -38,19 +38,24 @@ export interface SelectedAvatar {
 
 export type AppScreen = "join" | "channels" | "game";
 
-export const screen = signal<AppScreen>("join");
-export const joinStatus = signal("Loading...");
+export const screen = signal<AppScreen>("channels");
+export const joinStatus = signal("");
 export const joinReady = signal(false);
 export const gameData = signal<Pack | null>(null);
+export const sessionToken = signal<string | null>(null);
 
 // ─── Channel state ────────────────────────────────────────────────
 
 /** The channel the player has joined (e.g. "#lobby"). Set before entering game screen. */
 export const currentChannel = signal<string | null>(null);
 
+/** The current IRC room channel (e.g. "#lobby-reception"). Changes on door transitions. */
+export const ircRoom = signal("");
+
 // ─── Connection state ─────────────────────────────────────────────
 
 export const connected = signal(false);
+export const ircConnected = signal(false);
 
 // ─── Zoom state ───────────────────────────────────────────────────
 

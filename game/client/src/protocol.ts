@@ -51,17 +51,6 @@ export interface ClientUseDoorMessage {
   doorId: string;
 }
 
-export interface ClientChatMessage {
-  type: "chat";
-  text: string;
-}
-
-export interface ClientPrivateMessage {
-  type: "private-message";
-  targetAvatarId: string;
-  text: string;
-}
-
 export interface ClientLeaveMessage {
   type: "leave";
 }
@@ -70,8 +59,6 @@ export type ClientMessage =
   | ClientJoinMessage
   | ClientPositionMessage
   | ClientUseDoorMessage
-  | ClientChatMessage
-  | ClientPrivateMessage
   | ClientLeaveMessage;
 
 // ─── Server → Client messages ────────────────────────────────────
@@ -112,21 +99,6 @@ export interface ServerRoomChangeMessage {
   avatars: AvatarSnapshot[];
 }
 
-export interface ServerChatMessageMessage {
-  type: "chat-message";
-  avatarId: string;
-  name: string;
-  text: string;
-}
-
-export interface ServerPrivateMessageMessage {
-  type: "private-message";
-  fromAvatarId: string;
-  fromName: string;
-  toAvatarId: string;
-  text: string;
-}
-
 export interface ServerSnapMessage {
   type: "snap";
   x: number;
@@ -144,7 +116,5 @@ export type ServerMessage =
   | ServerAvatarLeaveMessage
   | ServerAvatarMoveMessage
   | ServerRoomChangeMessage
-  | ServerChatMessageMessage
-  | ServerPrivateMessageMessage
   | ServerSnapMessage
   | ServerErrorMessage;

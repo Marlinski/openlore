@@ -2,11 +2,11 @@
  * Hud — on-screen overlay with zoom controls (top) and status bar (bottom).
  *
  * The status bar shows:
- *   - Two indicator lights: Game WS (connected signal) and IRC WS (placeholder)
+ *   - Two indicator lights: Game WS (connected signal) and IRC WS (ircConnected signal)
  *   - Current channel name and room name
  */
 
-import { connected, zoomLevel, stepZoom, roomName, currentChannel } from "../../store";
+import { connected, ircConnected, zoomLevel, stepZoom, roomName, currentChannel } from "../../store";
 
 export function Hud() {
   return (
@@ -39,8 +39,10 @@ export function Hud() {
             />
             <span class="status-bar-light-label">Game</span>
           </div>
-          <div class="status-bar-light" title="IRC WebSocket (not connected)">
-            <span class="status-bar-dot off" />
+          <div class="status-bar-light" title={`IRC WebSocket (${ircConnected.value ? "connected" : "not connected"})`}>
+            <span
+              class={`status-bar-dot ${ircConnected.value ? "on" : "off"}`}
+            />
             <span class="status-bar-light-label">IRC</span>
           </div>
         </div>

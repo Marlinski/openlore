@@ -34,8 +34,7 @@ func main() {
 	players := game.NewPlayerStore()
 
 	// ── World store ──────────────────────────────────────────────────────
-	chat := game.NewMemoryChatProvider()
-	worlds := game.NewStore(chat, players)
+	worlds := game.NewStore(players)
 
 	// Restore saved channels from disk
 	saved, err := channels.List()

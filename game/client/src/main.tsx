@@ -2,20 +2,19 @@
  * Client entry point.
  *
  * Bootstraps the game:
- *   1. If a session token cookie exists, validate via REST
- *   2. Otherwise show join form — on submit, call POST /api/register
- *   3. Store token as cookie, show channel browser
- *   4. Player picks a channel, game data is fetched for that channel
+ *   1. Show channel browser (always the first screen)
+ *   2. Player picks a channel — game data is fetched for that channel
+ *   3. If no session token, show JoinScreen (register name + pick character)
+ *   4. If session token exists (returning player), skip straight to game
  *   5. Render GameScreen which handles WebSocket + PixiJS
  */
 
 import { render } from "preact";
-import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import type { Pack } from "@offisims/pack";
 import { preloadGameAssets } from "./assets";
 import {
-  screen, joinStatus, joinReady, gameData, currentChannel,
+  screen, joinStatus, joinReady, gameData, currentChannel, sessionToken,
 } from "./store";
 import { JoinScreen } from "./ui/components/JoinScreen";
 import { ChannelBrowser } from "./ui/components/ChannelBrowser";
@@ -46,26 +45,54 @@ function deleteCookie(name: string): void {
 // ─── App component ────────────────────────────────────────────────
 
 function App() {
-  const token = signal<string | null>(null);
+  /** Fetch game data for a channel, preload assets, return the pack */
+  const loadChannelData = async (channel: string): Promise<Pack> => {
+    const chName = channel.startsWith("#") ? channel.slice(1) : channel;
+    const res = await fetch(`/api/channels/${encodeURIComponent(chName)}/game-data`);
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const data = (await res.json()) as Pack;
+    gameData.value = data;
+    await preloadGameAssets(data);
+    return data;
+  };
 
-  /** Proceed to channel browser after authentication */
-  const goToChannels = (t: string) => {
-    token.value = t;
+  /** Enter the game screen */
+  const enterGame = () => {
+    screen.value = "game";
+  };
+
+  /** Session was invalidated by the server — go back to channel browser */
+  const handleSessionInvalid = () => {
+    deleteCookie(COOKIE_NAME);
+    sessionToken.value = null;
+    currentChannel.value = null;
+    gameData.value = null;
     screen.value = "channels";
   };
 
-  /** Session was invalidated by the server — go back to join screen */
-  const handleSessionInvalid = () => {
-    deleteCookie(COOKIE_NAME);
-    token.value = null;
-    currentChannel.value = null;
-    gameData.value = null;
-    screen.value = "join";
-    joinReady.value = true;
-    joinStatus.value = "Session expired. Please join again.";
+  /** Handle channel selection from the channel browser */
+  const handleJoinChannel = async (channel: string) => {
+    currentChannel.value = channel;
+
+    try {
+      await loadChannelData(channel);
+
+      if (sessionToken.value) {
+        // Returning player — skip join screen, go straight to game
+        enterGame();
+      } else {
+        // New player — show join screen to register name + pick character
+        joinStatus.value = "Enter your name and pick a character!";
+        joinReady.value = true;
+        screen.value = "join";
+      }
+    } catch (err) {
+      console.error("[JoinChannel] Failed:", err);
+      currentChannel.value = null;
+    }
   };
 
-  /** Handle join form submission */
+  /** Handle join form submission (registration) */
   const handleJoin = async (name: string, characterId: string) => {
     joinReady.value = false;
     joinStatus.value = "Registering...";
@@ -84,36 +111,12 @@ function App() {
 
       const { token: newToken } = (await res.json()) as { token: string };
       setCookie(COOKIE_NAME, newToken, COOKIE_MAX_AGE);
-      goToChannels(newToken);
+      sessionToken.value = newToken;
+      enterGame();
     } catch (err) {
       joinStatus.value = `Error: ${err}`;
       joinReady.value = true;
       console.error("[Register] Failed:", err);
-    }
-  };
-
-  /** Handle channel selection from the channel browser */
-  const handleJoinChannel = async (channel: string) => {
-    currentChannel.value = channel;
-
-    // Strip leading "#" for the URL path segment
-    const chName = channel.startsWith("#") ? channel.slice(1) : channel;
-
-    try {
-      // Fetch channel-specific game data
-      const res = await fetch(`/api/channels/${encodeURIComponent(chName)}/game-data`);
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = (await res.json()) as Pack;
-      gameData.value = data;
-
-      // Preload assets
-      await preloadGameAssets(data);
-
-      screen.value = "game";
-    } catch (err) {
-      console.error("[JoinChannel] Failed:", err);
-      // Stay on channel browser — user can retry
-      currentChannel.value = null;
     }
   };
 
@@ -123,33 +126,30 @@ function App() {
       // Check for existing session token
       const existingToken = getCookie(COOKIE_NAME);
       if (existingToken) {
-        joinStatus.value = "Validating session...";
         const sessionRes = await fetch(`/api/session?token=${encodeURIComponent(existingToken)}`);
         if (sessionRes.ok) {
-          goToChannels(existingToken);
-          return;
+          sessionToken.value = existingToken;
+        } else {
+          deleteCookie(COOKIE_NAME);
         }
-        // Token is invalid — delete cookie and fall through to join form
-        deleteCookie(COOKIE_NAME);
       }
 
-      // No valid token — show join form
-      joinStatus.value = "Enter your name and join!";
-      joinReady.value = true;
+      // Always start on channel browser
+      screen.value = "channels";
     })();
   }, []);
 
   return (
     <>
-      {screen.value === "join" && (
-        <JoinScreen onJoin={handleJoin} />
-      )}
       {screen.value === "channels" && (
         <ChannelBrowser onJoinChannel={handleJoinChannel} />
       )}
-      {screen.value === "game" && token.value && gameData.value && currentChannel.value && (
+      {screen.value === "join" && (
+        <JoinScreen onJoin={handleJoin} />
+      )}
+      {screen.value === "game" && sessionToken.value && gameData.value && currentChannel.value && (
         <GameScreen
-          token={token.value}
+          token={sessionToken.value}
           gameData={gameData.value}
           channel={currentChannel.value}
           onSessionInvalid={handleSessionInvalid}

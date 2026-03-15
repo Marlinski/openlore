@@ -3,14 +3,7 @@ package game
 import (
 	"encoding/json"
 	"log"
-	"time"
-
-	"github.com/offisims/game/internal/transport"
 )
-
-// gracePrefix is prepended to avatar IDs in synthetic disconnect envelopes
-// so the Run loop can distinguish grace-timer expiry from real disconnects.
-const gracePrefix = "grace:"
 
 // ─── Exclusion types ─────────────────────────────────────────────
 
@@ -136,51 +129,6 @@ func (w *World) broadcastToRoom(roomName string, msg any, exc *exclusion) {
 			}
 		}
 	}
-}
-
-// ─── Grace timer ─────────────────────────────────────────────────
-
-// startGraceTimer starts a 30-second timer for a disconnected avatar.
-// When it fires, a synthetic envelope is dispatched back into the Run loop.
-func (w *World) startGraceTimer(avatarID string) {
-	// Cancel any existing timer first
-	if timer, ok := w.graceTimers[avatarID]; ok {
-		timer.Stop()
-	}
-
-	w.graceTimers[avatarID] = time.AfterFunc(
-		time.Duration(disconnectGraceMS)*time.Millisecond,
-		func() {
-			// Post a synthetic envelope. The connID carries the grace prefix
-			// so handleEnvelope knows this is a timer expiry, not a real disconnect.
-			w.Dispatch(transport.Envelope{
-				ConnID:    gracePrefix + avatarID,
-				Transport: nil,
-				Raw:       nil,
-			})
-		},
-	)
-}
-
-// handleGraceExpiry is called when a grace timer fires for an avatar.
-// If the avatar still has no connections, it's removed from the world.
-func (w *World) handleGraceExpiry(avatarID string) {
-	delete(w.graceTimers, avatarID)
-
-	// If reconnected in the meantime, do nothing
-	if conns := w.avatarConns[avatarID]; len(conns) > 0 {
-		return
-	}
-
-	avatar := w.avatars[avatarID]
-	if avatar == nil {
-		return
-	}
-
-	log.Printf("[World %s] %s (%s) grace period expired, removing",
-		w.Channel, avatar.Name, avatarID)
-
-	w.removeAvatar(avatarID)
 }
 
 // ─── Snapshot helpers ────────────────────────────────────────────

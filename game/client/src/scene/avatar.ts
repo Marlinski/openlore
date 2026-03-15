@@ -41,42 +41,74 @@ export interface CharacterResources {
 // ─── Tag-based resource lookup ────────────────────────────────────
 
 /**
- * Find a resource matching an action + direction combo.
- * Tags use colon-prefix convention: "action:idle", "dir:down".
+ * Check whether a resource has any variant or action sub-tags.
+ * We consider "variant:*" and "action:*" as sub-variants that should
+ * not be used for the base idle/walk lookup.
+ */
+function hasVariant(r: Resource): boolean {
+  return r.tags.some((t) => t.startsWith("variant:") || t.startsWith("action:"));
+}
+
+/**
+ * Find a resource matching a state + direction combo.
+ * Tags use colon-prefix convention: "state:idle", "dir:down".
+ *
+ * The `state` parameter matches the server's `family` field
+ * ("idle", "walk", "sit", etc.).
  *
  * Fallback chain:
- *   1. action:X + dir:Y  (exact match)
- *   2. action:X           (any direction — e.g. single idle anim)
- *   3. dir:down + action:idle  (ultimate fallback)
- *   4. first resource       (last resort)
+ *   1. state:X + dir:Y (no variant/action sub-tag — exact base match)
+ *   2. state:X + dir:Y (any, including variants — relaxed match)
+ *   3. state:X (no dir, no variant — direction-agnostic)
+ *   4. state:X (no dir, any variant — direction-agnostic relaxed)
+ *   5. state:idle + dir:down (no variant — ultimate fallback)
+ *   6. first resource (last resort)
  */
 function findResource(
   resources: Resource[],
-  action: string,
+  state: string,
   dir: string,
 ): Resource | undefined {
-  const actionTag = `action:${action}`;
+  const stateTag = `state:${state}`;
   const dirTag = `dir:${dir}`;
 
-  // 1. Exact: action + dir
+  // 1. Exact base: state + dir, no variant
   let match = resources.find(
-    (r) => r.tags.includes(actionTag) && r.tags.includes(dirTag),
+    (r) =>
+      r.tags.includes(stateTag) &&
+      r.tags.includes(dirTag) &&
+      !hasVariant(r),
   );
   if (match) return match;
 
-  // 2. Action only (direction-agnostic resource)
-  match = resources.find((r) => r.tags.includes(actionTag));
+  // 2. Relaxed: state + dir (allow variants)
+  match = resources.find(
+    (r) => r.tags.includes(stateTag) && r.tags.includes(dirTag),
+  );
   if (match) return match;
 
-  // 3. Fallback to idle + down
-  if (action !== "idle" || dir !== "down") {
+  // 3. State only, no variant (direction-agnostic resource)
+  match = resources.find(
+    (r) => r.tags.includes(stateTag) && !hasVariant(r),
+  );
+  if (match) return match;
+
+  // 4. State only, any variant
+  match = resources.find((r) => r.tags.includes(stateTag));
+  if (match) return match;
+
+  // 5. Fallback to idle + down (no variant)
+  if (state !== "idle" || dir !== "down") {
     match = resources.find(
-      (r) => r.tags.includes("action:idle") && r.tags.includes("dir:down"),
+      (r) =>
+        r.tags.includes("state:idle") &&
+        r.tags.includes("dir:down") &&
+        !hasVariant(r),
     );
     if (match) return match;
   }
 
-  // 4. Last resort: first resource
+  // 6. Last resort: first resource
   return resources[0];
 }
 
@@ -111,12 +143,13 @@ export class Avatar {
   private animFrame = 0;
   private animTimer = 0;
 
-  /** Default animation speed (fps) per family */
+  /** Default animation speed (fps) per state/family */
   private static readonly FAMILY_FPS: Record<string, number> = {
     idle: 4,
     walk: 8,
     sit: 4,
-    sit_office: 4,
+    sleep: 2,
+    preview: 4,
   };
 
   /** Interpolation target for remote avatars */
@@ -315,10 +348,11 @@ export class Avatar {
     const tsDef = findTilesetDef(this.gameData, frame.tilesetId);
     if (!tsDef) return null;
 
-    const px = frame.srcCol * tsDef.tileWidth;
-    const py = frame.srcRow * tsDef.tileHeight;
-    const pw = frame.w * tsDef.tileWidth;
-    const ph = frame.h * tsDef.tileHeight;
+    // Guard against protojson zero-value omission (srcCol/srcRow may be undefined)
+    const px = (frame.srcCol || 0) * tsDef.tileWidth;
+    const py = (frame.srcRow || 0) * tsDef.tileHeight;
+    const pw = (frame.w || 0) * tsDef.tileWidth;
+    const ph = (frame.h || 0) * tsDef.tileHeight;
 
     const rect = new Rectangle(px, py, pw, ph);
     return new Texture({ source: baseTex.source, frame: rect });

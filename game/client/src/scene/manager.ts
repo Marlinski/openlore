@@ -33,8 +33,6 @@ import type {
   ServerAvatarMoveMessage,
   ServerRoomChangeMessage,
   ServerSnapMessage,
-  ServerChatMessageMessage,
-  ServerPrivateMessageMessage,
 } from "../protocol.js";
 import { Connection } from "../connection.js";
 import { Input } from "../input.js";
@@ -92,6 +90,8 @@ export interface UICallbacks {
   clearPmMessages: () => void;
   getSelectedAvatarId: () => string | null;
   setChannelOpen: (open: boolean) => void;
+  /** Called on room transitions (door use) so the IRC client can PART/JOIN. */
+  onRoomTransition: (oldRoom: string, newRoom: string) => void;
 }
 
 // ─── SceneManager ─────────────────────────────────────────────────
@@ -197,8 +197,7 @@ export class SceneManager {
     this.connection.on<ServerAvatarMoveMessage>("avatar-move", (msg) => this.onAvatarMove(msg));
     this.connection.on<ServerRoomChangeMessage>("room-change", (msg) => this.onRoomChange(msg));
     this.connection.on<ServerSnapMessage>("snap", (msg) => this.onSnap(msg));
-    this.connection.on<ServerChatMessageMessage>("chat-message", (msg) => this.onChatMessage(msg));
-    this.connection.on<ServerPrivateMessageMessage>("private-message", (msg) => this.onPrivateMessage(msg));
+    // Chat messages are now handled by the IRC client — see GameScreen.tsx.
 
     // Wire up input handlers
     this.input.onDoorUse(() => this.tryUseDoor());
@@ -212,6 +211,11 @@ export class SceneManager {
   /** Set the bubble manager (called after construction) */
   setBubbleManager(bm: BubbleManager): void {
     this.bubbleManager = bm;
+  }
+
+  /** Get the bubble manager (for IRC message → speech bubble bridging). */
+  getBubbleManager(): BubbleManager | null {
+    return this.bubbleManager;
   }
 
   /** Handle window resize */
@@ -239,6 +243,20 @@ export class SceneManager {
   /** Get all avatars */
   getAvatars(): Map<string, Avatar> {
     return this.avatars;
+  }
+
+  /** Find an avatar by name (for IRC nick → avatar mapping). */
+  findAvatarByName(name: string): Avatar | null {
+    for (const avatar of this.avatars.values()) {
+      if (avatar.name === name) return avatar;
+    }
+    return null;
+  }
+
+  /** Get the local avatar's name. */
+  getLocalName(): string | null {
+    const avatar = this.getLocalAvatar();
+    return avatar?.name ?? null;
   }
 
   /**
@@ -760,6 +778,7 @@ export class SceneManager {
 
   private onRoomChange(msg: ServerRoomChangeMessage): void {
     this.transitioning = true;
+    const oldRoom = this.currentRoomName;
     this.currentRoomName = msg.room.name;
 
     const roomDef = this.gameData.rooms.find((r) => r.name === msg.room.name);
@@ -767,6 +786,11 @@ export class SceneManager {
       console.error(`[Scene] Room "${msg.room.name}" not found in game data`);
       this.transitioning = false;
       return;
+    }
+
+    // Notify IRC client to PART old room channel and JOIN new one
+    if (oldRoom && oldRoom !== msg.room.name) {
+      this.ui.onRoomTransition(oldRoom, msg.room.name);
     }
 
     this.buildRoom(roomDef, msg.avatars, msg.spawnX, msg.spawnY);
@@ -779,56 +803,6 @@ export class SceneManager {
     avatar.applySnap(msg.x, msg.y);
     this.lastSentX = msg.x;
     this.lastSentY = msg.y;
-  }
-
-  private onChatMessage(msg: ServerChatMessageMessage): void {
-    // Show speech bubble
-    if (this.bubbleManager) {
-      this.bubbleManager.show(msg.avatarId, msg.name, msg.text);
-    }
-
-    // Add to channel panel via store
-    const isSelf = msg.avatarId === this.localAvatarId;
-    this.ui.addChannelMessage(msg.name, msg.text, isSelf);
-  }
-
-  private onPrivateMessage(msg: ServerPrivateMessageMessage): void {
-    // Determine the "other" avatar for PM history keying
-    const isSelf = msg.fromAvatarId === this.localAvatarId;
-    const otherAvatarId = isSelf ? msg.toAvatarId : msg.fromAvatarId;
-
-    // Store in PM history
-    const entry: PmMessage = {
-      name: msg.fromName,
-      text: msg.text,
-      timestamp: Date.now(),
-      isSelf,
-    };
-
-    let history = this.pmHistory.get(otherAvatarId);
-    if (!history) {
-      history = [];
-      this.pmHistory.set(otherAvatarId, history);
-    }
-    history.push(entry);
-    while (history.length > 200) {
-      history.shift();
-    }
-
-    // If the character card is open for this avatar, append the message live
-    const currentSelected = this.ui.getSelectedAvatarId();
-    if (currentSelected === otherAvatarId) {
-      this.ui.addPmMessage(msg.fromName, msg.text, isSelf);
-    } else if (!isSelf) {
-      // Card is NOT open for this avatar — track as unread + show badge
-      let unreads = this.pmUnread.get(otherAvatarId);
-      if (!unreads) {
-        unreads = [];
-        this.pmUnread.set(otherAvatarId, unreads);
-      }
-      unreads.push(entry);
-      this.showBadge(otherAvatarId);
-    }
   }
 
   // ─── Room building ──────────────────────────────────────────

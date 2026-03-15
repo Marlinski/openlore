@@ -1,19 +1,23 @@
 /**
  * ChannelPanel — left-side panel for room channel chat.
+ *
+ * Chat is sent and received via IRC (AircClient), not the game WebSocket.
  */
 
 import { useEffect, useRef } from "preact/hooks";
+import type { AircClient } from "@airc/client";
 import type { Input } from "../../input";
 import type { Connection } from "../../connection";
 import {
   channelOpen, toggleChannel,
-  channelMessages, roomName,
+  channelMessages, roomName, ircRoom,
 } from "../../store";
 import type { ChannelMessage } from "../../store";
 
 interface ChannelPanelProps {
   connection: Connection;
   input: Input;
+  irc: AircClient | null;
 }
 
 function formatTime(ts: number): string {
@@ -61,8 +65,11 @@ export function ChannelPanel(props: ChannelPanelProps) {
     const el = inputRef.current;
     if (!el) return;
     const text = el.value.trim();
-    if (text) {
-      props.connection.send({ type: "chat", text });
+    if (text && props.irc) {
+      const room = ircRoom.value;
+      if (room) {
+        props.irc.say(room, text);
+      }
     }
     el.value = "";
     el.blur();

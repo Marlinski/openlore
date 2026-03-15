@@ -1,7 +1,7 @@
 # Offisims — Root orchestrator
 #
-# Studio targets delegate to studio/Makefile (single source of truth).
-# Game targets are defined here (no game/Makefile yet).
+# Studio targets delegate to studio/Makefile.
+# Game targets delegate to game/Makefile.
 #
 # Ports:
 #   studio/server → http://localhost:4000  (Go, data API + RAG)
@@ -46,23 +46,16 @@ studio-server:
 studio-app:
 	$(MAKE) -C studio app
 
-# ─── Game ────────────────────────────────────────────────────────
-
-game-server:
-	cd game/server && go run ./cmd/game
-
-game-client: pack
-	yarn workspace @offisims/client dev
+# ─── Game (delegates to game/Makefile) ───────────────────────────
 
 game:
-	@echo "Starting Game..."
-	@echo "  Server: http://localhost:3001"
-	@echo "  Client: http://localhost:3002"
-	@trap 'kill 0' INT TERM; \
-		$(MAKE) game-server & \
-		while ! curl -sf http://localhost:3001/api/status > /dev/null 2>&1; do sleep 0.2; done; \
-		$(MAKE) game-client & \
-		wait
+	$(MAKE) -C game dev
+
+game-server:
+	$(MAKE) -C game server
+
+game-client:
+	$(MAKE) -C game client
 
 # ─── All together ────────────────────────────────────────────────
 
@@ -78,22 +71,21 @@ dev:
 
 build: pack
 	$(MAKE) -C studio build
-	yarn workspace @offisims/client build
-	cd game/server && go build -o ../../dist/game-server ./cmd/game
+	$(MAKE) -C game build
 
 # ─── Type checking ───────────────────────────────────────────────
 
 check: pack
 	npx buf lint
 	$(MAKE) -C studio check
-	npx tsc -p game/client/tsconfig.json --noEmit
+	$(MAKE) -C game check
 	cd shared/pack/go && go vet ./...
-	cd game/server && go vet ./...
 	@echo "All packages OK"
 
 # ─── Cleanup ─────────────────────────────────────────────────────
 
 clean:
 	$(MAKE) -C studio clean
-	rm -rf shared/pack/js/dist game/server/dist game/client/dist dist/ gen/
+	$(MAKE) -C game clean
+	rm -rf shared/pack/js/dist dist/ gen/
 	@echo "Cleaned all dist/ and gen/ directories"
