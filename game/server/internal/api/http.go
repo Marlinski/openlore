@@ -51,7 +51,7 @@ func (h *Handlers) createChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	world, err := h.worlds.Create(channel, req.PackID, p)
+	world, err := h.worlds.Create(channel, req.PackID, p, "")
 	if err != nil {
 		writeError(w, http.StatusConflict, "CHANNEL_EXISTS", err.Error())
 		return

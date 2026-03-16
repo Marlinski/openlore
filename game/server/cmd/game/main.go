@@ -47,7 +47,7 @@ func main() {
 			log.Printf("skip channel %s: pack %q not found", ch.Channel, ch.PackID)
 			continue
 		}
-		if _, err := worlds.Create(ch.Channel, ch.PackID, p); err != nil {
+		if _, err := worlds.Create(ch.Channel, ch.PackID, p, cfg.DefaultRoom); err != nil {
 			log.Printf("skip channel %s: %v", ch.Channel, err)
 			continue
 		}
@@ -62,7 +62,7 @@ func main() {
 			log.Fatalf("cannot load default pack %q: %v", cfg.DefaultPack, err)
 		}
 		channel := "#default"
-		world, err := worlds.Create(channel, cfg.DefaultPack, p)
+		world, err := worlds.Create(channel, cfg.DefaultPack, p, cfg.DefaultRoom)
 		if err != nil {
 			log.Fatalf("cannot create default channel: %v", err)
 		}

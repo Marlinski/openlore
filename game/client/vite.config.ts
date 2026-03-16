@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [preact()],
   server: {
     port: 3002,
+    strictPort: true,
     open: true,
     // Proxy API and WebSocket to the game server
     proxy: {

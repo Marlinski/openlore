@@ -59,7 +59,8 @@ type World struct {
 
 // NewWorld creates a World for the given channel, loads game data from the
 // pack, and returns it ready to be started with Run.
-func NewWorld(channel, packID string, p *pack.Pack, players *PlayerStore) *World {
+// defaultRoom is the room new avatars spawn in; pass "" to use the first room in the pack.
+func NewWorld(channel, packID string, p *pack.Pack, players *PlayerStore, defaultRoom string) *World {
 	w := &World{
 		Channel: channel,
 		PackID:  packID,
@@ -75,7 +76,8 @@ func NewWorld(channel, packID string, p *pack.Pack, players *PlayerStore) *World
 		connAvatars:  make(map[string]string),
 		transports:   make(map[string]transport.Transport),
 
-		players: players,
+		players:     players,
+		defaultRoom: defaultRoom,
 	}
 
 	// Load rooms from pack

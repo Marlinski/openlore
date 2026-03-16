@@ -45,6 +45,6 @@ clean: ## Remove build artifacts
 
 kill: ## Kill game processes (server + vite)
 	@echo "Killing game processes..."
-	@-lsof -i :3001 -t 2>/dev/null | xargs kill 2>/dev/null; true
-	@-lsof -i :3002 -t 2>/dev/null | xargs kill 2>/dev/null; true
+	@-{ lsof -ti :3001 2>/dev/null || fuser 3001/tcp 2>/dev/null; } | xargs kill -9 2>/dev/null; true
+	@-{ lsof -ti :3002 2>/dev/null || fuser 3002/tcp 2>/dev/null; } | xargs kill -9 2>/dev/null; true
 	@echo "Done."

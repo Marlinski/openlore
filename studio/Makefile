@@ -80,7 +80,7 @@ clean: ## Remove build artifacts
 
 kill: ## Kill all studio-related processes (server, vite, embedder)
 	@echo "Killing studio processes..."
-	@-lsof -i :4000 -t 2>/dev/null | xargs kill 2>/dev/null; true
-	@-lsof -i :5173 -t 2>/dev/null | xargs kill 2>/dev/null; true
-	@-lsof -i :7997 -t 2>/dev/null | xargs kill 2>/dev/null; true
+	@-{ lsof -ti :4000 2>/dev/null || fuser 4000/tcp 2>/dev/null; } | xargs kill -9 2>/dev/null; true
+	@-{ lsof -ti :5173 2>/dev/null || fuser 5173/tcp 2>/dev/null; } | xargs kill -9 2>/dev/null; true
+	@-{ lsof -ti :7997 2>/dev/null || fuser 7997/tcp 2>/dev/null; } | xargs kill -9 2>/dev/null; true
 	@echo "Done."

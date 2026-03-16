@@ -29,7 +29,8 @@ func NewStore(players *PlayerStore) *Store {
 
 // Create starts a new World for the given channel, backed by the given pack,
 // and launches its Run loop. The channel name (e.g. "#lobby") is the primary key.
-func (s *Store) Create(channel, packID string, p *pack.Pack) (*World, error) {
+// defaultRoom sets the spawn room for new avatars; pass "" to use the first room in the pack.
+func (s *Store) Create(channel, packID string, p *pack.Pack, defaultRoom string) (*World, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -37,7 +38,7 @@ func (s *Store) Create(channel, packID string, p *pack.Pack) (*World, error) {
 		return nil, fmt.Errorf("channel %q already exists", channel)
 	}
 
-	w := NewWorld(channel, packID, p, s.players)
+	w := NewWorld(channel, packID, p, s.players, defaultRoom)
 	s.worlds[channel] = w
 
 	go w.Run()

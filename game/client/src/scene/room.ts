@@ -266,42 +266,30 @@ export class RoomScene {
     }
   }
 
-  private addObjectPlacement(p: TexturePlacement, gameData: Pack): void {
-    if (p.compositeId) {
-      const comp = gameData.composites.find((c) => c.id === p.compositeId);
-      if (!comp) return;
+   private addObjectPlacement(p: TexturePlacement, gameData: Pack): void {
+     if (p.compositeId) {
+       const comp = gameData.composites.find((c) => c.id === p.compositeId);
+       if (!comp) return;
 
-      // Sort parts by anchor Y within the composite (same as studio RoomCanvasDraw.ts)
-      const sorted = [...comp.parts].sort((a, b) => {
-        const anchorA = (a.offsetY || 0) + (a.region?.h ?? 1) + (a.zBias ?? 0);
-        const anchorB = (b.offsetY || 0) + (b.region?.h ?? 1) + (b.zBias ?? 0);
-        if (anchorA !== anchorB) return anchorA - anchorB;
-        return (a.offsetX || 0) - (b.offsetX || 0);
-      });
-
-      // All parts of a composite are ONE z-sorted unit (not separate entries).
-      // Use a sub-container so the whole composite moves/sorts together.
-      const compContainer = new Container();
-      compContainer.x = (p.gridX || 0) * TILE_SIZE;
-      compContainer.y = (p.gridY || 0) * TILE_SIZE;
-
-      for (const part of sorted) {
-        if (!part.region) continue;
-        const sprite = this.createRegionSprite(
-          part.region.tilesetId, part.region.srcCol, part.region.srcRow,
-          part.region.w, part.region.h,
-        );
-        if (sprite) {
-          sprite.x = (part.offsetX || 0) * TILE_SIZE;
-          sprite.y = (part.offsetY || 0) * TILE_SIZE;
-          compContainer.addChild(sprite);
-        }
-      }
-
-      // anchorY = gridY + displayHeight + placement.zBias (matches studio getPlacementSize)
-      const anchorY = (p.gridY || 0) + (comp.displayHeight || 1) + (p.zBias ?? 0);
-      this.objectContainer.addChild(compContainer);
-      this.objectEntries.push({ sprite: compContainer, anchorY });
+       // Each part is its own ObjectEntry so avatars z-sort correctly through
+       // the composite (e.g. avatar walking below the front row of a desk appears
+       // in front of the front chairs but behind the back row).
+       // anchorY per part = gridY + offsetY_tiles + hTiles + placement.zBias
+       for (const part of comp.parts) {
+         if (!part.region) continue;
+         const sprite = this.createRegionSprite(
+           part.region.tilesetId, part.region.srcCol, part.region.srcRow,
+           part.region.w, part.region.h,
+         );
+         if (!sprite) continue;
+         sprite.x = ((p.gridX || 0) + (part.offsetX || 0)) * TILE_SIZE;
+         sprite.y = ((p.gridY || 0) + (part.offsetY || 0)) * TILE_SIZE;
+         const tsScale = findTilesetDef(gameData, part.region.tilesetId)?.tileWidth || TILE_SIZE;
+         const hTiles = (part.region.h || 0) / (tsScale === 1 ? TILE_SIZE : 1);
+         const anchorY = (p.gridY || 0) + (part.offsetY || 0) + hTiles + (part.zBias ?? 0) + (p.zBias ?? 0);
+         this.objectContainer.addChild(sprite);
+         this.objectEntries.push({ sprite, anchorY });
+       }
     } else if (p.region) {
       const sprite = this.createRegionSprite(
         p.region.tilesetId, p.region.srcCol, p.region.srcRow,
@@ -310,7 +298,9 @@ export class RoomScene {
       if (sprite) {
         sprite.x = (p.gridX || 0) * TILE_SIZE;
         sprite.y = (p.gridY || 0) * TILE_SIZE;
-        const anchorY = (p.gridY || 0) + (p.region.h || 0) + (p.zBias ?? 0);
+        const tsScale = findTilesetDef(gameData, p.region.tilesetId)?.tileWidth || TILE_SIZE;
+        const hTiles = (p.region.h || 0) / (tsScale === 1 ? TILE_SIZE : 1);
+        const anchorY = (p.gridY || 0) + hTiles + (p.zBias ?? 0);
         this.objectContainer.addChild(sprite);
         this.objectEntries.push({ sprite, anchorY });
       }
