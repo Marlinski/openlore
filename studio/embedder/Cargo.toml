@@ -23,6 +23,11 @@ clap = { version = "4", features = ["derive"] }
 # Optional macOS acceleration
 accelerate-src = { version = "0.3", optional = true }
 
+# macOS: enable Metal GPU automatically
+[target.'cfg(target_os = "macos")'.dependencies]
+candle-core = { version = "0.9", features = ["metal"] }
+candle-nn = { version = "0.9", features = ["metal"] }
+
 [features]
 default = []
 metal = ["candle-core/metal", "candle-nn/metal"]

@@ -27,13 +27,13 @@ dev: pack-js ## Start server + app + embedder in parallel
 		wait
 
 server: ## Start Go API server (port 4000)
-	cd server && CGO_ENABLED=1 go run ./cmd/studio serve --studio-dir $(REPO_ROOT)/data/studio
+	cd server && CGO_ENABLED=1 GAME_SERVER_URL=http://localhost:3001 go run ./cmd/studio serve --studio-dir $(REPO_ROOT)/data/studio
 
 app: ## Start Vite dev server (port 5173, proxies to :4000)
 	yarn workspace @offisims/studio dev
 
 embedder: ## Start Rust CLIP embedding server (port 7997, requires cargo)
-	cd embedder && cargo run --release --features metal -- --port 7997 --metal
+	cd embedder && cargo run --release -- --port 7997
 
 # ─── Build ───────────────────────────────────────────────────
 

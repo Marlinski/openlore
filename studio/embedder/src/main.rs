@@ -17,10 +17,6 @@ struct Args {
     /// HuggingFace model ID to serve
     #[arg(short, long, default_value = "openai/clip-vit-base-patch32")]
     model: String,
-
-    /// Use Metal GPU (macOS Apple Silicon)
-    #[arg(long, default_value_t = false)]
-    metal: bool,
 }
 
 #[tokio::main]
@@ -34,14 +30,13 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let device = if args.metal {
-        Device::new_metal(0).unwrap_or_else(|e| {
-            tracing::warn!("metal not available ({e}), falling back to CPU");
-            Device::Cpu
-        })
-    } else {
+    #[cfg(target_os = "macos")]
+    let device = Device::new_metal(0).unwrap_or_else(|e| {
+        tracing::warn!("metal not available ({e}), falling back to CPU");
         Device::Cpu
-    };
+    });
+    #[cfg(not(target_os = "macos"))]
+    let device = Device::Cpu;
 
     let state = Arc::new(model::AppState::load(&args.model, device)?);
     let app = server::router(state);
