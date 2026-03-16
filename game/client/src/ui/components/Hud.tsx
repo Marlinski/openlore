@@ -6,7 +6,7 @@
  *   - Current channel name and room name
  */
 
-import { connected, ircConnected, zoomLevel, stepZoom, roomName, currentChannel } from "../../store";
+import { connected, ircConnected, zoomLevel, stepZoom, roomName, currentLore } from "../../store";
 
 export function Hud() {
   return (
@@ -47,8 +47,8 @@ export function Hud() {
           </div>
         </div>
         <div class="status-bar-info">
-          {currentChannel.value && (
-            <span class="status-bar-channel">{currentChannel.value}</span>
+          {currentLore.value && (
+            <span class="status-bar-lore">{currentLore.value}</span>
           )}
           {roomName.value && (
             <span class="status-bar-room">{roomName.value}</span>

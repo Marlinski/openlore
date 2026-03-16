@@ -12,7 +12,7 @@
 .PHONY: install proto pack \
         studio studio-server studio-app \
         game game-server game-client \
-        dev build check clean
+        dev kill build check clean
 
 # ─── Setup ───────────────────────────────────────────────────────
 
@@ -60,12 +60,20 @@ game-client:
 # ─── All together ────────────────────────────────────────────────
 
 dev:
+	@echo "OpenLore"
+	@echo "  Studio API:      http://localhost:4000"
+	@echo "  Studio App:      http://localhost:5173"
+	@echo "  Studio Embedder: http://localhost:7997"
+	@echo "  Game Server:     http://localhost:3001"
+	@echo "  Game Client:     http://localhost:3002"
 	@trap 'kill 0' INT TERM; \
-		$(MAKE) studio-server & \
-		$(MAKE) game-server & \
-		$(MAKE) studio-app & \
-		$(MAKE) game-client & \
+		$(MAKE) -C studio dev & \
+		$(MAKE) -C game dev & \
 		wait
+
+kill:
+	$(MAKE) -C studio kill
+	$(MAKE) -C game kill
 
 # ─── Build ───────────────────────────────────────────────────────
 

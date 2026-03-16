@@ -81,15 +81,15 @@ export interface PmMessage {
  */
 export interface UICallbacks {
   setRoomName: (name: string) => void;
-  addChannelMessage: (name: string, text: string, isSelf: boolean) => void;
-  clearChannelMessages: () => void;
+  addLoreMessage: (name: string, text: string, isSelf: boolean) => void;
+  clearLoreMessages: () => void;
   openCharacterCard: (avatarId: string, name: string, characterId: string) => void;
   closeCharacterCard: () => void;
   setPmHistory: (messages: PmMessage[]) => void;
   addPmMessage: (name: string, text: string, isSelf: boolean) => void;
   clearPmMessages: () => void;
   getSelectedAvatarId: () => string | null;
-  setChannelOpen: (open: boolean) => void;
+  setLoreOpen: (open: boolean) => void;
   /** Called on room transitions (door use) so the IRC client can PART/JOIN. */
   onRoomTransition: (oldRoom: string, newRoom: string) => void;
 }
@@ -829,7 +829,7 @@ export class SceneManager {
     this.deselectAvatar();
 
     // Notify UI
-    this.ui.clearChannelMessages();
+    this.ui.clearLoreMessages();
     this.ui.setRoomName(roomDef.name);
 
     // Build new room scene

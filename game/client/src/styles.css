@@ -336,7 +336,7 @@ html, body {
   margin-left: auto;
 }
 
-.status-bar-channel {
+.status-bar-lore {
   color: #a0c4ff;
 }
 
@@ -547,9 +547,9 @@ html, body {
   color: rgba(255, 255, 255, 0.2);
 }
 
-/* ─── Channel panel (left panel) ─────────────── */
+/* ─── Lore panel (left panel) ─────────────── */
 
-.channel-panel {
+.lore-panel {
   position: absolute;
   top: 0;
   left: 0;
@@ -559,7 +559,7 @@ html, body {
   pointer-events: none;
 }
 
-.channel-panel-tab {
+.lore-panel-tab {
   width: 36px;
   height: 100%;
   background: rgba(18, 18, 30, 0.7);
@@ -575,21 +575,21 @@ html, body {
   flex-shrink: 0;
 }
 
-.channel-panel-tab:hover {
+.lore-panel-tab:hover {
   background: rgba(18, 18, 30, 0.85);
 }
 
-.channel-panel-tab-icon {
+.lore-panel-tab-icon {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.3);
   transition: transform 0.2s;
 }
 
-.channel-panel.open .channel-panel-tab-icon {
+.lore-panel.open .lore-panel-tab-icon {
   transform: rotate(180deg);
 }
 
-.channel-panel-tab-name {
+.lore-panel-tab-name {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-size: 11px;
@@ -599,7 +599,7 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.channel-panel-content {
+.lore-panel-content {
   width: 0;
   height: 100%;
   background: rgba(18, 18, 30, 0.95);
@@ -613,11 +613,11 @@ html, body {
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
 }
 
-.channel-panel.open .channel-panel-content {
+.lore-panel.open .lore-panel-content {
   width: 340px;
 }
 
-.channel-panel-messages {
+.lore-panel-messages {
   flex: 1;
   overflow-y: auto;
   padding: 12px 14px;
@@ -627,24 +627,24 @@ html, body {
   min-width: 340px;
 }
 
-.channel-panel-messages::-webkit-scrollbar {
+.lore-panel-messages::-webkit-scrollbar {
   width: 5px;
 }
 
-.channel-panel-messages::-webkit-scrollbar-track {
+.lore-panel-messages::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.channel-panel-messages::-webkit-scrollbar-thumb {
+.lore-panel-messages::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.channel-panel-messages::-webkit-scrollbar-thumb:hover {
+.lore-panel-messages::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.channel-panel-msg {
+.lore-panel-msg {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -654,48 +654,48 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.channel-panel-msg.self {
+.lore-panel-msg.self {
   background: rgba(96, 165, 250, 0.06);
   border-color: rgba(96, 165, 250, 0.08);
 }
 
-.channel-panel-msg-top {
+.lore-panel-msg-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.channel-panel-msg-name {
+.lore-panel-msg-name {
   font-size: 11px;
   font-weight: 600;
   color: #a0c4ff;
   letter-spacing: 0.2px;
 }
 
-.channel-panel-msg.self .channel-panel-msg-name {
+.lore-panel-msg.self .lore-panel-msg-name {
   color: #60a5fa;
 }
 
-.channel-panel-msg-time {
+.lore-panel-msg-time {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.2);
 }
 
-.channel-panel-msg-text {
+.lore-panel-msg-text {
   font-size: 13px;
   color: #d0d0d0;
   line-height: 1.4;
   word-wrap: break-word;
 }
 
-.channel-panel-form {
+.lore-panel-form {
   flex-shrink: 0;
   padding: 8px 14px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 340px;
 }
 
-.channel-panel-input {
+.lore-panel-input {
   width: 100%;
   padding: 8px 10px;
   background: rgba(0, 0, 0, 0.4);
@@ -706,14 +706,14 @@ html, body {
   outline: none;
 }
 
-.channel-panel-input:focus {
+.lore-panel-input:focus {
   border-color: #a0c4ff;
   background: rgba(0, 0, 0, 0.6);
 }
 
-/* ─── Channel browser ────────────────────────── */
+/* ─── Lore browser ────────────────────────── */
 
-.channel-browser {
+.lore-browser {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -723,13 +723,13 @@ html, body {
   padding: 32px;
 }
 
-.channel-browser h1 {
+.lore-browser h1 {
   font-size: 1.6rem;
   color: #a0c4ff;
   margin-bottom: 4px;
 }
 
-.channel-browser-error {
+.lore-browser-error {
   font-size: 0.85rem;
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
@@ -740,19 +740,19 @@ html, body {
   text-align: center;
 }
 
-.channel-browser-loading {
+.lore-browser-loading {
   font-size: 0.9rem;
   color: #888;
 }
 
-.channel-browser-empty {
+.lore-browser-empty {
   font-size: 0.9rem;
   color: #666;
   text-align: center;
   padding: 20px 0;
 }
 
-.channel-browser-list {
+.lore-browser-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -762,16 +762,16 @@ html, body {
   overflow-y: auto;
 }
 
-.channel-browser-list::-webkit-scrollbar {
+.lore-browser-list::-webkit-scrollbar {
   width: 5px;
 }
 
-.channel-browser-list::-webkit-scrollbar-thumb {
+.lore-browser-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.channel-browser-item {
+.lore-browser-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -782,12 +782,12 @@ html, body {
   transition: background 0.15s, border-color 0.15s;
 }
 
-.channel-browser-item:hover {
+.lore-browser-item:hover {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.channel-browser-item-info {
+.lore-browser-item-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -795,7 +795,7 @@ html, body {
   min-width: 0;
 }
 
-.channel-browser-item-name {
+.lore-browser-item-name {
   font-size: 0.95rem;
   color: #e0e0e0;
   font-weight: 600;
@@ -804,7 +804,7 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.channel-browser-item-pack {
+.lore-browser-item-pack {
   font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
@@ -812,17 +812,17 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.channel-browser-item-meta {
+.lore-browser-item-meta {
   flex-shrink: 0;
 }
 
-.channel-browser-item-players {
+.lore-browser-item-players {
   font-size: 0.8rem;
   color: #888;
   white-space: nowrap;
 }
 
-.channel-browser-join-btn {
+.lore-browser-join-btn {
   flex-shrink: 0;
   padding: 6px 16px;
   background: #3a5a8a;
@@ -834,20 +834,20 @@ html, body {
   transition: background 0.15s;
 }
 
-.channel-browser-join-btn:hover {
+.lore-browser-join-btn:hover {
   background: #4a6a9a;
 }
 
-/* Create channel form */
+/* Create lore form */
 
-.channel-browser-create {
+.lore-browser-create {
   width: 100%;
   max-width: 440px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 16px;
 }
 
-.channel-browser-create-title {
+.lore-browser-create-title {
   font-size: 0.85rem;
   color: #999;
   margin-bottom: 10px;
@@ -855,12 +855,12 @@ html, body {
   letter-spacing: 0.5px;
 }
 
-.channel-browser-create-row {
+.lore-browser-create-row {
   display: flex;
   gap: 8px;
 }
 
-.channel-browser-create-input {
+.lore-browser-create-input {
   flex: 1;
   padding: 8px 10px;
   background: #2a2a3e;
@@ -872,15 +872,15 @@ html, body {
   min-width: 0;
 }
 
-.channel-browser-create-input:focus {
+.lore-browser-create-input:focus {
   border-color: #a0c4ff;
 }
 
-.channel-browser-create-input::placeholder {
+.lore-browser-create-input::placeholder {
   color: #666;
 }
 
-.channel-browser-create-select {
+.lore-browser-create-select {
   width: 140px;
   padding: 8px 10px;
   background: #2a2a3e;
@@ -891,11 +891,11 @@ html, body {
   outline: none;
 }
 
-.channel-browser-create-select:focus {
+.lore-browser-create-select:focus {
   border-color: #a0c4ff;
 }
 
-.channel-browser-create-btn {
+.lore-browser-create-btn {
   flex-shrink: 0;
   padding: 8px 18px;
   background: #3a5a8a;
@@ -907,11 +907,11 @@ html, body {
   transition: background 0.15s;
 }
 
-.channel-browser-create-btn:hover:not(:disabled) {
+.lore-browser-create-btn:hover:not(:disabled) {
   background: #4a6a9a;
 }
 
-.channel-browser-create-btn:disabled {
+.lore-browser-create-btn:disabled {
   opacity: 0.5;
   cursor: default;
 }

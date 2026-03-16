@@ -2,8 +2,8 @@
  * Client entry point.
  *
  * Bootstraps the game:
- *   1. Show channel browser (always the first screen)
- *   2. Player picks a channel — game data is fetched for that channel
+ *   1. Show lore browser (always the first screen)
+ *   2. Player picks a lore — game data is fetched for that lore
  *   3. If no session token, show JoinScreen (register name + pick character)
  *   4. If session token exists (returning player), skip straight to game
  *   5. Render GameScreen which handles WebSocket + PixiJS
@@ -14,10 +14,10 @@ import { useEffect } from "preact/hooks";
 import type { Pack } from "@offisims/pack";
 import { preloadGameAssets } from "./assets";
 import {
-  screen, joinStatus, joinReady, gameData, currentChannel, sessionToken,
+  screen, joinStatus, joinReady, gameData, currentLore, sessionToken,
 } from "./store";
 import { JoinScreen } from "./ui/components/JoinScreen";
-import { ChannelBrowser } from "./ui/components/ChannelBrowser";
+import { LoreBrowser } from "./ui/components/LoreBrowser";
 import { GameScreen } from "./ui/components/GameScreen";
 import "./styles.css";
 
@@ -45,8 +45,8 @@ function deleteCookie(name: string): void {
 // ─── App component ────────────────────────────────────────────────
 
 function App() {
-  /** Fetch game data for a channel, preload assets, return the pack */
-  const loadChannelData = async (channel: string): Promise<Pack> => {
+  /** Fetch game data for a lore, preload assets, return the pack */
+  const loadLoreData = async (channel: string): Promise<Pack> => {
     const chName = channel.startsWith("#") ? channel.slice(1) : channel;
     const res = await fetch(`/api/channels/${encodeURIComponent(chName)}/game-data`);
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
@@ -61,21 +61,21 @@ function App() {
     screen.value = "game";
   };
 
-  /** Session was invalidated by the server — go back to channel browser */
+  /** Session was invalidated by the server — go back to lore browser */
   const handleSessionInvalid = () => {
     deleteCookie(COOKIE_NAME);
     sessionToken.value = null;
-    currentChannel.value = null;
+    currentLore.value = null;
     gameData.value = null;
-    screen.value = "channels";
+    screen.value = "lore";
   };
 
-  /** Handle channel selection from the channel browser */
-  const handleJoinChannel = async (channel: string) => {
-    currentChannel.value = channel;
+  /** Handle lore selection from the lore browser */
+  const handleJoinLore = async (channel: string) => {
+    currentLore.value = channel;
 
     try {
-      await loadChannelData(channel);
+      await loadLoreData(channel);
 
       if (sessionToken.value) {
         // Returning player — skip join screen, go straight to game
@@ -87,8 +87,8 @@ function App() {
         screen.value = "join";
       }
     } catch (err) {
-      console.error("[JoinChannel] Failed:", err);
-      currentChannel.value = null;
+      console.error("[JoinLore] Failed:", err);
+      currentLore.value = null;
     }
   };
 
@@ -134,24 +134,24 @@ function App() {
         }
       }
 
-      // Always start on channel browser
-      screen.value = "channels";
+      // Always start on lore browser
+      screen.value = "lore";
     })();
   }, []);
 
   return (
     <>
-      {screen.value === "channels" && (
-        <ChannelBrowser onJoinChannel={handleJoinChannel} />
+      {screen.value === "lore" && (
+        <LoreBrowser onJoinLore={handleJoinLore} />
       )}
       {screen.value === "join" && (
         <JoinScreen onJoin={handleJoin} />
       )}
-      {screen.value === "game" && sessionToken.value && gameData.value && currentChannel.value && (
+      {screen.value === "game" && sessionToken.value && gameData.value && currentLore.value && (
         <GameScreen
           token={sessionToken.value}
           gameData={gameData.value}
-          channel={currentChannel.value}
+          channel={currentLore.value}
           onSessionInvalid={handleSessionInvalid}
         />
       )}

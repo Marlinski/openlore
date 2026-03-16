@@ -1,8 +1,8 @@
 /**
- * ChannelBrowser — screen shown after login, before entering a game channel.
+ * LoreBrowser — screen shown after login, before entering a lore.
  *
- * Lists available channels from GET /api/channels, lets the player join one,
- * and provides a minimal create-channel form (name + pack selection).
+ * Lists available lores from GET /api/channels, lets the player join one,
+ * and provides a minimal create-lore form (name + pack selection).
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -10,7 +10,7 @@ import { signal } from "@preact/signals";
 
 // ─── Types ────────────────────────────────────────────────────────
 
-interface ChannelMeta {
+interface LoreMeta {
   channel: string;
   packId: string;
   players: number;
@@ -22,13 +22,13 @@ interface PackInfo {
   name: string;
 }
 
-interface ChannelBrowserProps {
-  onJoinChannel: (channel: string) => void;
+interface LoreBrowserProps {
+  onJoinLore: (channel: string) => void;
 }
 
 // ─── Local signals ────────────────────────────────────────────────
 
-const channels = signal<ChannelMeta[]>([]);
+const lores = signal<LoreMeta[]>([]);
 const packs = signal<PackInfo[]>([]);
 const loading = signal(true);
 const error = signal<string | null>(null);
@@ -36,7 +36,7 @@ const creating = signal(false);
 
 // ─── Component ────────────────────────────────────────────────────
 
-export function ChannelBrowser(props: ChannelBrowserProps) {
+export function LoreBrowser(props: LoreBrowserProps) {
   const nameRef = useRef<HTMLInputElement>(null);
   const packRef = useRef<HTMLSelectElement>(null);
 
@@ -50,10 +50,10 @@ export function ChannelBrowser(props: ChannelBrowserProps) {
         fetch("/api/packs"),
       ]);
 
-      if (!chRes.ok) throw new Error(`Channels: ${chRes.status}`);
+      if (!chRes.ok) throw new Error(`Lores: ${chRes.status}`);
       if (!pkRes.ok) throw new Error(`Packs: ${pkRes.status}`);
 
-      channels.value = (await chRes.json()) as ChannelMeta[];
+      lores.value = (await chRes.json()) as LoreMeta[];
       packs.value = (await pkRes.json()) as PackInfo[];
     } catch (err) {
       error.value = `Failed to load: ${err}`;
@@ -87,10 +87,10 @@ export function ChannelBrowser(props: ChannelBrowserProps) {
         throw new Error(body.error || `Server returned ${res.status}`);
       }
 
-      const created = (await res.json()) as ChannelMeta;
+      const created = (await res.json()) as LoreMeta;
       // Refresh list and auto-join
       await fetchData();
-      props.onJoinChannel(created.channel);
+      props.onJoinLore(created.channel);
     } catch (err) {
       error.value = `${err}`;
       creating.value = false;
@@ -98,36 +98,36 @@ export function ChannelBrowser(props: ChannelBrowserProps) {
   };
 
   return (
-    <div class="channel-browser">
-      <h1>Channels</h1>
+    <div class="lore-browser">
+      <h1>Lore</h1>
 
-      {error.value && <div class="channel-browser-error">{error.value}</div>}
+      {error.value && <div class="lore-browser-error">{error.value}</div>}
 
       {loading.value ? (
-        <div class="channel-browser-loading">Loading channels...</div>
+        <div class="lore-browser-loading">Loading lores...</div>
       ) : (
         <>
-          {/* Channel list */}
-          <div class="channel-browser-list">
-            {channels.value.length === 0 ? (
-              <div class="channel-browser-empty">
-                No channels yet. Create one below.
+          {/* Lore list */}
+          <div class="lore-browser-list">
+            {lores.value.length === 0 ? (
+              <div class="lore-browser-empty">
+                No lores yet. Create one below.
               </div>
             ) : (
-              channels.value.map((ch) => (
-                <div class="channel-browser-item" key={ch.channel}>
-                  <div class="channel-browser-item-info">
-                    <span class="channel-browser-item-name">{ch.channel}</span>
-                    <span class="channel-browser-item-pack">{ch.packId}</span>
+              lores.value.map((ch) => (
+                <div class="lore-browser-item" key={ch.channel}>
+                  <div class="lore-browser-item-info">
+                    <span class="lore-browser-item-name">{ch.channel}</span>
+                    <span class="lore-browser-item-pack">{ch.packId}</span>
                   </div>
-                  <div class="channel-browser-item-meta">
-                    <span class="channel-browser-item-players">
+                  <div class="lore-browser-item-meta">
+                    <span class="lore-browser-item-players">
                       {ch.players} {ch.players === 1 ? "player" : "players"}
                     </span>
                   </div>
                   <button
-                    class="channel-browser-join-btn"
-                    onClick={() => props.onJoinChannel(ch.channel)}
+                    class="lore-browser-join-btn"
+                    onClick={() => props.onJoinLore(ch.channel)}
                   >
                     Join
                   </button>
@@ -136,20 +136,20 @@ export function ChannelBrowser(props: ChannelBrowserProps) {
             )}
           </div>
 
-          {/* Create channel form */}
+          {/* Create lore form */}
           {packs.value.length > 0 && (
-            <form class="channel-browser-create" onSubmit={handleCreate}>
-              <div class="channel-browser-create-title">Create Channel</div>
-              <div class="channel-browser-create-row">
+            <form class="lore-browser-create" onSubmit={handleCreate}>
+              <div class="lore-browser-create-title">Create Lore</div>
+              <div class="lore-browser-create-row">
                 <input
                   ref={nameRef}
-                  class="channel-browser-create-input"
+                  class="lore-browser-create-input"
                   type="text"
-                  placeholder="Channel name (e.g. lobby)"
+                  placeholder="Lore name (e.g. lobby)"
                   maxLength={30}
                   autocomplete="off"
                 />
-                <select ref={packRef} class="channel-browser-create-select">
+                <select ref={packRef} class="lore-browser-create-select">
                   {packs.value.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name || p.id}
@@ -157,7 +157,7 @@ export function ChannelBrowser(props: ChannelBrowserProps) {
                   ))}
                 </select>
                 <button
-                  class="channel-browser-create-btn"
+                  class="lore-browser-create-btn"
                   type="submit"
                   disabled={creating.value}
                 >

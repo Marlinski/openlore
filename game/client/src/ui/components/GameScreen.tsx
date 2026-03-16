@@ -19,15 +19,15 @@ import { Connection } from "../../connection";
 import { Input } from "../../input";
 import { SceneManager } from "../../scene/manager";
 import { Hud } from "./Hud";
-import { ChannelPanel } from "./ChannelPanel";
+import { LorePanel } from "./LorePanel";
 import { CharacterCard } from "./CharacterCard";
 import { BubbleOverlay, BubbleManager } from "./BubbleOverlay";
 import {
   connected, ircConnected, setOnZoomChange, roomName,
-  addChannelMessage, clearChannelMessages,
+  addLoreMessage, clearLoreMessages,
   openCharacterCard, closeCharacterCard,
   setPmHistory, addPmMessage, clearPmMessages,
-  channelOpen, selectedAvatar, ircRoom,
+  loreOpen, selectedAvatar, ircRoom,
 } from "../../store";
 
 interface GameScreenProps {
@@ -96,15 +96,15 @@ export function GameScreen(props: GameScreenProps) {
       // Create scene manager with store callbacks
       const scn = new SceneManager(app, conn, inp, props.gameData, {
         setRoomName: (name: string) => { roomName.value = name; },
-        addChannelMessage,
-        clearChannelMessages,
+        addLoreMessage,
+        clearLoreMessages,
         openCharacterCard,
         closeCharacterCard,
         setPmHistory,
         addPmMessage,
         clearPmMessages,
         getSelectedAvatarId: () => selectedAvatar.value?.avatarId ?? null,
-        setChannelOpen: (open: boolean) => { channelOpen.value = open; },
+        setLoreOpen: (open: boolean) => { loreOpen.value = open; },
         onRoomTransition: (oldRoom: string, newRoom: string) => {
           if (!ircClient) return;
           const oldIrcCh = `${props.channel}-${oldRoom}`;
@@ -162,9 +162,12 @@ export function GameScreen(props: GameScreenProps) {
         ircRoom.value = currentIrcRoom;
 
         // Create IRC client
+        const ircUrl =
+          import.meta.env.VITE_IRC_URL ?? "wss://irc.openlore.xyz/ws";
         ircClient = new AircClient({
           nick: playerName,
           autoJoin: [currentIrcRoom],
+          url: ircUrl,
         });
 
         // Wire IRC events
@@ -181,7 +184,7 @@ export function GameScreen(props: GameScreenProps) {
 
               if (isChannel) {
                 // Channel message → chat panel + speech bubble
-                addChannelMessage(ircMsg.from, ircMsg.text, isSelf);
+                addLoreMessage(ircMsg.from, ircMsg.text, isSelf);
                 if (!isSelf) {
                   const avatar = scn.findAvatarByName(ircMsg.from);
                   if (avatar && scn.getBubbleManager()) {
@@ -289,7 +292,7 @@ export function GameScreen(props: GameScreenProps) {
       <Hud />
       {connectionSig.value && inputSig.value && (
         <>
-          <ChannelPanel
+          <LorePanel
             connection={connectionSig.value}
             input={inputSig.value}
             irc={ircSig.value}

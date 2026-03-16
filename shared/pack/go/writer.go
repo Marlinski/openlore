@@ -13,8 +13,9 @@ import (
 )
 
 var marshaler = protojson.MarshalOptions{
-	Multiline: true,
-	Indent:    "  ",
+	Multiline:       true,
+	Indent:          "  ",
+	EmitUnpopulated: true,
 }
 
 // Write writes a pack to a directory as JSON files.

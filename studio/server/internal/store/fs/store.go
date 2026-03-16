@@ -16,9 +16,10 @@ import (
 // protojson options matching shared/pack conventions.
 var (
 	marshaler = protojson.MarshalOptions{
-		Multiline:      true,
-		Indent:         "  ",
-		UseEnumNumbers: true,
+		Multiline:       true,
+		Indent:          "  ",
+		UseEnumNumbers:  true,
+		EmitUnpopulated: true,
 	}
 	unmarshaler = protojson.UnmarshalOptions{DiscardUnknown: true}
 )

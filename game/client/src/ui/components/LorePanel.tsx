@@ -1,5 +1,5 @@
 /**
- * ChannelPanel — left-side panel for room channel chat.
+ * LorePanel — left-side panel for room channel chat.
  *
  * Chat is sent and received via IRC (AircClient), not the game WebSocket.
  */
@@ -9,12 +9,12 @@ import type { AircClient } from "@airc/client";
 import type { Input } from "../../input";
 import type { Connection } from "../../connection";
 import {
-  channelOpen, toggleChannel,
-  channelMessages, roomName, ircRoom,
+  loreOpen, toggleLore,
+  loreMessages, roomName, ircRoom,
 } from "../../store";
-import type { ChannelMessage } from "../../store";
+import type { LoreMessage } from "../../store";
 
-interface ChannelPanelProps {
+interface LorePanelProps {
   connection: Connection;
   input: Input;
   irc: AircClient | null;
@@ -27,19 +27,19 @@ function formatTime(ts: number): string {
   return `${h}:${m}`;
 }
 
-function MessageEl(props: { msg: ChannelMessage }) {
+function MessageEl(props: { msg: LoreMessage }) {
   return (
-    <div class={`channel-panel-msg${props.msg.isSelf ? " self" : ""}`}>
-      <div class="channel-panel-msg-top">
-        <span class="channel-panel-msg-name">{props.msg.name}</span>
-        <span class="channel-panel-msg-time">{formatTime(props.msg.timestamp)}</span>
+    <div class={`lore-panel-msg${props.msg.isSelf ? " self" : ""}`}>
+      <div class="lore-panel-msg-top">
+        <span class="lore-panel-msg-name">{props.msg.name}</span>
+        <span class="lore-panel-msg-time">{formatTime(props.msg.timestamp)}</span>
       </div>
-      <div class="channel-panel-msg-text">{props.msg.text}</div>
+      <div class="lore-panel-msg-text">{props.msg.text}</div>
     </div>
   );
 }
 
-export function ChannelPanel(props: ChannelPanelProps) {
+export function LorePanel(props: LorePanelProps) {
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,15 +51,15 @@ export function ChannelPanel(props: ChannelPanelProps) {
   };
 
   // Auto-scroll when messages change
-  const msgs = channelMessages.value;
+  const msgs = loreMessages.value;
   useEffect(() => {
     scrollToBottom();
   }, [msgs.length]);
 
   // Also scroll when panel opens
   useEffect(() => {
-    if (channelOpen.value) scrollToBottom();
-  }, [channelOpen.value]);
+    if (loreOpen.value) scrollToBottom();
+  }, [loreOpen.value]);
 
   const sendChat = () => {
     const el = inputRef.current;
@@ -102,7 +102,7 @@ export function ChannelPanel(props: ChannelPanelProps) {
     const handleWindowKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Tab" && !props.input.chatOpen) {
         e.preventDefault();
-        toggleChannel();
+        toggleLore();
       }
     };
 
@@ -110,7 +110,7 @@ export function ChannelPanel(props: ChannelPanelProps) {
 
     // Enter key opens panel and focuses chat input
     props.input.onChatOpen(() => {
-      if (!channelOpen.value) channelOpen.value = true;
+      if (!loreOpen.value) loreOpen.value = true;
       inputRef.current?.focus();
     });
 
@@ -124,21 +124,21 @@ export function ChannelPanel(props: ChannelPanelProps) {
   }, []);
 
   return (
-    <div class={`channel-panel${channelOpen.value ? " open" : ""}`}>
-      <div class="channel-panel-tab" onClick={toggleChannel}>
-        <span class="channel-panel-tab-icon">{"\u25B8"}</span>
-        <span class="channel-panel-tab-name">{roomName.value}</span>
+    <div class={`lore-panel${loreOpen.value ? " open" : ""}`}>
+      <div class="lore-panel-tab" onClick={toggleLore}>
+        <span class="lore-panel-tab-icon">{"\u25B8"}</span>
+        <span class="lore-panel-tab-name">{roomName.value}</span>
       </div>
-      <div class="channel-panel-content">
-        <div class="channel-panel-messages" ref={messagesRef}>
-          {channelMessages.value.map((msg, i) => (
+      <div class="lore-panel-content">
+        <div class="lore-panel-messages" ref={messagesRef}>
+          {loreMessages.value.map((msg, i) => (
             <MessageEl key={i} msg={msg} />
           ))}
         </div>
-        <form class="channel-panel-form" onSubmit={handleSubmit}>
+        <form class="lore-panel-form" onSubmit={handleSubmit}>
           <input
             ref={inputRef}
-            class="channel-panel-input"
+            class="lore-panel-input"
             type="text"
             placeholder="Type a message..."
             maxLength={200}

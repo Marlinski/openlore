@@ -14,7 +14,7 @@ import type { Pack } from "@offisims/pack";
 
 // ─── Types ────────────────────────────────────────────────────────
 
-export interface ChannelMessage {
+export interface LoreMessage {
   name: string;
   text: string;
   timestamp: number;
@@ -36,18 +36,18 @@ export interface SelectedAvatar {
 
 // ─── App-level state (screens, boot) ─────────────────────────────
 
-export type AppScreen = "join" | "channels" | "game";
+export type AppScreen = "join" | "lore" | "game";
 
-export const screen = signal<AppScreen>("channels");
+export const screen = signal<AppScreen>("lore");
 export const joinStatus = signal("");
 export const joinReady = signal(false);
 export const gameData = signal<Pack | null>(null);
 export const sessionToken = signal<string | null>(null);
 
-// ─── Channel state ────────────────────────────────────────────────
+// ─── Lore state ───────────────────────────────────────────────────
 
-/** The channel the player has joined (e.g. "#lobby"). Set before entering game screen. */
-export const currentChannel = signal<string | null>(null);
+/** The lore the player has joined (e.g. "#lobby"). Set before entering game screen. */
+export const currentLore = signal<string | null>(null);
 
 /** The current IRC room channel (e.g. "#lobby-reception"). Changes on door transitions. */
 export const ircRoom = signal("");
@@ -82,24 +82,24 @@ export function setOnZoomChange(cb: (zoom: number) => void): void {
 
 export const roomName = signal("");
 
-// ─── Channel panel (left panel — room chat) ──────────────────────
+// ─── Lore panel (left panel — room chat) ─────────────────────────
 
-export const channelOpen = signal(false);
-export const channelMessages = signal<ChannelMessage[]>([]);
+export const loreOpen = signal(false);
+export const loreMessages = signal<LoreMessage[]>([]);
 
-export function toggleChannel(): void {
-  channelOpen.value = !channelOpen.value;
+export function toggleLore(): void {
+  loreOpen.value = !loreOpen.value;
 }
 
-export function addChannelMessage(name: string, text: string, isSelf: boolean): void {
-  const entry: ChannelMessage = { name, text, timestamp: Date.now(), isSelf };
-  const msgs = channelMessages.value;
+export function addLoreMessage(name: string, text: string, isSelf: boolean): void {
+  const entry: LoreMessage = { name, text, timestamp: Date.now(), isSelf };
+  const msgs = loreMessages.value;
   const next = [...msgs, entry];
-  channelMessages.value = next.length > 200 ? next.slice(next.length - 200) : next;
+  loreMessages.value = next.length > 200 ? next.slice(next.length - 200) : next;
 }
 
-export function clearChannelMessages(): void {
-  channelMessages.value = [];
+export function clearLoreMessages(): void {
+  loreMessages.value = [];
 }
 
 // ─── Character card (right panel — avatar PM chat) ───────────────

@@ -17,7 +17,8 @@ const ownerIDKey contextKey = "ownerID"
 
 // protojson options for API responses — numeric enums match game server convention.
 var apiMarshaler = protojson.MarshalOptions{
-	UseEnumNumbers: true,
+	UseEnumNumbers:  true,
+	EmitUnpopulated: true,
 }
 
 // WorkspaceMiddleware extracts the workspace ID from the chi URL param

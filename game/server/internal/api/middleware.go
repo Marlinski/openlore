@@ -13,7 +13,8 @@ import (
 // PLACEMENT_LAYER_FLOOR) which matches the TypeScript numeric enums generated
 // by protobuf-es.
 var protoJSONOpts = protojson.MarshalOptions{
-	UseEnumNumbers: true,
+	UseEnumNumbers:  true,
+	EmitUnpopulated: true,
 }
 
 // writeJSON serialises v as JSON and writes it with the given status code.
