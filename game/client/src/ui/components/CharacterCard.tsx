@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
-import type { AircClient } from "@airc/client";
+import type { AircClient } from "@marlinski/airc";
 import type { Input } from "../../input";
 import type { Connection } from "../../connection";
 import {

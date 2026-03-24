@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 
-	"github.com/offisims/game/internal/api"
-	"github.com/offisims/game/internal/channelstore"
-	"github.com/offisims/game/internal/config"
-	"github.com/offisims/game/internal/game"
-	"github.com/offisims/game/internal/packstore"
+	"github.com/openlore/game/internal/api"
+	"github.com/openlore/game/internal/channelstore"
+	"github.com/openlore/game/internal/config"
+	"github.com/openlore/game/internal/game"
+	"github.com/openlore/game/internal/packstore"
 )
 
 func main() {
@@ -75,7 +76,7 @@ func main() {
 
 	// ── HTTP server ──────────────────────────────────────────────────────
 	handlers := api.NewHandlers(cfg, packs, worlds, players, channels)
-	router := api.NewRouter(cfg, handlers)
+	router := api.NewRouter(cfg, handlers, frontendFS())
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	log.Printf("game server listening on http://localhost%s", addr)
@@ -86,4 +87,19 @@ func main() {
 	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// frontendFS returns the embedded Preact build as an fs.FS rooted at "dist/".
+// Returns nil if no real build is embedded (dev mode — only .gitkeep present).
+func frontendFS() fs.FS {
+	sub, err := fs.Sub(distFS, "dist")
+	if err != nil {
+		return nil
+	}
+	// Check for index.html to distinguish real build from placeholder.
+	if _, err := fs.Stat(sub, "index.html"); err != nil {
+		return nil
+	}
+	log.Println("embedded frontend detected — serving SPA at /")
+	return sub
 }

@@ -12,9 +12,9 @@
 import { useEffect, useRef } from "preact/hooks";
 import { signal } from "@preact/signals";
 import { Application } from "pixi.js";
-import type { Pack } from "@offisims/pack";
-import { AircClient } from "@airc/client";
-import type { IrcEvent } from "@airc/client";
+import type { Pack } from "@openlore/pack";
+import { AircClient } from "@marlinski/airc";
+import type { IrcEvent } from "@marlinski/airc";
 import { Connection } from "../../connection";
 import { Input } from "../../input";
 import { SceneManager } from "../../scene/manager";

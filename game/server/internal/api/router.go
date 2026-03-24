@@ -1,15 +1,16 @@
 package api
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/offisims/game/internal/channelstore"
-	"github.com/offisims/game/internal/config"
-	"github.com/offisims/game/internal/game"
-	"github.com/offisims/game/internal/packstore"
-	"github.com/offisims/game/internal/transport"
+	"github.com/openlore/game/internal/channelstore"
+	"github.com/openlore/game/internal/config"
+	"github.com/openlore/game/internal/game"
+	"github.com/openlore/game/internal/packstore"
+	"github.com/openlore/game/internal/transport"
 	"nhooyr.io/websocket"
 )
 
@@ -27,7 +28,8 @@ func NewHandlers(cfg *config.Config, packs *packstore.Store, worlds *game.Store,
 }
 
 // NewRouter wires all HTTP handlers onto a chi router.
-func NewRouter(cfg *config.Config, h *Handlers) http.Handler {
+// frontendFS is optional — pass nil to disable SPA serving (dev mode).
+func NewRouter(cfg *config.Config, h *Handlers, frontendFS fs.FS) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -77,6 +79,11 @@ func NewRouter(cfg *config.Config, h *Handlers) http.Handler {
 
 	// ── Static data assets ────────────────────────────────────────────────
 	r.Get("/data/*", h.serveData)
+
+	// ── Embedded SPA frontend ────────────────────────────────────────────
+	// The SPA catches all unmatched routes and handles client-side routing.
+	spa := NewSPAHandler(frontendFS)
+	r.NotFound(spa.ServeHTTP)
 
 	return r
 }
