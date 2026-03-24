@@ -14,9 +14,7 @@ WORKDIR /src
 COPY package.json yarn.lock ./
 COPY shared/pack/js/package.json shared/pack/js/
 COPY game/client/package.json game/client/
-
-# Stub studio/app so yarn workspaces doesn't fail
-RUN mkdir -p studio/app && echo '{"name":"@openlore/studio","version":"0.0.0","private":true}' > studio/app/package.json
+COPY studio/app/package.json studio/app/
 
 RUN yarn install --frozen-lockfile
 

@@ -1,8 +1,8 @@
 # ─── Studio: Go server with embedded Preact frontend ─────────────
 # Build context: repo root (so shared/ is accessible)
 #
-#   docker build -f studio/Dockerfile -t offisims-studio .
-#   docker run -p 4000:4000 -v ./data/studio:/data offisims-studio
+#   docker build -f studio/Dockerfile -t openlore-studio .
+#   docker run -p 4000:4000 -v ./data/studio:/data openlore-studio
 
 # ── Stage 1: Build JS frontend ───────────────────────────────────
 
@@ -16,7 +16,7 @@ COPY shared/pack/js/package.json shared/pack/js/
 COPY studio/app/package.json studio/app/
 
 # Stub game/client so yarn workspaces doesn't fail
-RUN mkdir -p game/client && echo '{"name":"@offisims/client","version":"0.0.0","private":true}' > game/client/package.json
+RUN mkdir -p game/client && echo '{"name":"@openlore/client","version":"0.0.0","private":true}' > game/client/package.json
 
 RUN yarn install --frozen-lockfile
 
@@ -25,12 +25,12 @@ COPY shared/pack/js/ shared/pack/js/
 COPY studio/app/ studio/app/
 COPY tsconfig.base.json ./
 
-RUN yarn workspace @offisims/pack build
-RUN yarn workspace @offisims/studio build
+RUN yarn workspace @openlore/pack build
+RUN yarn workspace @openlore/studio build
 
 # ── Stage 2: Build Go server ─────────────────────────────────────
 
-FROM golang:1.24-alpine AS go-build
+FROM golang:1.25-alpine AS go-build
 
 WORKDIR /src
 
