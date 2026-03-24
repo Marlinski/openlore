@@ -6,7 +6,7 @@
 
 # ── Stage 1: Build Rust binary ────────────────────────────────────
 
-FROM rust:1.85-alpine AS build
+FROM rust:1.88-alpine AS build
 
 # musl-dev: C toolchain; openssl-dev: TLS; oniguruma-dev: tokenizers onig feature
 RUN apk add --no-cache musl-dev openssl-dev pkgconfig oniguruma-dev

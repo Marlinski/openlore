@@ -10,18 +10,13 @@ FROM node:22-alpine AS js-build
 
 WORKDIR /src
 
-# Copy workspace root files + all workspace package.json files for install
 COPY package.json yarn.lock ./
-COPY shared/pack/js/package.json shared/pack/js/
-COPY game/client/package.json game/client/
-COPY studio/app/package.json studio/app/
-
-RUN yarn install --frozen-lockfile
-
-# Copy source and build
 COPY shared/pack/js/ shared/pack/js/
 COPY game/client/ game/client/
+COPY studio/app/package.json studio/app/package.json
 COPY tsconfig.base.json ./
+
+RUN yarn install
 
 RUN yarn workspace @openlore/pack build
 RUN yarn workspace @openlore/client build

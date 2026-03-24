@@ -10,20 +10,13 @@ FROM node:22-alpine AS js-build
 
 WORKDIR /src
 
-# Copy workspace root files + all workspace package.json files for install
 COPY package.json yarn.lock ./
-COPY shared/pack/js/package.json shared/pack/js/
-COPY studio/app/package.json studio/app/
-
-# Stub game/client so yarn workspaces doesn't fail
-RUN mkdir -p game/client && echo '{"name":"@openlore/client","version":"0.0.0","private":true}' > game/client/package.json
-
-RUN yarn install --frozen-lockfile
-
-# Copy source and build
 COPY shared/pack/js/ shared/pack/js/
 COPY studio/app/ studio/app/
+COPY game/client/package.json game/client/package.json
 COPY tsconfig.base.json ./
+
+RUN yarn install
 
 RUN yarn workspace @openlore/pack build
 RUN yarn workspace @openlore/studio build
