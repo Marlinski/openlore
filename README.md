@@ -2,6 +2,12 @@
 
 A 2D multiplayer office simulation game with a Zelda-like top-down perspective. Includes a full world editor (Studio) and a multiplayer game runtime with IRC-based chat and presence.
 
+| | |
+|---|---|
+| **openlore.xyz** | Landing page (`landing/`) |
+| **app.openlore.xyz** | Game client + server (`game/`) |
+| **studio.openlore.xyz** | World editor (`studio/`) |
+
 ## Prerequisites
 
 | Dependency | Min version | Install (Arch Linux) | Install (macOS) |
@@ -78,17 +84,24 @@ Players connect to IRC independently via `@airc/client` over WebSocket.
 
 ## Docker
 
-Both services have multi-stage Dockerfiles. Build from the repo root:
+All three services build from the repo root, plus a static landing page:
 
 ```bash
-# Game (Go server + Preact client behind nginx)
+# Game (single Go binary with embedded Preact client)
 docker build -f game/Dockerfile -t openlore-game .
-docker run -p 80:80 -v ./data/game:/data openlore-game
+docker run -p 3001:3001 -v ./data/game:/data openlore-game
 
 # Studio (single Go binary with embedded frontend)
 docker build -f studio/Dockerfile -t openlore-studio .
 docker run -p 4000:4000 -v ./data/studio:/data openlore-studio
+
+# Landing page (static nginx, serves openlore.xyz)
+docker build -f landing/Dockerfile -t openlore-landing .
+docker run -p 8080:80 openlore-landing
 ```
+
+CI pushes all four to GHCR on every push to `main`:
+`openlore-game`, `openlore-studio`, `openlore-embedder`, `openlore-landing`.
 
 | Env Variable | Default | Description |
 |---|---|---|
@@ -115,6 +128,10 @@ openlore/
 ├── game/
 │   ├── client/             # Browser game client (Preact + PixiJS + Vite)
 │   ├── server/             # Authoritative game server (Go, WebSocket)
+│   └── Dockerfile
+├── landing/                # Static landing page for openlore.xyz
+│   ├── index.html          # Self-contained: inline CSS + canvas office demo
+│   ├── nginx.conf
 │   └── Dockerfile
 ├── data/                   # Runtime data (gitignored)
 │   ├── studio/             # Studio workspaces, tilesets, RAG vectors

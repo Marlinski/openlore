@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="OpenLore is a 2D multiplayer pixel office that runs in a browser tab. Every room is a real IRC channel — walking through a door sends a PART and a JOIN. Build the whole world yourself in Studio.">
+<meta name="theme-color" content="#16182b">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://openlore.xyz/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="OpenLore">
+<meta property="og:url" content="https://openlore.xyz/">
+<meta property="og:title" content="OpenLore — walk into work. Chat is IRC.">
+<meta property="og:description" content="OpenLore is a 2D multiplayer pixel office that runs in a browser tab. Every room is a real IRC channel — walking through a door sends a PART and a JOIN. Build the whole world yourself in Studio.">
+<meta property="og:image" content="https://openlore.xyz/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OpenLore — walk into work. Chat is IRC.">
+<meta name="twitter:description" content="OpenLore is a 2D multiplayer pixel office that runs in a browser tab. Every room is a real IRC channel — walking through a door sends a PART and a JOIN. Build the whole world yourself in Studio.">
+<meta name="twitter:image" content="https://openlore.xyz/og.png">
+
+<style>
+/* Base reset — kept ahead of the page styles below. */
+:root{
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+img{ max-width:100%; }
+[hidden]{ display:none !important; }
+</style>
+
+<title>OpenLore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ── Tokens ────────────────────────────────────────────────────────
+   Single committed theme: this page is a game screen. Every colour is
+   declared explicitly so it holds on either host ground.
+   Palette sampled from the game's own render — indigo letterbox,
+   desk-oak accent, office-floor slate. Green is semantic only
+   (connection dots / JOIN), never decorative.
+------------------------------------------------------------------ */
+:root{
+  --ground:#16182b;
+  --ground-deep:#101223;
+  --panel:#1e2138;
+  --panel-2:#262a45;
+  --line:#343a5c;
+  --line-soft:#2a2f4b;
+
+  --ink:#e9e7f2;
+  --muted:#8b8fae;
+  --dim:#666a8a;
+
+  --oak:#d9a45e;
+  --oak-lit:#f0c98d;
+  --oak-deep:#a87a3f;
+
+  --live:#5fd08a;
+  --pm:#c89ad6;
+  --floor:#a9aeb9;
+
+  --step:8px;
+  --maxw:1120px;
+}
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  /* faint scanline + grid wash, fixed so it reads as a screen */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px),
+    radial-gradient(1200px 600px at 50% -5%, rgba(217,164,94,.07), transparent 65%);
+  background-attachment:fixed;
+}
+
+/* Nothing on this page is rounded. Pixel art has no antialiasing. */
+a,button,img,canvas,div,section,input{ border-radius:0; }
+
+h1,h2,h3,.disp{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-weight:400;
+  letter-spacing:.01em;
+  text-wrap:balance;
+  margin:0;
+}
+
+a{ color:var(--oak); text-decoration:none; }
+a:focus-visible,button:focus-visible{
+  outline:2px solid var(--oak);
+  outline-offset:3px;
+}
+
+.wrap{
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding-inline:20px;
+}
+
+/* ── Eyebrow / section label ─────────────────────────────────── */
+.eyebrow{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:10px;
+  letter-spacing:.22em;
+  color:var(--oak);
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.eyebrow::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--line);
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.nav{
+  position:sticky;
+  top:env(safe-area-inset-top, 0px);
+  z-index:40;
+  background:rgba(16,18,35,.9);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line-soft);
+}
+.nav-in{
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding:12px 20px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.mark{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:16px;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.mark .dot{
+  width:9px; height:9px;
+  background:var(--oak);
+  box-shadow:0 0 0 3px rgba(217,164,94,.16);
+}
+.nav-links{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.nav-links a{
+  font-size:12px;
+  color:var(--muted);
+  padding:7px 11px;
+  border:1px solid transparent;
+  letter-spacing:.03em;
+}
+.nav-links a:hover{ color:var(--ink); border-color:var(--line); }
+.nav-links a.hot{ color:var(--ground-deep); background:var(--oak); font-weight:600; }
+.nav-links a.hot:hover{ background:var(--oak-lit); border-color:transparent; }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero{ padding-block:54px 8px; }
+.hero-head{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  max-width:760px;
+}
+.hero h1{
+  font-size:clamp(30px,5.6vw,56px);
+  line-height:1.1;
+  letter-spacing:-.01em;
+}
+.hero h1 .cut{ color:var(--oak); }
+.hero p.lede{
+  margin:0;
+  font-size:clamp(14px,1.6vw,17px);
+  color:var(--muted);
+  max-width:62ch;
+}
+.hero p.lede b{ color:var(--ink); font-weight:500; }
+
+.cta-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+.btn{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:12px;
+  letter-spacing:.04em;
+  padding:13px 20px;
+  border:2px solid var(--oak);
+  color:var(--oak);
+  background:transparent;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  transition:transform .08s steps(2), background .12s, color .12s;
+}
+.btn:hover{ transform:translateY(-2px); }
+.btn.solid{
+  background:var(--oak);
+  color:var(--ground-deep);
+  box-shadow:4px 4px 0 var(--oak-deep);
+}
+.btn.solid:hover{ background:var(--oak-lit); box-shadow:6px 6px 0 var(--oak-deep); }
+.btn.ghost{ border-color:var(--line); color:var(--muted); }
+.btn.ghost:hover{ border-color:var(--ink); color:var(--ink); }
+
+/* ── The screen: canvas + IRC log ────────────────────────────── */
+.stage{
+  margin-top:34px;
+  display:grid;
+  grid-template-columns:minmax(0,1.85fr) minmax(0,1fr);
+  gap:14px;
+  align-items:stretch;
+}
+.screen{
+  position:relative;
+  border:2px solid var(--line);
+  background:var(--ground-deep);
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.screen-bar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 2px 8px;
+  font-size:11px;
+  color:var(--dim);
+  letter-spacing:.04em;
+}
+.screen-bar .rt{ margin-left:auto; color:var(--muted); }
+.led{
+  width:7px; height:7px;
+  background:var(--live);
+  box-shadow:0 0 6px rgba(95,208,138,.7);
+  animation:blink 2.6s steps(1,end) infinite;
+}
+@keyframes blink{ 0%,92%{opacity:1} 93%,100%{opacity:.35} }
+
+.view{
+  position:relative;
+  flex:1;
+  min-height:0;
+  background:#14162a;
+  overflow:hidden;
+}
+.view canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+/* Vignette + scanlines over the game view only */
+.view::after{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, rgba(10,11,24,.16) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(10,11,24,.45) 100%);
+}
+.overlay{ position:absolute; inset:0; pointer-events:none; }
+.tag{
+  position:absolute;
+  top:0; left:0;
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:9px;
+  color:var(--ink);
+  text-shadow:1px 1px 0 rgba(16,18,35,.95);
+  white-space:nowrap;
+  will-change:transform;
+}
+.bub{
+  position:absolute;
+  top:0; left:0;
+  background:#f2f1f8;
+  color:#20223a;
+  border:2px solid #20223a;
+  padding:3px 6px;
+  font-size:10px;
+  line-height:1.3;
+  white-space:nowrap;
+  max-width:170px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  will-change:transform;
+  box-shadow:0 2px 0 rgba(16,18,35,.5);
+}
+.bub::after{
+  content:"";
+  position:absolute;
+  left:9px; bottom:-6px;
+  width:0; height:0;
+  border:3px solid transparent;
+  border-top-color:#20223a;
+  border-bottom:0;
+  border-width:6px 5px 0 5px;
+}
+
+/* ── IRC log ─────────────────────────────────────────────────── */
+.irc{
+  border:2px solid var(--line);
+  background:var(--ground-deep);
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  min-height:300px;
+}
+.irc-head{
+  padding:9px 11px;
+  border-bottom:1px solid var(--line-soft);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:10px;
+  letter-spacing:.06em;
+  color:var(--muted);
+}
+.irc-head .ch{ color:var(--ink); }
+.irc-head .who{ margin-left:auto; color:var(--dim); font-size:9px; }
+.log{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:9px 11px 12px;
+  font-size:11.5px;
+  line-height:1.62;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+.log::-webkit-scrollbar{ width:6px; }
+.log::-webkit-scrollbar-thumb{ background:var(--line); }
+.ln{ word-break:break-word; color:var(--muted); display:flex; gap:7px; }
+.ln .t{ color:#4d5170; flex:none; font-variant-numeric:tabular-nums; }
+.ln .b{ min-width:0; }
+.ln .nick{ color:var(--oak); }
+.ln.join .b{ color:var(--live); }
+.ln.part .b{ color:var(--dim); }
+.ln.msg .b{ color:var(--ink); }
+.ln.pm .b{ color:var(--pm); }
+.ln.flash{ animation:flash 1.5s steps(3,end) 1; }
+@keyframes flash{
+  0%{ background:rgba(217,164,94,.22); }
+  100%{ background:transparent; }
+}
+.irc-foot{
+  border-top:1px solid var(--line-soft);
+  padding:8px 11px;
+  font-size:10px;
+  color:var(--dim);
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.irc-foot .led{ width:6px; height:6px; animation:none; }
+
+.stage-note{
+  margin:14px 0 0;
+  font-size:12.5px;
+  color:var(--dim);
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+}
+.stage-note .k{
+  color:var(--oak);
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:9px;
+  letter-spacing:.1em;
+  border:1px solid var(--line);
+  padding:3px 6px;
+  flex:none;
+  margin-top:1px;
+}
+
+/* ── Generic section ─────────────────────────────────────────── */
+section.band{ padding-block:74px; }
+.sec-head{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  max-width:70ch;
+  margin-bottom:34px;
+}
+.sec-head h2{
+  font-size:clamp(22px,3.3vw,34px);
+  line-height:1.2;
+}
+.sec-head p{ margin:0; color:var(--muted); }
+.sec-head p b{ color:var(--ink); font-weight:500; }
+code.inl{
+  color:var(--oak);
+  background:rgba(217,164,94,.09);
+  border:1px solid rgba(217,164,94,.22);
+  padding:1px 5px;
+  font-size:.92em;
+}
+
+/* ── Two-socket diagram ──────────────────────────────────────── */
+.sockets{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(255px,1fr));
+  gap:14px;
+}
+.sock{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+}
+.sock.b{ border-color:rgba(95,208,138,.3); }
+.sock h3{
+  font-size:12px;
+  letter-spacing:.1em;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.sock.a h3{ color:var(--oak); }
+.sock.b h3{ color:var(--live); }
+.sock p{ margin:0; font-size:13px; color:var(--muted); }
+.sock ul{
+  margin:0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:6px;
+  font-size:12.5px; color:var(--muted);
+}
+.sock li{ display:flex; gap:9px; align-items:baseline; }
+.sock li::before{
+  content:"";
+  width:5px; height:5px;
+  flex:none;
+  background:var(--line);
+  transform:translateY(-2px);
+}
+.sock.a li::before{ background:var(--oak-deep); }
+.sock.b li::before{ background:rgba(95,208,138,.55); }
+
+/* ── Studio ──────────────────────────────────────────────────── */
+.studio-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  gap:26px;
+  align-items:start;
+}
+.shot{
+  border:2px solid var(--line);
+  background:var(--ground-deep);
+  padding:7px;
+  position:relative;
+}
+.shot .frame{
+  aspect-ratio:694/640;
+  overflow:hidden;
+  display:block;
+}
+.shot img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:top center;
+  display:block;
+  image-rendering:pixelated;
+}
+.shot figcaption{
+  padding:9px 3px 2px;
+  font-size:11px;
+  color:var(--dim);
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.shot figcaption b{ color:var(--muted); font-weight:400; }
+
+.tabs{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  border:1px solid var(--line);
+  background:var(--panel);
+}
+.tab{
+  display:flex;
+  gap:13px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--line-soft);
+  align-items:baseline;
+}
+.tab:last-child{ border-bottom:0; }
+.tab .n{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:10px;
+  color:var(--oak-deep);
+  flex:none;
+  width:22px;
+  font-variant-numeric:tabular-nums;
+}
+.tab .tt{ font-size:13px; color:var(--ink); }
+.tab .td{ font-size:12px; color:var(--muted); display:block; margin-top:2px; }
+
+/* ── Pipeline ────────────────────────────────────────────────── */
+.pipe{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:0;
+  border:1px solid var(--line);
+  background:var(--panel);
+}
+.stepc{
+  padding:22px 20px;
+  border-right:1px solid var(--line-soft);
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  position:relative;
+}
+.stepc:last-child{ border-right:0; }
+.stepc .num{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:10px;
+  letter-spacing:.14em;
+  color:var(--oak);
+}
+.stepc h3{ font-size:13px; color:var(--ink); letter-spacing:.06em; }
+.stepc p{ margin:0; font-size:12.5px; color:var(--muted); }
+.stepc .art{
+  font-size:11px;
+  color:var(--dim);
+  border-top:1px dashed var(--line);
+  padding-top:9px;
+  margin-top:auto;
+}
+.stepc .art b{ color:var(--oak-deep); font-weight:400; }
+
+/* ── Specs ───────────────────────────────────────────────────── */
+.specs{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(285px,1fr));
+  gap:0 30px;
+}
+.spec{
+  display:flex;
+  gap:14px;
+  align-items:baseline;
+  padding:11px 0;
+  border-bottom:1px solid var(--line-soft);
+  font-size:13px;
+}
+.spec dt{ color:var(--muted); flex:none; min-width:122px; }
+.spec dd{
+  margin:0;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  min-width:0;
+  word-break:break-word;
+}
+
+/* ── Close ───────────────────────────────────────────────────── */
+.close{
+  border:2px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(217,164,94,.05), transparent 60%),
+    var(--panel);
+  padding:clamp(30px,5vw,54px);
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  align-items:flex-start;
+}
+.close h2{ font-size:clamp(20px,3.4vw,32px); line-height:1.2; }
+.close p{ margin:0; color:var(--muted); max-width:58ch; font-size:14px; }
+
+footer{
+  border-top:1px solid var(--line-soft);
+  margin-top:70px;
+  padding-block:26px 40px;
+  font-size:11.5px;
+  color:var(--dim);
+}
+.foot-in{
+  display:flex;
+  gap:18px 26px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.foot-in a{ color:var(--muted); }
+.foot-in a:hover{ color:var(--oak); }
+.foot-in .sp{ margin-left:auto; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width:900px){
+  .stage{ grid-template-columns:1fr; }
+  .irc{ min-height:245px; max-height:320px; }
+  .studio-grid{ grid-template-columns:1fr; }
+  .stepc{ border-right:0; border-bottom:1px solid var(--line-soft); }
+  .stepc:last-child{ border-bottom:0; }
+}
+@media (max-width:560px){
+  .hero{ padding-block:34px 4px; }
+  section.band{ padding-block:54px; }
+  .nav-links a{ padding:6px 8px; font-size:11px; }
+  .spec dt{ min-width:96px; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-in">
+    <span class="mark"><span class="dot"></span>OPENLORE</span>
+    <span class="nav-links">
+      <a href="https://studio.openlore.xyz">Studio</a>
+      <a href="https://github.com/Marlinski/openlore">Source</a>
+      <a class="hot" href="https://app.openlore.xyz">Play</a>
+    </span>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="hero-head">
+    <span class="eyebrow">2D multiplayer office sim &middot; open source</span>
+    <h1>Walk into work.<br><span class="cut">Chat is IRC.</span></h1>
+    <p class="lede">
+      OpenLore is a top-down pixel office that runs in a browser tab. Move with WASD,
+      bump into your team, talk in the room you're standing in. <b>Every room is a real
+      IRC channel</b> &mdash; walking through a door sends a PART and a JOIN. Then build
+      the whole world yourself in Studio.
+    </p>
+    <div class="cta-row">
+      <a class="btn solid" href="https://app.openlore.xyz">Enter the office &rarr;</a>
+      <a class="btn ghost" href="https://studio.openlore.xyz">Open Studio</a>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="led"></span>
+        <span>#lobby</span>
+        <span style="color:var(--line)">/</span>
+        <span id="roomName">main_office</span>
+        <span class="rt" id="popCount">4 online</span>
+      </div>
+      <div class="view">
+        <canvas id="game" width="352" height="192" aria-label="A pixel-art office seen from above. Four characters walk between desks, the coffee machine and the door."></canvas>
+        <div class="overlay" id="overlay"></div>
+      </div>
+    </div>
+
+    <div class="irc">
+      <div class="irc-head">
+        <span>IRC</span>
+        <span class="ch">#lobby-main_office</span>
+        <span class="who" id="ircWho">4 users</span>
+      </div>
+      <div class="log" id="log" aria-live="polite" aria-label="Live IRC log for the room"></div>
+      <div class="irc-foot"><span class="led"></span> irc.openlore.xyz &mdash; connect any client</div>
+    </div>
+  </div>
+
+  <p class="stage-note">
+    <span class="k">live</span>
+    <span>Not a video. The office above is running, and the log beside it is what the room is
+    actually saying. Watch someone walk out the bottom door &mdash; the PART and JOIN
+    land in the log as they cross it.</span>
+  </p>
+</header>
+
+<section class="band wrap">
+  <div class="sec-head">
+    <span class="eyebrow">The mechanic</span>
+    <h2>A door is a JOIN.</h2>
+    <p>
+      OpenLore ships no chat system, because it doesn't need one. Each room in a world maps
+      onto an IRC channel named <code class="inl">#lobby-main_office</code>,
+      <code class="inl">#lobby-coffee_room</code>. Crossing a doorway issues
+      <b>PART</b> on the old channel and <b>JOIN</b> on the new one. That isn't a metaphor
+      for how it works &mdash; it is how it works. The game server tracks where bodies are and
+      nothing else; your client holds two sockets to prove it.
+    </p>
+  </div>
+  <div class="sockets">
+    <div class="sock a">
+      <h3>Game WS</h3>
+      <p>Authoritative Go server, one goroutine per world, no mutexes.</p>
+      <ul>
+        <li>Positions at ~15/sec, pixel-granular</li>
+        <li>Client-side prediction, server reconciliation</li>
+        <li>Room transitions and door targets</li>
+        <li>Binary protobuf on the wire</li>
+      </ul>
+    </div>
+    <div class="sock b">
+      <h3>IRC WS</h3>
+      <p>Straight to an IRC daemon. The game server never touches it.</p>
+      <ul>
+        <li>Room chat, rendered as speech bubbles</li>
+        <li>Private messages between avatars</li>
+        <li>Presence &mdash; who is in which room</li>
+        <li>Any IRC client can sit in the room with you</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="band wrap">
+  <div class="sec-head">
+    <span class="eyebrow">The editor</span>
+    <h2>Cut a tileset. Ship a world.</h2>
+    <p>
+      Studio is the other half of OpenLore: a browser world editor that turns a PNG of
+      sprites into a playable office. Slice tiles, tag them, assemble multi-tile objects,
+      paint rooms with walkability grids and doors, then walk through it yourself before
+      anyone else does.
+    </p>
+  </div>
+  <div class="studio-grid">
+    <figure class="shot" style="margin:0">
+      <span class="frame"><img src="studio.png" alt="The OpenLore Studio editor: tabs across the top, a pixel office room on the canvas with desks and a character, and a status bar reading 54 resources, 2 rooms."></span>
+      <figcaption>
+        <b>Tester tab</b>
+        <span>&middot;</span>
+        <span>Pos (6.00, 11.00)</span>
+        <span>&middot;</span>
+        <span>Door: door-1 &rarr; coffee_room#door-3</span>
+      </figcaption>
+    </figure>
+    <div class="tabs">
+      <div class="tab"><span class="n">01</span><span><span class="tt">Tile Cutter</span><span class="td">Slice a tileset PNG into tagged resources and reusable masks.</span></span></div>
+      <div class="tab"><span class="n">02</span><span><span class="tt">Resources</span><span class="td">Browse and filter by tag, or search by meaning &mdash; CLIP embeddings index every sprite.</span></span></div>
+      <div class="tab"><span class="n">03</span><span><span class="tt">Composite</span><span class="td">Assemble regions into one object with per-part z-bias. Conference tables, corner desks.</span></span></div>
+      <div class="tab"><span class="n">04</span><span><span class="tt">Room</span><span class="td">Paint floors and objects, mark what blocks movement, wire doors room to room.</span></span></div>
+      <div class="tab"><span class="n">05</span><span><span class="tt">Tester</span><span class="td">Walk the room with a real character before publishing it.</span></span></div>
+      <div class="tab"><span class="n">06</span><span><span class="tt">AI Agent</span><span class="td">Ask for the props you need; RAG search pulls them from the library.</span></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="band wrap">
+  <div class="sec-head">
+    <span class="eyebrow">Author &rarr; play</span>
+    <h2>Four steps, one artifact.</h2>
+    <p>
+      Studio never talks to the game from the browser. It compiles your workspace into a
+      single immutable file and hands it over server to server.
+    </p>
+  </div>
+  <div class="pipe">
+    <div class="stepc">
+      <span class="num">STEP 01</span>
+      <h3>AUTHOR</h3>
+      <p>Tilesets, resources, composites and rooms, stored as individual files you can read and diff.</p>
+      <span class="art">on disk &middot; <b>protojson</b></span>
+    </div>
+    <div class="stepc">
+      <span class="num">STEP 02</span>
+      <h3>COMPILE</h3>
+      <p>Regions are deduplicated and shelf-packed into a texture atlas, then serialised to binary.</p>
+      <span class="art">produces &middot; <b>.offpack</b></span>
+    </div>
+    <div class="stepc">
+      <span class="num">STEP 03</span>
+      <h3>PUBLISH</h3>
+      <p>The Studio backend POSTs the pack straight to the game server's install API.</p>
+      <span class="art">server to server &middot; <b>no browser</b></span>
+    </div>
+    <div class="stepc">
+      <span class="num">STEP 04</span>
+      <h3>PLAY</h3>
+      <p>A world binds to a pack and runs its own instance. State survives a restart.</p>
+      <span class="art">one world &middot; <b>one channel</b></span>
+    </div>
+  </div>
+</section>
+
+<section class="band wrap">
+  <div class="sec-head">
+    <span class="eyebrow">Under the hood</span>
+    <h2>Numbers, for the curious.</h2>
+  </div>
+  <dl class="specs">
+    <div class="spec"><dt>Tile size</dt><dd>48 &times; 48 px</dd></div>
+    <div class="spec"><dt>Position rate</dt><dd>~15 / sec (66 ms)</dd></div>
+    <div class="spec"><dt>Wire format</dt><dd>Binary protobuf, one oneof envelope</dd></div>
+    <div class="spec"><dt>World loop</dt><dd>One goroutine, zero mutexes</dd></div>
+    <div class="spec"><dt>Z-sorting</dt><dd>At render time, by anchor Y + bias</dd></div>
+    <div class="spec"><dt>Characters</dt><dd>Tag-resolved &mdash; state:idle, dir:down</dd></div>
+    <div class="spec"><dt>Asset search</dt><dd>CLIP ViT-B/32, cosine similarity</dd></div>
+    <div class="spec"><dt>Renderer</dt><dd>PixiJS + Preact, both halves</dd></div>
+    <div class="spec"><dt>Servers</dt><dd>Go &mdash; Studio API and game runtime</dd></div>
+    <div class="spec"><dt>Sprites</dt><dd>LimeZu Modern Interiors</dd></div>
+  </dl>
+</section>
+
+<section class="wrap" style="padding-bottom:12px">
+  <div class="close">
+    <span class="eyebrow" style="width:100%">Clock in</span>
+    <h2>There's a desk free.</h2>
+    <p>
+      Open the office and pick a character, or go straight to Studio and start cutting up a
+      tileset of your own. Both halves are open source.
+    </p>
+    <div class="cta-row">
+      <a class="btn solid" href="https://app.openlore.xyz">Enter the office &rarr;</a>
+      <a class="btn ghost" href="https://studio.openlore.xyz">Open Studio</a>
+      <a class="btn ghost" href="https://github.com/Marlinski/openlore">Read the source</a>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="foot-in">
+    <span class="mark" style="font-size:12px"><span class="dot" style="width:7px;height:7px;box-shadow:none"></span>OPENLORE</span>
+    <a href="https://app.openlore.xyz">app.openlore.xyz</a>
+    <a href="https://studio.openlore.xyz">studio.openlore.xyz</a>
+    <a href="https://github.com/Marlinski/openlore">GitHub</a>
+    <span class="sp">Chat by <a href="https://github.com/nicething-inc/aircd">aircd</a> &middot; sprites by LimeZu</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const cv = document.getElementById("game");
+  if(!cv) return;
+  const ctx = cv.getContext("2d");
+  const overlay = document.getElementById("overlay");
+  const logEl = document.getElementById("log");
+
+  const W = 352, H = 192, T = 16;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ── Palette, sampled from the game's own render ───────────────
+  const C = {
+    void:"#14162a", wallTrim:"#3b3f5e", wallFace:"#e4e5ee", wallBase:"#c5c8d6",
+    floor:"#a9aeb9", grid:"#9ea3af",
+    oak:"#d9b877", oakDark:"#bb9553",
+    panel:"#b5bcc9", panelDark:"#8b93a6",
+    chair:"#4a4f63", chairDark:"#353948",
+    screenOff:"#2b3048", screenLit:"#7593d4", metal:"#9aa3b5", metalDark:"#79839a",
+    leaf:"#4f8f5c", leafDark:"#3b6f47", pot:"#8a5f45", potDark:"#6d4835",
+    shadow:"rgba(20,22,42,.20)",
+    doorDark:"#22263c", doorGlow:"#d9a45e",
+    white:"#f2f1f8", boardEdge:"#8b93a6"
+  };
+
+  const r = (x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w|0,h|0); };
+
+  // ── Static room ───────────────────────────────────────────────
+  function drawRoom(){
+    r(0,0,W,H,C.void);
+    r(0,10,W,38,C.wallFace);        // wall face, rows 1-2
+    r(0,8,W,3,C.wallTrim);          // ceiling trim
+    r(0,44,W,4,C.wallBase);         // baseboard
+    r(0,48,W,128,C.floor);          // floor, rows 3-10
+
+    for(let x=0;x<=W;x+=T) r(x,48,1,128,C.grid);
+    for(let y=48;y<=176;y+=T) r(0,y,W,1,C.grid);
+
+    r(0,176,W,16,C.wallTrim);       // bottom wall
+    r(160,176,32,16,C.doorDark);    // door well
+    r(160,174,32,2,C.doorGlow);     // lit threshold
+    r(158,174,2,18,"#4a4f6e");
+    r(192,174,2,18,"#4a4f6e");
+
+    drawShelf(24,14); drawShelf(44,14);
+    drawBoard(96,14);
+    drawCoffee(272,12);
+    drawWindow(216,14);
+
+    drawDeskRow(64,80);   // cluster A
+    drawDeskRow(208,80);  // cluster B
+
+    drawPlant(14,140); drawPlant(330,140); drawPlant(8,60);
+  }
+
+  function drawShelf(x,y){
+    r(x,y,18,30,C.metalDark);
+    r(x+1,y+1,16,28,C.metal);
+    for(let i=0;i<3;i++) r(x+1,y+2+i*9,16,2,C.metalDark);
+    r(x+3,y+5,4,4,"#c8734f"); r(x+9,y+5,3,4,"#5b7fc4");
+    r(x+3,y+14,5,4,"#4f8f5c"); r(x+10,y+14,4,4,"#d9b877");
+    r(x+4,y+23,8,4,"#8b93a6");
+  }
+  function drawBoard(x,y){
+    r(x,y,42,26,C.boardEdge);
+    r(x+2,y+2,38,22,C.white);
+    r(x+5,y+6,12,3,"#5b7fc4"); r(x+5,y+12,18,2,"#b9bfcc");
+    r(x+5,y+17,9,2,"#b9bfcc");
+    r(x+24,y+7,12,12,"#e8b87a"); r(x+24,y+13,12,6,"#c8734f");
+  }
+  function drawCoffee(x,y){
+    r(x,y,16,32,C.metalDark);
+    r(x+1,y+1,14,30,C.metal);
+    r(x+3,y+4,10,8,C.screenOff);
+    r(x+4,y+5,3,2,C.screenLit);
+    r(x+4,y+16,8,7,"#3a3f52");
+    r(x+6,y+18,4,4,"#6b4a35");
+    r(x+2,y+26,12,3,C.metalDark);
+  }
+  function drawWindow(x,y){
+    r(x,y,40,26,C.metalDark);
+    r(x+2,y+2,36,22,"#7fa8cf");
+    r(x+2,y+2,36,8,"#98bcdc");
+    r(x+19,y+2,2,22,C.metalDark);
+    r(x+2,y+18,36,6,"#6d96be");
+  }
+  function drawPlant(x,y){
+    r(x+3,y+14,10,8,C.potDark);
+    r(x+4,y+14,8,7,C.pot);
+    r(x+1,y,14,15,C.leafDark);
+    r(x+2,y+1,12,12,C.leaf);
+    r(x,y+4,3,6,C.leafDark); r(x+13,y+3,3,7,C.leafDark);
+    r(x+6,y-3,3,5,C.leaf);
+  }
+  // A back-to-back desk row: 4 tiles wide, monitors + chairs above and below.
+  function drawDeskRow(x,y){
+    r(x,y,80,4,C.oakDark);
+    r(x,y-4,80,5,C.oak);          // wood lip, upper desk
+    r(x,y+4,80,18,C.panelDark);
+    r(x+1,y+5,78,16,C.panel);
+    r(x,y+22,80,5,C.oak);         // wood lip, lower desk
+    r(x,y+27,80,3,C.oakDark);
+    // legs
+    r(x+2,y+30,3,6,C.panelDark); r(x+75,y+30,3,6,C.panelDark);
+    // monitors facing down
+    drawMonitor(x+10,y-13); drawMonitor(x+52,y-13);
+    // desk clutter
+    r(x+30,y-7,7,5,C.white); r(x+31,y-6,5,3,"#c8cede");
+    r(x+66,y-8,5,6,"#c8734f");
+    // chairs: one above (facing away), two below (facing us)
+    drawChair(x+16,y-26,true); drawChair(x+58,y-26,true);
+    drawChair(x+16,y+30,false); drawChair(x+58,y+30,false);
+  }
+  function drawMonitor(x,y){
+    r(x+5,y+11,6,2,C.metalDark);
+    r(x+7,y+8,2,4,C.metalDark);
+    r(x,y,16,9,C.metalDark);
+    r(x+1,y+1,14,7,C.screenOff);
+    r(x+2,y+2,6,2,C.screenLit);
+    r(x+2,y+5,9,1,"#4c5878");
+  }
+  function drawChair(x,y,away){
+    r(x,y+9,14,3,C.chairDark);
+    r(x+1,y+3,12,7,C.chair);
+    r(x+1,y,12,4,away?C.chairDark:C.chair);
+    r(x+5,y+12,4,3,C.chairDark);
+  }
+
+  // ── Cast ──────────────────────────────────────────────────────
+  // Corridor routing: everyone travels along row 9 (y=152), which is
+  // always clear of the desk clusters. Same idea as walkability grids.
+  const CORRIDOR = 152;
+  const SPOTS = {
+    deskA1:{x:80,y:138},  deskA2:{x:122,y:138},
+    deskB1:{x:224,y:138}, deskB2:{x:266,y:138},
+    coffee:{x:280,y:60},  window:{x:236,y:64},
+    plant:{x:26,y:150},   centre:{x:176,y:152},
+    door:{x:176,y:182}
+  };
+
+  const CAST = [
+    {name:"amanda",   hair:"#6b4a35", skin:"#e8b48f", shirt:"#e2e6f0", pants:"#5b6a9a",
+     loop:["deskA1","coffee","deskA1","centre"],
+     says:["standup in 5","who moved my chair","ok pushing now"]},
+    {name:"adam",     hair:"#2f2c3f", skin:"#c98f63", shirt:"#7b8ec9", pants:"#3f4560",
+     loop:["window","deskB2","deskB1","deskB2"],
+     says:["build's green","nice","looking at it"]},
+    {name:"dana",     hair:"#c0a060", skin:"#f0c9a4", shirt:"#d08a7a", pants:"#4a5273",
+     loop:["plant","deskA2","centre","deskB2"],
+     says:["the atlas repacked fine","54 resources now","brb"]},
+    {name:"marlinski",hair:"#4a3a2e", skin:"#dba57e", shirt:"#5fd08a", pants:"#39405c",
+     loop:["deskA2","coffee","DOOR","deskA2"],
+     says:["coffee run","anyone want one","back"]}
+  ];
+
+  const avatars = CAST.map((c,i)=>{
+    const s = SPOTS[c.loop[0]];
+    const tag = document.createElement("span");
+    tag.className = "tag"; tag.textContent = c.name;
+    overlay.appendChild(tag);
+    return {
+      ...c, x:s.x, y:s.y, dir:"down", moving:false, anim:0,
+      path:[], step:i, wait:1.2 + i*1.1, away:false, tag, bub:null, bubT:0
+    };
+  });
+
+  // ── Routing ───────────────────────────────────────────────────
+  function routeTo(a, dest){
+    const p = [];
+    if(Math.abs(a.y - CORRIDOR) > 1) p.push({x:a.x, y:CORRIDOR});
+    if(Math.abs(dest.x - a.x) > 1)   p.push({x:dest.x, y:CORRIDOR});
+    p.push({x:dest.x, y:dest.y});
+    a.path = p;
+  }
+
+  const SPEED = 23; // internal px per second
+
+  function advance(a){
+    const key = a.loop[a.step % a.loop.length];
+    a.step++;
+    if(key === "DOOR"){ routeTo(a, SPOTS.door); a.exiting = true; }
+    else { routeTo(a, SPOTS[key]); a.exiting = false; }
+  }
+
+  function updateAvatar(a, dt){
+    if(a.away){
+      a.awayT -= dt;
+      if(a.awayT <= 0){
+        a.away = false;
+        a.tag.style.display = "";
+        a.x = SPOTS.door.x; a.y = SPOTS.door.y;
+        emit("part", a.name, "#lobby-coffee_room", true);
+        emit("join", a.name, "#lobby-main_office", true);
+        advance(a);
+      }
+      return;
+    }
+    if(a.wait > 0){
+      a.wait -= dt; a.moving = false;
+      if(a.wait <= 0 && a.path.length === 0) advance(a);
+      return;
+    }
+    if(a.path.length === 0){
+      a.moving = false;
+      a.wait = 1.6 + Math.random()*3.4;
+      if(Math.random() < 0.55) say(a);
+      return;
+    }
+
+    const t = a.path[0];
+    const dx = t.x - a.x, dy = t.y - a.y;
+    const d = Math.hypot(dx,dy);
+    if(d < 1.2){
+      a.x = t.x; a.y = t.y;
+      a.path.shift();
+      if(a.path.length === 0 && a.exiting){
+        // Crossed the threshold. This is the whole mechanic.
+        a.away = true; a.awayT = 7; a.tag.style.display = "none";
+        if(a.bub){ a.bub.remove(); a.bub = null; }
+        emit("part", a.name, "#lobby-main_office", true);
+        emit("join", a.name, "#lobby-coffee_room", true);
+        a.exiting = false;
+      }
+      return;
+    }
+    const k = Math.min(1, (SPEED*dt)/d);
+    a.x += dx*k; a.y += dy*k;
+    a.moving = true;
+    a.anim += dt*7;
+    a.dir = Math.abs(dx) > Math.abs(dy) ? (dx>0?"right":"left") : (dy>0?"down":"up");
+  }
+
+  function drawAvatar(a){
+    if(a.away) return;
+    const x = Math.round(a.x) - 4;
+    const top = Math.round(a.y) - 16;
+    r(x+1, top+16, 6, 2, C.shadow);
+
+    const bob = a.moving ? (Math.floor(a.anim) % 2) : 0;
+    r(x+1, top+13, 2, bob?2:3, a.pants);
+    r(x+5, top+13, 2, bob?3:2, a.pants);
+    r(x+1, top+15, 2, 1, "#332f42");
+    r(x+5, top+15, 2, 1, "#332f42");
+
+    r(x, top+7, 8, 6, a.shirt);
+    r(x, top+8, 1, 4, a.skin);
+    r(x+7, top+8, 1, 4, a.skin);
+
+    r(x+1, top+3, 6, 4, a.skin);
+    r(x, top, 8, 4, a.hair);
+    r(x, top+3, 1, 2, a.hair);
+    r(x+7, top+3, 1, 2, a.hair);
+
+    const eye = "#2d2740";
+    if(a.dir === "down"){ r(x+2, top+5, 1, 1, eye); r(x+5, top+5, 1, 1, eye); }
+    else if(a.dir === "left"){ r(x+2, top+5, 1, 1, eye); }
+    else if(a.dir === "right"){ r(x+5, top+5, 1, 1, eye); }
+    else { r(x+1, top+3, 6, 3, a.hair); }
+  }
+
+  // ── DOM overlay: nametags + bubbles ───────────────────────────
+  function syncOverlay(){
+    const scale = cv.clientWidth / W;
+    if(!scale) return;
+    for(const a of avatars){
+      if(a.away) continue;
+      const px = a.x*scale, py = (a.y-19)*scale;
+      a.tag.style.transform = `translate(${px}px,${py}px) translateX(-50%)`;
+      if(a.bub){
+        a.bub.style.transform = `translate(${px}px,${(a.y-33)*scale}px) translateX(-50%)`;
+      }
+    }
+  }
+
+  function say(a){
+    if(a.away) return;
+    const text = a.says[Math.floor(Math.random()*a.says.length)];
+    if(a.bub) a.bub.remove();
+    const b = document.createElement("span");
+    b.className = "bub"; b.textContent = text;
+    overlay.appendChild(b);
+    a.bub = b; a.bubT = 3.6;
+    emit("msg", a.name, text);
+  }
+
+  // ── IRC log ───────────────────────────────────────────────────
+  let clock = 21*60 + 3; // minutes since midnight
+  function stamp(){
+    clock += Math.random() < .35 ? 1 : 0;
+    const h = String(Math.floor(clock/60) % 24).padStart(2,"0");
+    const m = String(clock % 60).padStart(2,"0");
+    return h+":"+m;
+  }
+
+  function emit(kind, nick, payload, flash){
+    const ln = document.createElement("div");
+    ln.className = "ln " + kind + (flash ? " flash" : "");
+    const t = document.createElement("span");
+    t.className = "t"; t.textContent = stamp();
+    const b = document.createElement("span");
+    b.className = "b";
+
+    if(kind === "join"){
+      b.innerHTML = '&rarr; <span class="nick">'+nick+'</span> joined '+payload;
+    } else if(kind === "part"){
+      b.innerHTML = '&larr; <span class="nick">'+nick+'</span> left '+payload;
+    } else if(kind === "pm"){
+      b.innerHTML = '&lowast; PM from <span class="nick">'+nick+'</span>: '+payload;
+    } else {
+      b.innerHTML = '<span class="nick">&lt;'+nick+'&gt;</span> '+payload;
+    }
+    ln.append(t,b);
+    logEl.appendChild(ln);
+    while(logEl.children.length > 60) logEl.removeChild(logEl.firstChild);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  // Seed the log so the page is never empty at rest.
+  emit("join","amanda","#lobby-main_office");
+  emit("join","adam","#lobby-main_office");
+  emit("msg","amanda","standup in 5");
+  emit("join","dana","#lobby-main_office");
+  emit("msg","adam","build's green");
+  emit("join","marlinski","#lobby-main_office");
+  emit("pm","dana","did the atlas repack?");
+
+  // ── Loop ──────────────────────────────────────────────────────
+  function frame(dt){
+    for(const a of avatars){
+      updateAvatar(a, dt);
+      if(a.bub){
+        a.bubT -= dt;
+        if(a.bubT <= 0){ a.bub.remove(); a.bub = null; }
+      }
+    }
+    drawRoom();
+    const order = avatars.slice().sort((p,q)=>p.y-q.y); // z-sort by anchor Y
+    for(const a of order) drawAvatar(a);
+    syncOverlay();
+  }
+
+  drawRoom();
+  for(const a of avatars) drawAvatar(a);
+  syncOverlay();
+
+  if(reduced){
+    // Static composed frame; the log stays as seeded.
+    window.addEventListener("resize", syncOverlay);
+  } else {
+    let last = performance.now(), run = true;
+    const io = new IntersectionObserver(es=>{ run = es[0].isIntersecting; }, {threshold:0});
+    io.observe(cv);
+    (function tick(now){
+      const dt = Math.min(0.05, (now-last)/1000);
+      last = now;
+      if(run) frame(dt);
+      requestAnimationFrame(tick);
+    })(last);
+    window.addEventListener("resize", syncOverlay);
+  }
+})();
+</script>
+</body>
+</html>
