@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -75,9 +77,36 @@ func decodeJSON(r *http.Request, v any) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+// allowedOrigins is the set of sites permitted to call the API from a browser.
+// The landing page at openlore.xyz registers a session and reads game data, so
+// it has to be listed here; GAME_ALLOWED_ORIGINS overrides the whole set as a
+// comma-separated list.
+func allowedOrigins() map[string]bool {
+	raw := os.Getenv("GAME_ALLOWED_ORIGINS")
+	if raw == "" {
+		raw = "https://openlore.xyz,https://www.openlore.xyz," +
+			"https://app.openlore.xyz,https://studio.openlore.xyz," +
+			"http://localhost:3002,http://localhost:5173"
+	}
+	out := make(map[string]bool)
+	for _, o := range strings.Split(raw, ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			out[o] = true
+		}
+	}
+	return out
+}
+
+var corsOrigins = allowedOrigins()
+
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3002")
+		// Echo the origin back only when it is one we allow, so the response
+		// stays valid for credentialed requests and unknown sites get nothing.
+		if origin := r.Header.Get("Origin"); corsOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Add("Vary", "Origin")
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, DELETE, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {

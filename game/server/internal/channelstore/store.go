@@ -12,14 +12,19 @@ type ChannelConfig struct {
 	Channel string `json:"channel"` // e.g. "#lobby"
 	PackID  string `json:"packId"`
 	Created string `json:"created"` // RFC3339
+	// DefaultRoom is where new avatars spawn. Empty means the first room in
+	// the pack, which is whatever sorts first — rarely the one you want a
+	// visitor to land in.
+	DefaultRoom string `json:"defaultRoom,omitempty"`
 }
 
 // NewChannelConfig creates a ChannelConfig with the current timestamp.
-func NewChannelConfig(channel, packID string) *ChannelConfig {
+func NewChannelConfig(channel, packID, defaultRoom string) *ChannelConfig {
 	return &ChannelConfig{
-		Channel: channel,
-		PackID:  packID,
-		Created: time.Now().Format(time.RFC3339),
+		Channel:     channel,
+		PackID:      packID,
+		Created:     time.Now().Format(time.RFC3339),
+		DefaultRoom: defaultRoom,
 	}
 }
 

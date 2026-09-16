@@ -8,8 +8,10 @@
 
 FROM rust:1.88-alpine AS build
 
-# musl-dev: C toolchain; openssl-dev: TLS; oniguruma-dev: tokenizers onig feature
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig oniguruma-dev
+# musl-dev: C toolchain; g++: esaxx-rs (via tokenizers) builds C++ sources and
+# cc-rs aborts with ToolNotFound without it; openssl-dev: TLS;
+# oniguruma-dev: tokenizers onig feature
+RUN apk add --no-cache musl-dev g++ openssl-dev pkgconfig oniguruma-dev
 
 WORKDIR /src
 

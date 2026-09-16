@@ -46,10 +46,15 @@ export class Connection {
    *
    * @param channel  IRC-style channel name, e.g. "#lobby". Appended as
    *                 `?channel=<name>` so the server routes to the right world.
+   * @param origin   Optional game server origin, e.g. "https://app.openlore.xyz".
+   *                 Defaults to the page's own host, which is what the bundled
+   *                 client wants; the landing page is served from a different
+   *                 origin and has to point at the game server explicitly.
    */
-  connect(channel?: string): void {
-    const base =
-      `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
+  connect(channel?: string, origin?: string): void {
+    const base = origin
+      ? `${origin.replace(/^http/, "ws").replace(/\/+$/, "")}/ws`
+      : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
 
     if (channel) {
       const params = new URLSearchParams({ channel });

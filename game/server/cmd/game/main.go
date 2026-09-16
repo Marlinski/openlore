@@ -48,7 +48,7 @@ func main() {
 			log.Printf("skip channel %s: pack %q not found", ch.Channel, ch.PackID)
 			continue
 		}
-		if _, err := worlds.Create(ch.Channel, ch.PackID, p, cfg.DefaultRoom); err != nil {
+		if _, err := worlds.Create(ch.Channel, ch.PackID, p, firstNonEmpty(ch.DefaultRoom, cfg.DefaultRoom)); err != nil {
 			log.Printf("skip channel %s: %v", ch.Channel, err)
 			continue
 		}
@@ -68,7 +68,7 @@ func main() {
 			log.Fatalf("cannot create default channel: %v", err)
 		}
 		// Persist so it survives restart
-		if err := channels.Save(channelstore.NewChannelConfig(channel, cfg.DefaultPack)); err != nil {
+		if err := channels.Save(channelstore.NewChannelConfig(channel, cfg.DefaultPack, cfg.DefaultRoom)); err != nil {
 			log.Printf("warning: could not persist default channel: %v", err)
 		}
 		log.Printf("auto-started channel %q from pack %q", world.Channel, cfg.DefaultPack)
@@ -102,4 +102,15 @@ func frontendFS() fs.FS {
 	}
 	log.Println("embedded frontend detected — serving SPA at /")
 	return sub
+}
+
+// firstNonEmpty returns the first non-empty string, so a per-channel spawn room
+// overrides the server-wide default.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

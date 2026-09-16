@@ -22,8 +22,9 @@ func (h *Handlers) listChannels(w http.ResponseWriter, r *http.Request) {
 // POST /api/channels  body: { channel, packId } → ChannelMeta
 func (h *Handlers) createChannel(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Channel string `json:"channel"`
-		PackID  string `json:"packId"`
+		Channel     string `json:"channel"`
+		PackID      string `json:"packId"`
+		DefaultRoom string `json:"defaultRoom"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "invalid JSON: "+err.Error())
@@ -51,14 +52,14 @@ func (h *Handlers) createChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	world, err := h.worlds.Create(channel, req.PackID, p, "")
+	world, err := h.worlds.Create(channel, req.PackID, p, req.DefaultRoom)
 	if err != nil {
 		writeError(w, http.StatusConflict, "CHANNEL_EXISTS", err.Error())
 		return
 	}
 
 	// Persist to disk so it survives restarts
-	if err := h.channels.Save(channelstore.NewChannelConfig(channel, req.PackID)); err != nil {
+	if err := h.channels.Save(channelstore.NewChannelConfig(channel, req.PackID, req.DefaultRoom)); err != nil {
 		// World is running but config failed to save — log but don't fail the request
 		writeJSON(w, http.StatusCreated, world.Meta())
 		return
