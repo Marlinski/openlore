@@ -12,6 +12,10 @@
  *    messages are their real messages.
  *  - A real room transition (PART one channel, JOIN the other) is the door
  *    mechanic, so the avatar walks to a door and leaves.
+ *  - You can walk. Click the room and use WASD or the arrow keys. Movement uses
+ *    the client's own speed and axis-separated collision against the real
+ *    walkability grid, and stepping onto a door really does PART one channel
+ *    and JOIN the other — people in the channel see you move rooms.
  *
  * Two limits are inherent to the server, not worked around here:
  *
@@ -54,12 +58,21 @@ const OTHER_ROOM = "coffee_room";
 
 const HERE = `#${LOBBY}-${ROOM_NAME}`;
 const THERE = `#${LOBBY}-${OTHER_ROOM}`;
+const channelFor = (roomName: string) => `#${LOBBY}-${roomName}`;
 
 /** Characters the pack ships. A nick maps to one deterministically. */
 const CHARACTERS = ["amanda", "fiona", "arthur"];
 
-/** Walk speed in tiles/sec, used only for the door walk on a real PART. */
+/** Walk speed in tiles/sec for the scripted walk-out on a real PART. */
 const SPEED = 2.4;
+
+/** The game client's own movement speed (scene/manager.ts MOVE_SPEED). */
+const MOVE_SPEED = 4 * TILE_SIZE;
+
+const MOVE_KEYS = new Set([
+  "KeyW", "KeyA", "KeyS", "KeyD",
+  "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+]);
 
 type Tile = { col: number; row: number };
 
@@ -77,6 +90,12 @@ function emit(kind: string, nick: string, payload: string, flash = false) {
 function presence(count: number, connected: boolean) {
   window.dispatchEvent(
     new CustomEvent("openlore:presence", { detail: { count, connected } }),
+  );
+}
+
+function roomChanged(roomName: string, channel: string) {
+  window.dispatchEvent(
+    new CustomEvent("openlore:room", { detail: { room: roomName, channel } }),
   );
 }
 
@@ -172,8 +191,7 @@ async function start() {
     ),
   );
 
-  const room = pack.rooms.find((r) => r.name === ROOM_NAME) ?? pack.rooms[0];
-  if (!room) return;
+  if (!pack.rooms.some((r) => r.name === ROOM_NAME)) return;
 
   // 2. Real renderer.
   TextureSource.defaultOptions.scaleMode = "nearest";
@@ -190,32 +208,7 @@ async function start() {
 
   const world = new Container();
   app.stage.addChild(world);
-
   const textureCache: TextureCache = new Map();
-  const scene = new RoomScene(room, pack, textureCache);
-  world.addChild(scene.root);
-  host.classList.add("ready");
-
-  const grid = makeGrid(room);
-
-  // Walkable is not the same as visible: plenty of walkable tiles sit under a
-  // desk or a shelf, where an avatar reads as a smear behind furniture. Prefer
-  // tiles no OBJECT-layer placement covers, and fall back to any walkable tile.
-  const covered = new Set<number>();
-  for (const pl of room.placements ?? []) {
-    if (pl.layer !== 2 || !pl.region) continue;
-    const cols = Math.max(1, Math.round((pl.region.w ?? TILE_SIZE) / TILE_SIZE));
-    const rows = Math.max(1, Math.round((pl.region.h ?? TILE_SIZE) / TILE_SIZE));
-    for (let c = 0; c < cols; c++)
-      for (let r = 0; r < rows; r++)
-        covered.add((( pl.gridY ?? 0) + r) * room.width + ((pl.gridX ?? 0) + c));
-  }
-  const openTiles = grid.all.filter((t) => !covered.has(t.row * room.width + t.col));
-  const spawnPool = openTiles.length ? openTiles : grid.all;
-
-  const doorTiles: Tile[] = (room.doors ?? [])
-    .map((d) => ({ col: d.col ?? 0, row: d.row ?? 0 }))
-    .filter((t) => grid.ok(t.col, t.row));
 
   // Pre-resolve each character's resources once.
   const charRes = new Map<string, CharacterResources>();
@@ -226,26 +219,52 @@ async function start() {
     charRes.set(name, res);
   }
 
+  // ── Mutable room state — a door swaps all of this out ──────────
+  let room!: RoomDefinition;
+  let scene!: RoomScene;
+  let grid!: ReturnType<typeof makeGrid>;
+  let spawnPool: Tile[] = [];
+  let doorTiles: Tile[] = [];
+  let currentRoom = "";
+  let currentChannel = "";
+
+  /** Walkable is not the same as visible: plenty of walkable tiles sit under a
+   *  desk, where an avatar reads as a smear behind furniture. Prefer tiles no
+   *  OBJECT-layer placement covers. */
+  function openTilesFor(r: RoomDefinition, g: ReturnType<typeof makeGrid>): Tile[] {
+    const covered = new Set<number>();
+    for (const pl of r.placements ?? []) {
+      if (pl.layer !== 2 || !pl.region) continue;
+      const cols = Math.max(1, Math.round((pl.region.w ?? TILE_SIZE) / TILE_SIZE));
+      const rows = Math.max(1, Math.round((pl.region.h ?? TILE_SIZE) / TILE_SIZE));
+      for (let c = 0; c < cols; c++)
+        for (let rr = 0; rr < rows; rr++)
+          covered.add(((pl.gridY ?? 0) + rr) * r.width + ((pl.gridX ?? 0) + c));
+    }
+    const open = g.all.filter((t) => !covered.has(t.row * r.width + t.col));
+    return open.length ? open : g.all;
+  }
+
   function layout() {
     const w = host!.clientWidth, h = host!.clientHeight;
-    if (!w || !h) return;
+    if (!w || !h || !scene) return;
     app.renderer.resize(w, h);
-    const s = Math.min(w / scene.pixelWidth, h / scene.pixelHeight);
-    world.scale.set(s);
-    world.x = Math.round((w - scene.pixelWidth * s) / 2);
-    world.y = Math.round((h - scene.pixelHeight * s) / 2);
+    const sc = Math.min(w / scene.pixelWidth, h / scene.pixelHeight);
+    world.scale.set(sc);
+    world.x = Math.round((w - scene.pixelWidth * sc) / 2);
+    world.y = Math.round((h - scene.pixelHeight * sc) / 2);
   }
-  layout();
-  new ResizeObserver(layout).observe(host);
 
-  // 3. People, created only from observed IRC activity.
+  // ── People ─────────────────────────────────────────────────────
   const people = new Map<string, Person>();
+  /** Membership learned from observed events, per channel. */
+  const known = new Map<string, Set<string>>([[HERE, new Set()], [THERE, new Set()]]);
+  let me: Person | null = null;
   let connected = false;
   let selfNick = "";
 
   function updateCount() {
     presence(people.size, connected);
-    host!.classList.toggle("empty", people.size === 0);
   }
 
   function tileFor(nick: string): Tile {
@@ -253,16 +272,16 @@ async function start() {
     return pool[hash(nick) % pool.length];
   }
 
-  function add(nick: string, self: boolean): Person | null {
+  function add(nick: string, self: boolean, at?: { x: number; y: number }): Person | null {
     const existing = people.get(nick);
     if (existing) return existing;
     const name = CHARACTERS[hash(nick) % CHARACTERS.length];
     const res = charRes.get(name);
     if (!res) return null;
 
-    const p = centreOf(tileFor(nick));
+    const p = at ?? centreOf(tileFor(nick));
     const snapshot: AvatarSnapshot = {
-      id: nick, name: nick, characterId: name, room: room!.name,
+      id: nick, name: nick, characterId: name, room: currentRoom,
       x: p.x, y: p.y, direction: "down", moving: false, family: "idle",
     };
     const avatar = new Avatar(snapshot, res, pack, textureCache, self);
@@ -278,6 +297,7 @@ async function start() {
       moving: false, leaving: null, tag, bubble: null, bubbleT: 0,
     };
     people.set(nick, person);
+    if (self) me = person;
     updateCount();
     return person;
   }
@@ -289,13 +309,53 @@ async function start() {
     p.tag.remove();
     if (p.bubble) p.bubble.remove();
     people.delete(nick);
+    if (me === p) me = null;
     updateCount();
   }
+
+  /** Swap the rendered room. Rebuilds the scene and repopulates from `known`. */
+  function buildRoom(name: string, placeMeAt?: { x: number; y: number }) {
+    const next = pack.rooms.find((r) => r.name === name);
+    if (!next) return;
+
+    for (const nick of [...people.keys()]) {
+      const p = people.get(nick)!;
+      p.tag.remove();
+      if (p.bubble) p.bubble.remove();
+      people.delete(nick);
+    }
+    me = null;
+
+    if (scene) { world.removeChild(scene.root); scene.destroy(); }
+
+    room = next;
+    scene = new RoomScene(room, pack, textureCache);
+    world.addChild(scene.root);
+    grid = makeGrid(room);
+    spawnPool = openTilesFor(room, grid);
+    doorTiles = (room.doors ?? [])
+      .map((d) => ({ col: d.col ?? 0, row: d.row ?? 0 }))
+      .filter((t) => grid.ok(t.col, t.row));
+    currentRoom = room.name;
+    currentChannel = channelFor(room.name);
+    layout();
+    host!.classList.add("ready");
+    roomChanged(currentRoom, currentChannel);
+
+    if (selfNick) add(selfNick, true, placeMeAt);
+    for (const nick of known.get(currentChannel) ?? []) {
+      if (nick !== selfNick) add(nick, false);
+    }
+    updateCount();
+  }
+
+  buildRoom(ROOM_NAME);
+  new ResizeObserver(layout).observe(host);
 
   /** A real PART/QUIT: walk them to the nearest door, then remove them. */
   function walkOut(nick: string) {
     const p = people.get(nick);
-    if (!p) return;
+    if (!p || p === me) return;
     const from = {
       col: Math.floor(p.x / TILE_SIZE),
       row: Math.floor(p.y / TILE_SIZE),
@@ -321,9 +381,104 @@ async function start() {
     p.bubbleT = 4.5;
   }
 
-  // 4. Frame loop — idle animation, the door walk, and overlay placement.
+  // ── Your own movement ──────────────────────────────────────────
+  // Focus-gated: the client's Input class binds to window and swallows WASD and
+  // the arrow keys outright, which would stop a visitor scrolling the page. So
+  // keys are only captured once you click into the room, and released on blur.
+  const held = new Set<string>();
+  let active = false;
+  /** Re-armed once you step off a door, so arriving does not bounce you back. */
+  let doorArmed = true;
+
+  function setActive(on: boolean) {
+    active = on;
+    held.clear();
+    host!.classList.toggle("active", on);
+  }
+
+  host.setAttribute("tabindex", "0");
+  host.addEventListener("focus", () => setActive(true));
+  host.addEventListener("blur", () => setActive(false));
+  host.addEventListener("pointerdown", () => host!.focus());
+
+  window.addEventListener("keydown", (e) => {
+    if (!active) return;
+    if (e.code === "Escape") { host!.blur(); return; }
+    if (!MOVE_KEYS.has(e.code)) return;
+    e.preventDefault();
+    held.add(e.code);
+  });
+  window.addEventListener("keyup", (e) => { held.delete(e.code); });
+  window.addEventListener("blur", () => held.clear());
+
+  function movement(): { dx: number; dy: number } {
+    let dx = 0, dy = 0;
+    if (held.has("KeyW") || held.has("ArrowUp")) dy -= 1;
+    if (held.has("KeyS") || held.has("ArrowDown")) dy += 1;
+    if (held.has("KeyA") || held.has("ArrowLeft")) dx -= 1;
+    if (held.has("KeyD") || held.has("ArrowRight")) dx += 1;
+    if (dx && dy) { const l = Math.SQRT2; dx /= l; dy /= l; }
+    return { dx, dy };
+  }
+
+  /** Walking onto a door really does PART one channel and JOIN the other. */
+  function tryDoor() {
+    if (!me || !doorArmed) return;
+    const door = scene.getDoorAtPosition(me.x, me.y);
+    if (!door) { doorArmed = true; return; }
+    const target = door.target ?? "";
+    const [targetRoom, targetDoorId] = target.split("#");
+    if (!targetRoom || !pack.rooms.some((r) => r.name === targetRoom)) return;
+
+    const from = currentChannel;
+    const to = channelFor(targetRoom);
+    doorArmed = false;
+
+    const next = pack.rooms.find((r) => r.name === targetRoom)!;
+    const arrival = next.doors?.find((d) => d.id === targetDoorId);
+    const at = arrival
+      ? centreOf({ col: arrival.col ?? 0, row: arrival.row ?? 0 })
+      : undefined;
+
+    known.get(from)?.delete(selfNick);
+    buildRoom(targetRoom, at);
+    if (!known.has(to)) known.set(to, new Set());
+    known.get(to)!.add(selfNick);
+
+    if (client && connected) {
+      client.part(from, "through the door");
+      client.join(to);
+      emit("part", selfNick, from, true);
+      emit("join", selfNick, to, true);
+    }
+  }
+
+  function moveMe(dt: number) {
+    if (!me) return;
+    const { dx, dy } = active ? movement() : { dx: 0, dy: 0 };
+    if (!dx && !dy) { me.moving = false; return; }
+
+    const step = MOVE_SPEED * dt;
+    // Axis-separated, so you slide along a wall instead of sticking to it —
+    // the same check scene/manager.ts makes for the local avatar.
+    const nx = me.x + dx * step;
+    const ny = me.y + dy * step;
+    if (scene.isWalkable(nx, me.y)) me.x = nx;
+    if (scene.isWalkable(me.x, ny)) me.y = ny;
+
+    me.dir = Math.abs(dx) > Math.abs(dy)
+      ? (dx > 0 ? "right" : "left")
+      : (dy > 0 ? "down" : "up");
+    me.moving = true;
+
+    if (!scene.getDoorAtPosition(me.x, me.y)) doorArmed = true;
+    else tryDoor();
+  }
+
+  // ── Frame loop ─────────────────────────────────────────────────
   app.ticker.add((t) => {
     const dt = t.deltaMS / 1000;
+    moveMe(dt);
 
     for (const p of [...people.values()]) {
       if (p.leaving) {
@@ -345,7 +500,14 @@ async function start() {
         }
       }
       p.avatar.family = p.moving ? "walk" : "idle";
-      p.avatar.applyServerPosition(p.x, p.y, p.dir, p.moving);
+      if (p === me) {
+        // Your own avatar is authoritative locally — no interpolation lag.
+        p.avatar.setPosition(p.x, p.y);
+        p.avatar.setDirection(p.dir);
+        p.avatar.setMoving(p.moving);
+      } else {
+        p.avatar.applyServerPosition(p.x, p.y, p.dir, p.moving);
+      }
       p.avatar.update(dt);
       p.entry.anchorY = p.avatar.anchorY;
     }
@@ -367,7 +529,7 @@ async function start() {
     }
   });
 
-  // 5. Real IRC.
+  // ── Real IRC ───────────────────────────────────────────────────
   let client: AircClient | null = null;
 
   function onEvent(e: IrcEvent) {
@@ -375,33 +537,37 @@ async function start() {
       case "registered":
         connected = true;
         selfNick = e.nick;
+        known.get(currentChannel)?.add(e.nick);
         add(e.nick, true);
-        emit("join", e.nick, HERE);
+        emit("join", e.nick, currentChannel);
         updateCount();
         break;
 
       case "join":
         if (e.nick === selfNick) return;
-        if (e.channel === HERE) add(e.nick, false);
-        if (e.channel === HERE || e.channel === THERE)
-          emit("join", e.nick, e.channel, true);
+        if (!known.has(e.channel)) known.set(e.channel, new Set());
+        known.get(e.channel)!.add(e.nick);
+        if (e.channel === currentChannel) add(e.nick, false);
+        emit("join", e.nick, e.channel, true);
         break;
 
       case "part":
         if (e.nick === selfNick) return;
-        if (e.channel === HERE) walkOut(e.nick);
-        if (e.channel === HERE || e.channel === THERE)
-          emit("part", e.nick, e.channel, true);
+        known.get(e.channel)?.delete(e.nick);
+        if (e.channel === currentChannel) walkOut(e.nick);
+        emit("part", e.nick, e.channel, true);
         break;
 
       case "quit":
         if (e.nick === selfNick) return;
+        for (const set of known.values()) set.delete(e.nick);
         walkOut(e.nick);
-        emit("part", e.nick, HERE);
+        emit("part", e.nick, currentChannel);
         break;
 
       case "kick":
-        walkOut(e.nick);
+        known.get(e.channel)?.delete(e.nick);
+        if (e.channel === currentChannel) walkOut(e.nick);
         emit("part", e.nick, e.channel);
         break;
 
@@ -410,7 +576,7 @@ async function start() {
         if (!m.target.startsWith("#")) {
           emit("pm", m.from, m.text);
         } else {
-          if (m.target === HERE) say(m.from, m.text);
+          if (m.target === currentChannel) say(m.from, m.text);
           emit("msg", m.from, m.text);
         }
         break;
@@ -433,7 +599,7 @@ async function start() {
     // A clearly-marked visitor nick, so anyone in the channel can tell this is
     // someone looking at the website rather than a player.
     const nick = "web-" + Math.random().toString(36).slice(2, 8);
-    const c = new AircClient({ nick, url: IRC_URL, autoJoin: [HERE, THERE] });
+    const c = new AircClient({ nick, url: IRC_URL, autoJoin: [currentChannel] });
     client = c;
     c.on(onEvent);
     try {
@@ -452,7 +618,9 @@ async function start() {
     if (!c) return;
     client = null;
     connected = false;
+    for (const set of known.values()) set.clear();
     for (const nick of [...people.keys()]) drop(nick);
+    selfNick = "";
     updateCount();
     c.quit("closed the page").catch(() => {}).finally(() => c.destroy());
   }
@@ -463,7 +631,7 @@ async function start() {
   const io = new IntersectionObserver((entries) => {
     visible = entries[0]?.isIntersecting ?? false;
     if (visible && !document.hidden) connect();
-    else disconnect();
+    else { setActive(false); disconnect(); }
   }, { threshold: 0.05 });
   io.observe(host);
 

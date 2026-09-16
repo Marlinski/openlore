@@ -297,6 +297,25 @@ a:focus-visible,button:focus-visible{
     radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(10,11,24,.45) 100%);
 }
 .overlay{ position:absolute; inset:0; pointer-events:none; }
+.view{ cursor:pointer; }
+.view.active{ cursor:default; }
+.view:focus{ outline:none; }
+.view:focus-visible{ outline:2px solid var(--oak); outline-offset:-2px; }
+.hint{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  padding:7px 10px;
+  background:linear-gradient(180deg, transparent, rgba(16,18,35,.92) 55%);
+  font-size:10px;
+  letter-spacing:.06em;
+  color:var(--muted);
+  text-align:center;
+  pointer-events:none;
+  transition:opacity .25s;
+  z-index:3;
+}
+.hint b{ color:var(--oak); font-weight:500; }
+.view.active .hint{ opacity:0; }
 .tag{
   position:absolute;
   top:0; left:0;
@@ -694,13 +713,14 @@ footer{
       <div class="view">
         <canvas id="game" aria-label="The OpenLore main_office room, rendered by the real game client. Three characters walk between the desks and the doors."></canvas>
         <div class="overlay" id="overlay"></div>
+        <div class="hint" id="hint"><b>click</b> to walk &middot; WASD or arrows &middot; <b>esc</b> to let go</div>
       </div>
     </div>
 
     <div class="irc">
       <div class="irc-head">
         <span>IRC</span>
-        <span class="ch">#lobby-main_office</span>
+        <span class="ch" id="ircCh">#lobby-main_office</span>
         <span class="who" id="ircWho">&mdash;</span>
       </div>
       <div class="log" id="log" aria-live="polite" aria-label="Live IRC log for the room">
@@ -712,11 +732,11 @@ footer{
 
   <p class="stage-note">
     <span class="k">live</span>
-    <span>This is live. The office is the shipping game client &mdash; same renderer, same
-    compiled pack, same 48px art &mdash; and it is joined to the real
-    <code class="inl">#lobby-main_office</code> on irc.openlore.xyz. Everyone you see is
-    a real person in that channel, saying real things. Open the office in another tab and
-    you will walk into this frame.</span>
+    <span>This is live, and you are in it. Click the room and walk with WASD &mdash; the
+    same speed and the same wall collision the game uses. It is joined to the real
+    <code class="inl">#lobby-main_office</code> on irc.openlore.xyz, so everyone you see
+    is a real person saying real things, and when you step through a door you really do
+    PART one channel and JOIN the next. They see you leave.</span>
   </p>
 </header>
 
@@ -925,6 +945,15 @@ footer{
     const d = (e && e.detail) || {};
     if(seeded){ logEl.innerHTML = ""; seeded = false; }
     line(d.kind || "msg", d.nick || "?", d.payload || "", !!d.flash);
+  });
+
+  /* Walking through a door swaps the room — keep both labels in step. */
+  window.addEventListener("openlore:room", function(e){
+    const d = (e && e.detail) || {};
+    const rn = document.getElementById("roomName");
+    const ch = document.getElementById("ircCh");
+    if(rn && d.room) rn.textContent = d.room;
+    if(ch && d.channel) ch.textContent = d.channel;
   });
 
   /* Presence comes from the IRC client itself, not from counting log lines. */

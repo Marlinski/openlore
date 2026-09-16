@@ -195,6 +195,12 @@ simulation — it is the actual product, live:
   imports `RoomScene` and `Avatar` directly from `game/client/src/scene/` and
   loads a real compiled pack from `landing/pack/`. Real atlas art, real
   walkability grid, real doors, real anchor-Y z-sorting.
+- **You can walk.** Click the room and use WASD or the arrow keys. Movement
+  uses the client's own `MOVE_SPEED` and the same axis-separated collision
+  against the real walkability grid, so you slide along walls instead of
+  sticking. Stepping onto a door really does PART one channel and JOIN the
+  next, and swaps the rendered room — people in the channel see you move.
+  Keys are captured only while the room has focus, so the page still scrolls.
 - **The people are real.** The page connects to `wss://irc.openlore.xyz/ws`
   with `@marlinski/airc` — the same client the game uses — joins
   `#lobby-main_office` and `#lobby-coffee_room`, and renders one `Avatar` per
