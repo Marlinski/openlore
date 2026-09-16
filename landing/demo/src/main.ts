@@ -96,6 +96,21 @@ function roomChanged(room: string, channel: string) {
   );
 }
 
+/** Identity for this tab. Leaving and returning must not mint a new player:
+ *  the game server supports token reattachment, so the token and nick are kept
+ *  for the life of the tab and reused on every reconnect. */
+const SESSION_KEY = "openlore.hero.session";
+function loadSession(): { nick: string; token: string } | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function saveSession(nick: string, token: string) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ nick, token })); }
+  catch { /* private mode — we simply re-register next time */ }
+}
+
 function hash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -500,18 +515,32 @@ async function start() {
     me.avatar.applySnap(msg.x, msg.y);
   });
 
+  // Registered exactly once. Doing this inside connectGame() stacked a new
+  // handler on every tab switch, so one socket sent several joins.
+  let gameToken = "";
+  conn.onConnect(() => {
+    if (gameToken) conn.send({ type: "join", token: gameToken });
+  });
+
   async function connectGame() {
     if (!live) return;
     try {
-      const nick = myNick || ("web-" + Math.random().toString(36).slice(2, 8));
-      const res = await fetch(`${GAME_ORIGIN}/api/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nick, characterId: CHARACTERS[hash(nick) % CHARACTERS.length] }),
-      });
-      if (!res.ok) throw new Error("register failed: " + res.status);
-      const { token } = await res.json();
-      conn.onConnect(() => conn.send({ type: "join", token }));
+      const saved = loadSession();
+      if (saved?.token) { myNick = saved.nick; gameToken = saved.token; }
+
+      if (!gameToken) {
+        const nick = myNick || ("web-" + Math.random().toString(36).slice(2, 8));
+        const res = await fetch(`${GAME_ORIGIN}/api/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: nick, characterId: CHARACTERS[hash(nick) % CHARACTERS.length] }),
+        });
+        if (!res.ok) throw new Error("register failed: " + res.status);
+        const { token } = await res.json();
+        myNick = nick;
+        gameToken = token;
+        saveSession(myNick, gameToken);
+      }
       conn.connect(GAME_CHANNEL, GAME_ORIGIN);
     } catch (err) {
       console.warn("[hero] game connect failed, staying IRC-only", err);
@@ -623,7 +652,8 @@ async function start() {
 
   async function connectIrc() {
     if (irc) return;
-    const nick = myNick || ("web-" + Math.random().toString(36).slice(2, 8));
+    const saved = loadSession();
+    const nick = myNick || saved?.nick || ("web-" + Math.random().toString(36).slice(2, 8));
     myNick = nick;
     const c = new AircClient({ nick, url: IRC_URL, autoJoin: [] });
     irc = c;
@@ -641,11 +671,14 @@ async function start() {
     setActive(false);
     conn.disconnect();
     joined.clear();
+    // Wait for a fresh welcome before touching IRC channels again; the old
+    // avatar id refers to a session that is going away.
+    myAvatarId = "";
+    clearPeople();
     const c = irc;
     irc = null; ircReady = false;
-    if (!live) clearPeople();
     updateCount();
-    c?.quit("closed the page").catch(() => {}).finally(() => c.destroy());
+    c?.quit("left the page").catch(() => {}).finally(() => c.destroy());
   }
 
   // ── 6. Frame loop ────────────────────────────────────────────

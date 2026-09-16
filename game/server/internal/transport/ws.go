@@ -5,8 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"nhooyr.io/websocket"
+)
+
+const (
+	// pingInterval is how often we probe an idle connection.
+	pingInterval = 20 * time.Second
+	// pingTimeout is how long a peer has to answer before we treat the
+	// connection as gone.
+	pingTimeout = 10 * time.Second
 )
 
 // Transport is the per-connection send/receive abstraction.
@@ -69,6 +78,34 @@ func (t *WebSocketTransport) Close() {
 	t.conn.Close(websocket.StatusNormalClosure, "")
 }
 
+// keepalive pings the peer until the connection goes away.
+//
+// Without this a client that vanishes without closing — a shut laptop, a
+// killed tab, a dropped network — leaves a half-open socket whose Read never
+// returns, so the avatar stays in the world forever. Ping failure closes the
+// connection, which unblocks ReadLoop and lets the World remove the avatar.
+func (t *WebSocketTransport) keepalive(ctx context.Context) {
+	ticker := time.NewTicker(pingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.done:
+			return
+		case <-ticker.C:
+			pctx, cancel := context.WithTimeout(ctx, pingTimeout)
+			err := t.conn.Ping(pctx)
+			cancel()
+			if err != nil {
+				t.Close()
+				return
+			}
+		}
+	}
+}
+
 // ReadLoop reads raw JSON frames from the connection until it closes.
 // Each frame is passed to onMessage. When the loop exits, onClose is called.
 func (t *WebSocketTransport) ReadLoop(
@@ -80,6 +117,8 @@ func (t *WebSocketTransport) ReadLoop(
 		t.Close()
 		onClose(t.id)
 	}()
+
+	go t.keepalive(ctx)
 
 	for {
 		_, data, err := t.conn.Read(ctx)
