@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'preact/hooks'
 import { generateId } from '../../lib/pack'
-import type { CompositeObject } from '@offisims/pack'
+import type { CompositeObject } from '@openlore/pack'
 import { useComposites, useDeleteComposite } from '../../api/composites'
 import { useCompositeStore } from '../../store/composite'
 import type { WorkspacePart } from '../../store/composite'

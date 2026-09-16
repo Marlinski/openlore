@@ -8,7 +8,7 @@
 
 import { useRef, useEffect, useMemo, useCallback, useState } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
-import type { Resource } from '@offisims/pack'
+import type { Resource } from '@openlore/pack'
 import { loadImage } from '../TilesetPicker'
 import { useResources, useDeleteResource } from '../../api/resources'
 import { useCutterStore } from '../../store/cutter'

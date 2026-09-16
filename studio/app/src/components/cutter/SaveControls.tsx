@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
-import type { Resource, ResourceFrame } from '@offisims/pack'
+import type { Resource, ResourceFrame } from '@openlore/pack'
 import { generateId } from '../../lib/pack'
 import { useSaveResource } from '../../api/resources'
 import { useCutterStore } from '../../store/cutter'

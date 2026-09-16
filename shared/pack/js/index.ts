@@ -1,5 +1,5 @@
 /**
- * @offisims/pack — Pack format library
+ * @openlore/pack — Pack format library
  *
  * Re-exports generated protobuf types and hand-written helpers.
  */

@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	pb "github.com/offisims/shared/pack/pb/packv1"
-	"github.com/offisims/studio/internal/config"
-	"github.com/offisims/studio/internal/store"
-	"github.com/offisims/studio/internal/workspace"
+	pb "github.com/openlore/shared/pack/pb/packv1"
+	"github.com/openlore/studio/internal/config"
+	"github.com/openlore/studio/internal/store"
+	"github.com/openlore/studio/internal/workspace"
 )
 
 // Handlers holds all injected dependencies for HTTP handlers.

@@ -1,10 +1,10 @@
-// Package pack provides the pack format library for Offisims.
+// Package pack provides the pack format library for OpenLore.
 // A pack is a bundle of rooms, resources, tilesets, composites and masks.
 // Studio authors packs; the game server loads them and runs sessions on them.
 package pack
 
 import (
-	pb "github.com/offisims/shared/pack/pb/packv1"
+	pb "github.com/openlore/shared/pack/pb/packv1"
 )
 
 // Pack wraps the generated protobuf Pack message with convenience methods.

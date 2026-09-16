@@ -15,7 +15,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: offisims/protocol/v1/protocol.proto
+// source: openlore/protocol/v1/protocol.proto
 
 package protocolv1
 
@@ -73,11 +73,11 @@ func (x Direction) String() string {
 }
 
 func (Direction) Descriptor() protoreflect.EnumDescriptor {
-	return file_offisims_protocol_v1_protocol_proto_enumTypes[0].Descriptor()
+	return file_openlore_protocol_v1_protocol_proto_enumTypes[0].Descriptor()
 }
 
 func (Direction) Type() protoreflect.EnumType {
-	return &file_offisims_protocol_v1_protocol_proto_enumTypes[0]
+	return &file_openlore_protocol_v1_protocol_proto_enumTypes[0]
 }
 
 func (x Direction) Number() protoreflect.EnumNumber {
@@ -86,7 +86,7 @@ func (x Direction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Direction.Descriptor instead.
 func (Direction) EnumDescriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{0}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{0}
 }
 
 // Full avatar state snapshot sent to clients.
@@ -99,7 +99,7 @@ type AvatarSnapshot struct {
 	Room        string    `protobuf:"bytes,4,opt,name=room,proto3" json:"room,omitempty"`
 	X           float32   `protobuf:"fixed32,5,opt,name=x,proto3" json:"x,omitempty"`
 	Y           float32   `protobuf:"fixed32,6,opt,name=y,proto3" json:"y,omitempty"`
-	Direction   Direction `protobuf:"varint,7,opt,name=direction,proto3,enum=offisims.protocol.v1.Direction" json:"direction,omitempty"`
+	Direction   Direction `protobuf:"varint,7,opt,name=direction,proto3,enum=openlore.protocol.v1.Direction" json:"direction,omitempty"`
 	Moving      bool      `protobuf:"varint,8,opt,name=moving,proto3" json:"moving,omitempty"`
 	// Current animation family (e.g. "idle", "walk").
 	Family        string `protobuf:"bytes,9,opt,name=family,proto3" json:"family,omitempty"`
@@ -109,7 +109,7 @@ type AvatarSnapshot struct {
 
 func (x *AvatarSnapshot) Reset() {
 	*x = AvatarSnapshot{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[0]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -121,7 +121,7 @@ func (x *AvatarSnapshot) String() string {
 func (*AvatarSnapshot) ProtoMessage() {}
 
 func (x *AvatarSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[0]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -134,7 +134,7 @@ func (x *AvatarSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AvatarSnapshot.ProtoReflect.Descriptor instead.
 func (*AvatarSnapshot) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{0}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AvatarSnapshot) GetId() string {
@@ -212,7 +212,7 @@ type RoomSnapshot struct {
 
 func (x *RoomSnapshot) Reset() {
 	*x = RoomSnapshot{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[1]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -224,7 +224,7 @@ func (x *RoomSnapshot) String() string {
 func (*RoomSnapshot) ProtoMessage() {}
 
 func (x *RoomSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[1]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -237,7 +237,7 @@ func (x *RoomSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomSnapshot.ProtoReflect.Descriptor instead.
 func (*RoomSnapshot) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{1}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RoomSnapshot) GetName() string {
@@ -272,7 +272,7 @@ type JoinRequest struct {
 
 func (x *JoinRequest) Reset() {
 	*x = JoinRequest{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[2]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +284,7 @@ func (x *JoinRequest) String() string {
 func (*JoinRequest) ProtoMessage() {}
 
 func (x *JoinRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[2]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +297,7 @@ func (x *JoinRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinRequest.ProtoReflect.Descriptor instead.
 func (*JoinRequest) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{2}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *JoinRequest) GetToken() string {
@@ -313,7 +313,7 @@ type PositionUpdate struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	X             float32                `protobuf:"fixed32,1,opt,name=x,proto3" json:"x,omitempty"`
 	Y             float32                `protobuf:"fixed32,2,opt,name=y,proto3" json:"y,omitempty"`
-	Direction     Direction              `protobuf:"varint,3,opt,name=direction,proto3,enum=offisims.protocol.v1.Direction" json:"direction,omitempty"`
+	Direction     Direction              `protobuf:"varint,3,opt,name=direction,proto3,enum=openlore.protocol.v1.Direction" json:"direction,omitempty"`
 	Moving        bool                   `protobuf:"varint,4,opt,name=moving,proto3" json:"moving,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -321,7 +321,7 @@ type PositionUpdate struct {
 
 func (x *PositionUpdate) Reset() {
 	*x = PositionUpdate{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[3]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -333,7 +333,7 @@ func (x *PositionUpdate) String() string {
 func (*PositionUpdate) ProtoMessage() {}
 
 func (x *PositionUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[3]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -346,7 +346,7 @@ func (x *PositionUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PositionUpdate.ProtoReflect.Descriptor instead.
 func (*PositionUpdate) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{3}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PositionUpdate) GetX() float32 {
@@ -387,7 +387,7 @@ type UseDoor struct {
 
 func (x *UseDoor) Reset() {
 	*x = UseDoor{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[4]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -399,7 +399,7 @@ func (x *UseDoor) String() string {
 func (*UseDoor) ProtoMessage() {}
 
 func (x *UseDoor) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[4]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -412,7 +412,7 @@ func (x *UseDoor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UseDoor.ProtoReflect.Descriptor instead.
 func (*UseDoor) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{4}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UseDoor) GetDoorId() string {
@@ -432,7 +432,7 @@ type ChatSend struct {
 
 func (x *ChatSend) Reset() {
 	*x = ChatSend{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[5]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -444,7 +444,7 @@ func (x *ChatSend) String() string {
 func (*ChatSend) ProtoMessage() {}
 
 func (x *ChatSend) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[5]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -457,7 +457,7 @@ func (x *ChatSend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatSend.ProtoReflect.Descriptor instead.
 func (*ChatSend) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{5}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ChatSend) GetText() string {
@@ -478,7 +478,7 @@ type PrivateMessageSend struct {
 
 func (x *PrivateMessageSend) Reset() {
 	*x = PrivateMessageSend{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[6]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -490,7 +490,7 @@ func (x *PrivateMessageSend) String() string {
 func (*PrivateMessageSend) ProtoMessage() {}
 
 func (x *PrivateMessageSend) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[6]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -503,7 +503,7 @@ func (x *PrivateMessageSend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrivateMessageSend.ProtoReflect.Descriptor instead.
 func (*PrivateMessageSend) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{6}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PrivateMessageSend) GetTargetAvatarId() string {
@@ -529,7 +529,7 @@ type LeaveRequest struct {
 
 func (x *LeaveRequest) Reset() {
 	*x = LeaveRequest{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[7]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -541,7 +541,7 @@ func (x *LeaveRequest) String() string {
 func (*LeaveRequest) ProtoMessage() {}
 
 func (x *LeaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[7]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -554,7 +554,7 @@ func (x *LeaveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveRequest.ProtoReflect.Descriptor instead.
 func (*LeaveRequest) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{7}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{7}
 }
 
 // Sent to a client immediately after joining.
@@ -571,7 +571,7 @@ type Welcome struct {
 
 func (x *Welcome) Reset() {
 	*x = Welcome{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[8]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -583,7 +583,7 @@ func (x *Welcome) String() string {
 func (*Welcome) ProtoMessage() {}
 
 func (x *Welcome) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[8]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +596,7 @@ func (x *Welcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Welcome.ProtoReflect.Descriptor instead.
 func (*Welcome) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{8}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Welcome) GetAvatarId() string {
@@ -644,7 +644,7 @@ type AvatarJoin struct {
 
 func (x *AvatarJoin) Reset() {
 	*x = AvatarJoin{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[9]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -656,7 +656,7 @@ func (x *AvatarJoin) String() string {
 func (*AvatarJoin) ProtoMessage() {}
 
 func (x *AvatarJoin) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[9]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -669,7 +669,7 @@ func (x *AvatarJoin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AvatarJoin.ProtoReflect.Descriptor instead.
 func (*AvatarJoin) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{9}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AvatarJoin) GetAvatar() *AvatarSnapshot {
@@ -689,7 +689,7 @@ type AvatarLeave struct {
 
 func (x *AvatarLeave) Reset() {
 	*x = AvatarLeave{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[10]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -701,7 +701,7 @@ func (x *AvatarLeave) String() string {
 func (*AvatarLeave) ProtoMessage() {}
 
 func (x *AvatarLeave) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[10]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -714,7 +714,7 @@ func (x *AvatarLeave) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AvatarLeave.ProtoReflect.Descriptor instead.
 func (*AvatarLeave) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{10}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *AvatarLeave) GetAvatarId() string {
@@ -731,7 +731,7 @@ type AvatarMove struct {
 	AvatarId      string                 `protobuf:"bytes,1,opt,name=avatar_id,json=avatarId,proto3" json:"avatar_id,omitempty"`
 	X             float32                `protobuf:"fixed32,2,opt,name=x,proto3" json:"x,omitempty"`
 	Y             float32                `protobuf:"fixed32,3,opt,name=y,proto3" json:"y,omitempty"`
-	Direction     Direction              `protobuf:"varint,4,opt,name=direction,proto3,enum=offisims.protocol.v1.Direction" json:"direction,omitempty"`
+	Direction     Direction              `protobuf:"varint,4,opt,name=direction,proto3,enum=openlore.protocol.v1.Direction" json:"direction,omitempty"`
 	Moving        bool                   `protobuf:"varint,5,opt,name=moving,proto3" json:"moving,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -739,7 +739,7 @@ type AvatarMove struct {
 
 func (x *AvatarMove) Reset() {
 	*x = AvatarMove{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[11]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -751,7 +751,7 @@ func (x *AvatarMove) String() string {
 func (*AvatarMove) ProtoMessage() {}
 
 func (x *AvatarMove) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[11]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -764,7 +764,7 @@ func (x *AvatarMove) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AvatarMove.ProtoReflect.Descriptor instead.
 func (*AvatarMove) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{11}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *AvatarMove) GetAvatarId() string {
@@ -815,7 +815,7 @@ type RoomChange struct {
 
 func (x *RoomChange) Reset() {
 	*x = RoomChange{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[12]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -827,7 +827,7 @@ func (x *RoomChange) String() string {
 func (*RoomChange) ProtoMessage() {}
 
 func (x *RoomChange) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[12]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -840,7 +840,7 @@ func (x *RoomChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomChange.ProtoReflect.Descriptor instead.
 func (*RoomChange) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{12}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RoomChange) GetRoom() *RoomSnapshot {
@@ -883,7 +883,7 @@ type ChatReceive struct {
 
 func (x *ChatReceive) Reset() {
 	*x = ChatReceive{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[13]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -895,7 +895,7 @@ func (x *ChatReceive) String() string {
 func (*ChatReceive) ProtoMessage() {}
 
 func (x *ChatReceive) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[13]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -908,7 +908,7 @@ func (x *ChatReceive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatReceive.ProtoReflect.Descriptor instead.
 func (*ChatReceive) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{13}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ChatReceive) GetAvatarId() string {
@@ -945,7 +945,7 @@ type PrivateMessageReceive struct {
 
 func (x *PrivateMessageReceive) Reset() {
 	*x = PrivateMessageReceive{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[14]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -957,7 +957,7 @@ func (x *PrivateMessageReceive) String() string {
 func (*PrivateMessageReceive) ProtoMessage() {}
 
 func (x *PrivateMessageReceive) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[14]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +970,7 @@ func (x *PrivateMessageReceive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrivateMessageReceive.ProtoReflect.Descriptor instead.
 func (*PrivateMessageReceive) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{14}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PrivateMessageReceive) GetFromAvatarId() string {
@@ -1013,7 +1013,7 @@ type Snap struct {
 
 func (x *Snap) Reset() {
 	*x = Snap{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[15]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1025,7 @@ func (x *Snap) String() string {
 func (*Snap) ProtoMessage() {}
 
 func (x *Snap) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[15]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1038,7 @@ func (x *Snap) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Snap.ProtoReflect.Descriptor instead.
 func (*Snap) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{15}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Snap) GetX() float32 {
@@ -1065,7 +1065,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[16]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1077,7 +1077,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[16]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1090,7 +1090,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{16}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Error) GetMessage() string {
@@ -1128,7 +1128,7 @@ type GameMessage struct {
 
 func (x *GameMessage) Reset() {
 	*x = GameMessage{}
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[17]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1140,7 +1140,7 @@ func (x *GameMessage) String() string {
 func (*GameMessage) ProtoMessage() {}
 
 func (x *GameMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_protocol_v1_protocol_proto_msgTypes[17]
+	mi := &file_openlore_protocol_v1_protocol_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1153,7 +1153,7 @@ func (x *GameMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameMessage.ProtoReflect.Descriptor instead.
 func (*GameMessage) Descriptor() ([]byte, []int) {
-	return file_offisims_protocol_v1_protocol_proto_rawDescGZIP(), []int{17}
+	return file_openlore_protocol_v1_protocol_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GameMessage) GetPayload() isGameMessage_Payload {
@@ -1394,11 +1394,11 @@ func (*GameMessage_Snap) isGameMessage_Payload() {}
 
 func (*GameMessage_Error) isGameMessage_Payload() {}
 
-var File_offisims_protocol_v1_protocol_proto protoreflect.FileDescriptor
+var File_openlore_protocol_v1_protocol_proto protoreflect.FileDescriptor
 
-const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
+const file_openlore_protocol_v1_protocol_proto_rawDesc = "" +
 	"\n" +
-	"#offisims/protocol/v1/protocol.proto\x12\x14offisims.protocol.v1\"\xf6\x01\n" +
+	"#openlore/protocol/v1/protocol.proto\x12\x14openlore.protocol.v1\"\xf6\x01\n" +
 	"\x0eAvatarSnapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
@@ -1406,7 +1406,7 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\x04room\x18\x04 \x01(\tR\x04room\x12\f\n" +
 	"\x01x\x18\x05 \x01(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x06 \x01(\x02R\x01y\x12=\n" +
-	"\tdirection\x18\a \x01(\x0e2\x1f.offisims.protocol.v1.DirectionR\tdirection\x12\x16\n" +
+	"\tdirection\x18\a \x01(\x0e2\x1f.openlore.protocol.v1.DirectionR\tdirection\x12\x16\n" +
 	"\x06moving\x18\b \x01(\bR\x06moving\x12\x16\n" +
 	"\x06family\x18\t \x01(\tR\x06family\"P\n" +
 	"\fRoomSnapshot\x12\x12\n" +
@@ -1418,7 +1418,7 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\x0ePositionUpdate\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x02R\x01y\x12=\n" +
-	"\tdirection\x18\x03 \x01(\x0e2\x1f.offisims.protocol.v1.DirectionR\tdirection\x12\x16\n" +
+	"\tdirection\x18\x03 \x01(\x0e2\x1f.openlore.protocol.v1.DirectionR\tdirection\x12\x16\n" +
 	"\x06moving\x18\x04 \x01(\bR\x06moving\"\"\n" +
 	"\aUseDoor\x12\x17\n" +
 	"\adoor_id\x18\x01 \x01(\tR\x06doorId\"\x1e\n" +
@@ -1430,13 +1430,13 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\fLeaveRequest\"\xd0\x01\n" +
 	"\aWelcome\x12\x1b\n" +
 	"\tavatar_id\x18\x01 \x01(\tR\bavatarId\x126\n" +
-	"\x04room\x18\x02 \x01(\v2\".offisims.protocol.v1.RoomSnapshotR\x04room\x12\x17\n" +
+	"\x04room\x18\x02 \x01(\v2\".openlore.protocol.v1.RoomSnapshotR\x04room\x12\x17\n" +
 	"\aspawn_x\x18\x03 \x01(\x02R\x06spawnX\x12\x17\n" +
 	"\aspawn_y\x18\x04 \x01(\x02R\x06spawnY\x12>\n" +
-	"\aavatars\x18\x05 \x03(\v2$.offisims.protocol.v1.AvatarSnapshotR\aavatars\"J\n" +
+	"\aavatars\x18\x05 \x03(\v2$.openlore.protocol.v1.AvatarSnapshotR\aavatars\"J\n" +
 	"\n" +
 	"AvatarJoin\x12<\n" +
-	"\x06avatar\x18\x01 \x01(\v2$.offisims.protocol.v1.AvatarSnapshotR\x06avatar\"*\n" +
+	"\x06avatar\x18\x01 \x01(\v2$.openlore.protocol.v1.AvatarSnapshotR\x06avatar\"*\n" +
 	"\vAvatarLeave\x12\x1b\n" +
 	"\tavatar_id\x18\x01 \x01(\tR\bavatarId\"\x9c\x01\n" +
 	"\n" +
@@ -1444,14 +1444,14 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\tavatar_id\x18\x01 \x01(\tR\bavatarId\x12\f\n" +
 	"\x01x\x18\x02 \x01(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\x02R\x01y\x12=\n" +
-	"\tdirection\x18\x04 \x01(\x0e2\x1f.offisims.protocol.v1.DirectionR\tdirection\x12\x16\n" +
+	"\tdirection\x18\x04 \x01(\x0e2\x1f.openlore.protocol.v1.DirectionR\tdirection\x12\x16\n" +
 	"\x06moving\x18\x05 \x01(\bR\x06moving\"\xb6\x01\n" +
 	"\n" +
 	"RoomChange\x126\n" +
-	"\x04room\x18\x01 \x01(\v2\".offisims.protocol.v1.RoomSnapshotR\x04room\x12\x17\n" +
+	"\x04room\x18\x01 \x01(\v2\".openlore.protocol.v1.RoomSnapshotR\x04room\x12\x17\n" +
 	"\aspawn_x\x18\x02 \x01(\x02R\x06spawnX\x12\x17\n" +
 	"\aspawn_y\x18\x03 \x01(\x02R\x06spawnY\x12>\n" +
-	"\aavatars\x18\x04 \x03(\v2$.offisims.protocol.v1.AvatarSnapshotR\aavatars\"R\n" +
+	"\aavatars\x18\x04 \x03(\v2$.openlore.protocol.v1.AvatarSnapshotR\aavatars\"R\n" +
 	"\vChatReceive\x12\x1b\n" +
 	"\tavatar_id\x18\x01 \x01(\tR\bavatarId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1468,25 +1468,25 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\x05Error\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"\x80\b\n" +
 	"\vGameMessage\x127\n" +
-	"\x04join\x18\x01 \x01(\v2!.offisims.protocol.v1.JoinRequestH\x00R\x04join\x12B\n" +
-	"\bposition\x18\x02 \x01(\v2$.offisims.protocol.v1.PositionUpdateH\x00R\bposition\x12:\n" +
-	"\buse_door\x18\x03 \x01(\v2\x1d.offisims.protocol.v1.UseDoorH\x00R\auseDoor\x124\n" +
-	"\x04chat\x18\x04 \x01(\v2\x1e.offisims.protocol.v1.ChatSendH\x00R\x04chat\x12S\n" +
-	"\x0fprivate_message\x18\x05 \x01(\v2(.offisims.protocol.v1.PrivateMessageSendH\x00R\x0eprivateMessage\x12:\n" +
-	"\x05leave\x18\x06 \x01(\v2\".offisims.protocol.v1.LeaveRequestH\x00R\x05leave\x129\n" +
+	"\x04join\x18\x01 \x01(\v2!.openlore.protocol.v1.JoinRequestH\x00R\x04join\x12B\n" +
+	"\bposition\x18\x02 \x01(\v2$.openlore.protocol.v1.PositionUpdateH\x00R\bposition\x12:\n" +
+	"\buse_door\x18\x03 \x01(\v2\x1d.openlore.protocol.v1.UseDoorH\x00R\auseDoor\x124\n" +
+	"\x04chat\x18\x04 \x01(\v2\x1e.openlore.protocol.v1.ChatSendH\x00R\x04chat\x12S\n" +
+	"\x0fprivate_message\x18\x05 \x01(\v2(.openlore.protocol.v1.PrivateMessageSendH\x00R\x0eprivateMessage\x12:\n" +
+	"\x05leave\x18\x06 \x01(\v2\".openlore.protocol.v1.LeaveRequestH\x00R\x05leave\x129\n" +
 	"\awelcome\x18\n" +
-	" \x01(\v2\x1d.offisims.protocol.v1.WelcomeH\x00R\awelcome\x12C\n" +
-	"\vavatar_join\x18\v \x01(\v2 .offisims.protocol.v1.AvatarJoinH\x00R\n" +
+	" \x01(\v2\x1d.openlore.protocol.v1.WelcomeH\x00R\awelcome\x12C\n" +
+	"\vavatar_join\x18\v \x01(\v2 .openlore.protocol.v1.AvatarJoinH\x00R\n" +
 	"avatarJoin\x12F\n" +
-	"\favatar_leave\x18\f \x01(\v2!.offisims.protocol.v1.AvatarLeaveH\x00R\vavatarLeave\x12C\n" +
-	"\vavatar_move\x18\r \x01(\v2 .offisims.protocol.v1.AvatarMoveH\x00R\n" +
+	"\favatar_leave\x18\f \x01(\v2!.openlore.protocol.v1.AvatarLeaveH\x00R\vavatarLeave\x12C\n" +
+	"\vavatar_move\x18\r \x01(\v2 .openlore.protocol.v1.AvatarMoveH\x00R\n" +
 	"avatarMove\x12C\n" +
-	"\vroom_change\x18\x0e \x01(\v2 .offisims.protocol.v1.RoomChangeH\x00R\n" +
+	"\vroom_change\x18\x0e \x01(\v2 .openlore.protocol.v1.RoomChangeH\x00R\n" +
 	"roomChange\x12F\n" +
-	"\fchat_message\x18\x0f \x01(\v2!.offisims.protocol.v1.ChatReceiveH\x00R\vchatMessage\x12e\n" +
-	"\x17private_message_receive\x18\x10 \x01(\v2+.offisims.protocol.v1.PrivateMessageReceiveH\x00R\x15privateMessageReceive\x120\n" +
-	"\x04snap\x18\x11 \x01(\v2\x1a.offisims.protocol.v1.SnapH\x00R\x04snap\x123\n" +
-	"\x05error\x18\x12 \x01(\v2\x1b.offisims.protocol.v1.ErrorH\x00R\x05errorB\t\n" +
+	"\fchat_message\x18\x0f \x01(\v2!.openlore.protocol.v1.ChatReceiveH\x00R\vchatMessage\x12e\n" +
+	"\x17private_message_receive\x18\x10 \x01(\v2+.openlore.protocol.v1.PrivateMessageReceiveH\x00R\x15privateMessageReceive\x120\n" +
+	"\x04snap\x18\x11 \x01(\v2\x1a.openlore.protocol.v1.SnapH\x00R\x04snap\x123\n" +
+	"\x05error\x18\x12 \x01(\v2\x1b.openlore.protocol.v1.ErrorH\x00R\x05errorB\t\n" +
 	"\apayload*u\n" +
 	"\tDirection\x12\x19\n" +
 	"\x15DIRECTION_UNSPECIFIED\x10\x00\x12\x12\n" +
@@ -1494,67 +1494,67 @@ const file_offisims_protocol_v1_protocol_proto_rawDesc = "" +
 	"\fDIRECTION_UP\x10\x02\x12\x12\n" +
 	"\x0eDIRECTION_LEFT\x10\x03\x12\x13\n" +
 	"\x0fDIRECTION_RIGHT\x10\x04B\xd1\x01\n" +
-	"\x18com.offisims.protocol.v1B\rProtocolProtoP\x01Z4github.com/offisims/game/internal/game/pb/protocolv1\xa2\x02\x03OPX\xaa\x02\x14Offisims.Protocol.V1\xca\x02\x14Offisims\\Protocol\\V1\xe2\x02 Offisims\\Protocol\\V1\\GPBMetadata\xea\x02\x16Offisims::Protocol::V1b\x06proto3"
+	"\x18com.openlore.protocol.v1B\rProtocolProtoP\x01Z4github.com/openlore/game/internal/game/pb/protocolv1\xa2\x02\x03OPX\xaa\x02\x14Openlore.Protocol.V1\xca\x02\x14Openlore\\Protocol\\V1\xe2\x02 Openlore\\Protocol\\V1\\GPBMetadata\xea\x02\x16Openlore::Protocol::V1b\x06proto3"
 
 var (
-	file_offisims_protocol_v1_protocol_proto_rawDescOnce sync.Once
-	file_offisims_protocol_v1_protocol_proto_rawDescData []byte
+	file_openlore_protocol_v1_protocol_proto_rawDescOnce sync.Once
+	file_openlore_protocol_v1_protocol_proto_rawDescData []byte
 )
 
-func file_offisims_protocol_v1_protocol_proto_rawDescGZIP() []byte {
-	file_offisims_protocol_v1_protocol_proto_rawDescOnce.Do(func() {
-		file_offisims_protocol_v1_protocol_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_offisims_protocol_v1_protocol_proto_rawDesc), len(file_offisims_protocol_v1_protocol_proto_rawDesc)))
+func file_openlore_protocol_v1_protocol_proto_rawDescGZIP() []byte {
+	file_openlore_protocol_v1_protocol_proto_rawDescOnce.Do(func() {
+		file_openlore_protocol_v1_protocol_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_openlore_protocol_v1_protocol_proto_rawDesc), len(file_openlore_protocol_v1_protocol_proto_rawDesc)))
 	})
-	return file_offisims_protocol_v1_protocol_proto_rawDescData
+	return file_openlore_protocol_v1_protocol_proto_rawDescData
 }
 
-var file_offisims_protocol_v1_protocol_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_offisims_protocol_v1_protocol_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
-var file_offisims_protocol_v1_protocol_proto_goTypes = []any{
-	(Direction)(0),                // 0: offisims.protocol.v1.Direction
-	(*AvatarSnapshot)(nil),        // 1: offisims.protocol.v1.AvatarSnapshot
-	(*RoomSnapshot)(nil),          // 2: offisims.protocol.v1.RoomSnapshot
-	(*JoinRequest)(nil),           // 3: offisims.protocol.v1.JoinRequest
-	(*PositionUpdate)(nil),        // 4: offisims.protocol.v1.PositionUpdate
-	(*UseDoor)(nil),               // 5: offisims.protocol.v1.UseDoor
-	(*ChatSend)(nil),              // 6: offisims.protocol.v1.ChatSend
-	(*PrivateMessageSend)(nil),    // 7: offisims.protocol.v1.PrivateMessageSend
-	(*LeaveRequest)(nil),          // 8: offisims.protocol.v1.LeaveRequest
-	(*Welcome)(nil),               // 9: offisims.protocol.v1.Welcome
-	(*AvatarJoin)(nil),            // 10: offisims.protocol.v1.AvatarJoin
-	(*AvatarLeave)(nil),           // 11: offisims.protocol.v1.AvatarLeave
-	(*AvatarMove)(nil),            // 12: offisims.protocol.v1.AvatarMove
-	(*RoomChange)(nil),            // 13: offisims.protocol.v1.RoomChange
-	(*ChatReceive)(nil),           // 14: offisims.protocol.v1.ChatReceive
-	(*PrivateMessageReceive)(nil), // 15: offisims.protocol.v1.PrivateMessageReceive
-	(*Snap)(nil),                  // 16: offisims.protocol.v1.Snap
-	(*Error)(nil),                 // 17: offisims.protocol.v1.Error
-	(*GameMessage)(nil),           // 18: offisims.protocol.v1.GameMessage
+var file_openlore_protocol_v1_protocol_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_openlore_protocol_v1_protocol_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_openlore_protocol_v1_protocol_proto_goTypes = []any{
+	(Direction)(0),                // 0: openlore.protocol.v1.Direction
+	(*AvatarSnapshot)(nil),        // 1: openlore.protocol.v1.AvatarSnapshot
+	(*RoomSnapshot)(nil),          // 2: openlore.protocol.v1.RoomSnapshot
+	(*JoinRequest)(nil),           // 3: openlore.protocol.v1.JoinRequest
+	(*PositionUpdate)(nil),        // 4: openlore.protocol.v1.PositionUpdate
+	(*UseDoor)(nil),               // 5: openlore.protocol.v1.UseDoor
+	(*ChatSend)(nil),              // 6: openlore.protocol.v1.ChatSend
+	(*PrivateMessageSend)(nil),    // 7: openlore.protocol.v1.PrivateMessageSend
+	(*LeaveRequest)(nil),          // 8: openlore.protocol.v1.LeaveRequest
+	(*Welcome)(nil),               // 9: openlore.protocol.v1.Welcome
+	(*AvatarJoin)(nil),            // 10: openlore.protocol.v1.AvatarJoin
+	(*AvatarLeave)(nil),           // 11: openlore.protocol.v1.AvatarLeave
+	(*AvatarMove)(nil),            // 12: openlore.protocol.v1.AvatarMove
+	(*RoomChange)(nil),            // 13: openlore.protocol.v1.RoomChange
+	(*ChatReceive)(nil),           // 14: openlore.protocol.v1.ChatReceive
+	(*PrivateMessageReceive)(nil), // 15: openlore.protocol.v1.PrivateMessageReceive
+	(*Snap)(nil),                  // 16: openlore.protocol.v1.Snap
+	(*Error)(nil),                 // 17: openlore.protocol.v1.Error
+	(*GameMessage)(nil),           // 18: openlore.protocol.v1.GameMessage
 }
-var file_offisims_protocol_v1_protocol_proto_depIdxs = []int32{
-	0,  // 0: offisims.protocol.v1.AvatarSnapshot.direction:type_name -> offisims.protocol.v1.Direction
-	0,  // 1: offisims.protocol.v1.PositionUpdate.direction:type_name -> offisims.protocol.v1.Direction
-	2,  // 2: offisims.protocol.v1.Welcome.room:type_name -> offisims.protocol.v1.RoomSnapshot
-	1,  // 3: offisims.protocol.v1.Welcome.avatars:type_name -> offisims.protocol.v1.AvatarSnapshot
-	1,  // 4: offisims.protocol.v1.AvatarJoin.avatar:type_name -> offisims.protocol.v1.AvatarSnapshot
-	0,  // 5: offisims.protocol.v1.AvatarMove.direction:type_name -> offisims.protocol.v1.Direction
-	2,  // 6: offisims.protocol.v1.RoomChange.room:type_name -> offisims.protocol.v1.RoomSnapshot
-	1,  // 7: offisims.protocol.v1.RoomChange.avatars:type_name -> offisims.protocol.v1.AvatarSnapshot
-	3,  // 8: offisims.protocol.v1.GameMessage.join:type_name -> offisims.protocol.v1.JoinRequest
-	4,  // 9: offisims.protocol.v1.GameMessage.position:type_name -> offisims.protocol.v1.PositionUpdate
-	5,  // 10: offisims.protocol.v1.GameMessage.use_door:type_name -> offisims.protocol.v1.UseDoor
-	6,  // 11: offisims.protocol.v1.GameMessage.chat:type_name -> offisims.protocol.v1.ChatSend
-	7,  // 12: offisims.protocol.v1.GameMessage.private_message:type_name -> offisims.protocol.v1.PrivateMessageSend
-	8,  // 13: offisims.protocol.v1.GameMessage.leave:type_name -> offisims.protocol.v1.LeaveRequest
-	9,  // 14: offisims.protocol.v1.GameMessage.welcome:type_name -> offisims.protocol.v1.Welcome
-	10, // 15: offisims.protocol.v1.GameMessage.avatar_join:type_name -> offisims.protocol.v1.AvatarJoin
-	11, // 16: offisims.protocol.v1.GameMessage.avatar_leave:type_name -> offisims.protocol.v1.AvatarLeave
-	12, // 17: offisims.protocol.v1.GameMessage.avatar_move:type_name -> offisims.protocol.v1.AvatarMove
-	13, // 18: offisims.protocol.v1.GameMessage.room_change:type_name -> offisims.protocol.v1.RoomChange
-	14, // 19: offisims.protocol.v1.GameMessage.chat_message:type_name -> offisims.protocol.v1.ChatReceive
-	15, // 20: offisims.protocol.v1.GameMessage.private_message_receive:type_name -> offisims.protocol.v1.PrivateMessageReceive
-	16, // 21: offisims.protocol.v1.GameMessage.snap:type_name -> offisims.protocol.v1.Snap
-	17, // 22: offisims.protocol.v1.GameMessage.error:type_name -> offisims.protocol.v1.Error
+var file_openlore_protocol_v1_protocol_proto_depIdxs = []int32{
+	0,  // 0: openlore.protocol.v1.AvatarSnapshot.direction:type_name -> openlore.protocol.v1.Direction
+	0,  // 1: openlore.protocol.v1.PositionUpdate.direction:type_name -> openlore.protocol.v1.Direction
+	2,  // 2: openlore.protocol.v1.Welcome.room:type_name -> openlore.protocol.v1.RoomSnapshot
+	1,  // 3: openlore.protocol.v1.Welcome.avatars:type_name -> openlore.protocol.v1.AvatarSnapshot
+	1,  // 4: openlore.protocol.v1.AvatarJoin.avatar:type_name -> openlore.protocol.v1.AvatarSnapshot
+	0,  // 5: openlore.protocol.v1.AvatarMove.direction:type_name -> openlore.protocol.v1.Direction
+	2,  // 6: openlore.protocol.v1.RoomChange.room:type_name -> openlore.protocol.v1.RoomSnapshot
+	1,  // 7: openlore.protocol.v1.RoomChange.avatars:type_name -> openlore.protocol.v1.AvatarSnapshot
+	3,  // 8: openlore.protocol.v1.GameMessage.join:type_name -> openlore.protocol.v1.JoinRequest
+	4,  // 9: openlore.protocol.v1.GameMessage.position:type_name -> openlore.protocol.v1.PositionUpdate
+	5,  // 10: openlore.protocol.v1.GameMessage.use_door:type_name -> openlore.protocol.v1.UseDoor
+	6,  // 11: openlore.protocol.v1.GameMessage.chat:type_name -> openlore.protocol.v1.ChatSend
+	7,  // 12: openlore.protocol.v1.GameMessage.private_message:type_name -> openlore.protocol.v1.PrivateMessageSend
+	8,  // 13: openlore.protocol.v1.GameMessage.leave:type_name -> openlore.protocol.v1.LeaveRequest
+	9,  // 14: openlore.protocol.v1.GameMessage.welcome:type_name -> openlore.protocol.v1.Welcome
+	10, // 15: openlore.protocol.v1.GameMessage.avatar_join:type_name -> openlore.protocol.v1.AvatarJoin
+	11, // 16: openlore.protocol.v1.GameMessage.avatar_leave:type_name -> openlore.protocol.v1.AvatarLeave
+	12, // 17: openlore.protocol.v1.GameMessage.avatar_move:type_name -> openlore.protocol.v1.AvatarMove
+	13, // 18: openlore.protocol.v1.GameMessage.room_change:type_name -> openlore.protocol.v1.RoomChange
+	14, // 19: openlore.protocol.v1.GameMessage.chat_message:type_name -> openlore.protocol.v1.ChatReceive
+	15, // 20: openlore.protocol.v1.GameMessage.private_message_receive:type_name -> openlore.protocol.v1.PrivateMessageReceive
+	16, // 21: openlore.protocol.v1.GameMessage.snap:type_name -> openlore.protocol.v1.Snap
+	17, // 22: openlore.protocol.v1.GameMessage.error:type_name -> openlore.protocol.v1.Error
 	23, // [23:23] is the sub-list for method output_type
 	23, // [23:23] is the sub-list for method input_type
 	23, // [23:23] is the sub-list for extension type_name
@@ -1562,12 +1562,12 @@ var file_offisims_protocol_v1_protocol_proto_depIdxs = []int32{
 	0,  // [0:23] is the sub-list for field type_name
 }
 
-func init() { file_offisims_protocol_v1_protocol_proto_init() }
-func file_offisims_protocol_v1_protocol_proto_init() {
-	if File_offisims_protocol_v1_protocol_proto != nil {
+func init() { file_openlore_protocol_v1_protocol_proto_init() }
+func file_openlore_protocol_v1_protocol_proto_init() {
+	if File_openlore_protocol_v1_protocol_proto != nil {
 		return
 	}
-	file_offisims_protocol_v1_protocol_proto_msgTypes[17].OneofWrappers = []any{
+	file_openlore_protocol_v1_protocol_proto_msgTypes[17].OneofWrappers = []any{
 		(*GameMessage_Join)(nil),
 		(*GameMessage_Position)(nil),
 		(*GameMessage_UseDoor)(nil),
@@ -1588,18 +1588,18 @@ func file_offisims_protocol_v1_protocol_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_offisims_protocol_v1_protocol_proto_rawDesc), len(file_offisims_protocol_v1_protocol_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_openlore_protocol_v1_protocol_proto_rawDesc), len(file_openlore_protocol_v1_protocol_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_offisims_protocol_v1_protocol_proto_goTypes,
-		DependencyIndexes: file_offisims_protocol_v1_protocol_proto_depIdxs,
-		EnumInfos:         file_offisims_protocol_v1_protocol_proto_enumTypes,
-		MessageInfos:      file_offisims_protocol_v1_protocol_proto_msgTypes,
+		GoTypes:           file_openlore_protocol_v1_protocol_proto_goTypes,
+		DependencyIndexes: file_openlore_protocol_v1_protocol_proto_depIdxs,
+		EnumInfos:         file_openlore_protocol_v1_protocol_proto_enumTypes,
+		MessageInfos:      file_openlore_protocol_v1_protocol_proto_msgTypes,
 	}.Build()
-	File_offisims_protocol_v1_protocol_proto = out.File
-	file_offisims_protocol_v1_protocol_proto_goTypes = nil
-	file_offisims_protocol_v1_protocol_proto_depIdxs = nil
+	File_openlore_protocol_v1_protocol_proto = out.File
+	file_openlore_protocol_v1_protocol_proto_goTypes = nil
+	file_openlore_protocol_v1_protocol_proto_depIdxs = nil
 }

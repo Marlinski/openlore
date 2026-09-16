@@ -18,7 +18,7 @@
  */
 
 import { useRef, useEffect, useCallback } from 'preact/hooks'
-import type { TilesetRegion } from '@offisims/pack'
+import type { TilesetRegion } from '@openlore/pack'
 import { useTileset, tilesetImageUrl } from '../api/tilesets'
 import type { TilesetMeta } from '../api/tilesets'
 

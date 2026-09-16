@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/offisims/studio/internal/rag/embedder"
-	"github.com/offisims/studio/internal/rag/indexer"
-	"github.com/offisims/studio/internal/rag/vector"
+	"github.com/openlore/studio/internal/rag/embedder"
+	"github.com/openlore/studio/internal/rag/indexer"
+	"github.com/openlore/studio/internal/rag/vector"
 )
 
 // Service orchestrates embeddings, vector storage, and indexing.

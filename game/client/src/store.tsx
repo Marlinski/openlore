@@ -10,7 +10,7 @@
  */
 
 import { signal, batch } from "@preact/signals";
-import type { Pack } from "@offisims/pack";
+import type { Pack } from "@openlore/pack";
 
 // ─── Types ────────────────────────────────────────────────────────
 

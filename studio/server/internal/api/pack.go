@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/offisims/shared/pack"
+	"github.com/openlore/shared/pack"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

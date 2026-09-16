@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/offisims/studio/internal/rag/vector"
+	"github.com/openlore/studio/internal/rag/vector"
 )
 
 const defaultSearchLimit = 20

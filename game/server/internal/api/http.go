@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/offisims/game/internal/channelstore"
-	pb "github.com/offisims/shared/pack/pb/packv1"
+	"github.com/openlore/game/internal/channelstore"
+	pb "github.com/openlore/shared/pack/pb/packv1"
 	"google.golang.org/protobuf/proto"
 )
 

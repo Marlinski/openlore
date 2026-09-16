@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from 'preact/hooks'
-import type { TilesetRegion } from '@offisims/pack'
+import type { TilesetRegion } from '@openlore/pack'
 import { useTilesets } from '../../api/tilesets'
 import { TilesetPicker } from '../TilesetPicker'
 import { FilterableList } from '../FilterableList'

@@ -8,7 +8,7 @@ import { useCallback, useMemo } from 'preact/hooks'
 import { useRoomStore, parseDoorTarget } from '../../store/room'
 import type { LayoutTool } from '../../store/room'
 import { useRooms } from '../../api/rooms'
-import type { DoorDefinition, RoomDefinition } from '@offisims/pack'
+import type { DoorDefinition, RoomDefinition } from '@openlore/pack'
 
 export function LayoutPanel() {
   const layoutTool = useRoomStore((s) => s.layoutTool)

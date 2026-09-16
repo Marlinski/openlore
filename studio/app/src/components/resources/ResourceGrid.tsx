@@ -3,7 +3,7 @@
  * card grid using the shared ResourceCard component.
  */
 
-import type { Resource } from '@offisims/pack'
+import type { Resource } from '@openlore/pack'
 import { ResourceCard } from '../ResourceCard'
 
 interface ResourceGridProps {

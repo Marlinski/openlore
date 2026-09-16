@@ -1,7 +1,7 @@
 /**
  * Studio-local constants and utilities that operate on pack types.
  *
- * These live here (not in @offisims/pack) because they are studio-only
+ * These live here (not in @openlore/pack) because they are studio-only
  * concerns -- the pack library stays minimal and generic.
  */
 
@@ -10,8 +10,8 @@ import type {
   DoorDefinition,
   RoomDefinition,
   TexturePlacement,
-} from "@offisims/pack";
-import { PlacementLayer } from "@offisims/pack";
+} from "@openlore/pack";
+import { PlacementLayer } from "@openlore/pack";
 
 // Re-export PlacementLayer so consumers don't need a separate import.
 export { PlacementLayer };

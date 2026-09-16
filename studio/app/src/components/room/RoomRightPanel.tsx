@@ -9,7 +9,7 @@ import { useState, useCallback, useMemo } from 'preact/hooks'
 import { useRoomStore, computeRoomStats, hasUnsavedChanges } from '../../store/room'
 import { useRooms, useSaveRoom, useDeleteRoom } from '../../api/rooms'
 import { extractRoomLayout, extractRoomTexture } from '../../lib/pack'
-import type { RoomDefinition } from '@offisims/pack'
+import type { RoomDefinition } from '@openlore/pack'
 import { useComposites } from '../../api/composites'
 import { TileStackPanel } from './TileStackPanel'
 

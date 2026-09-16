@@ -1,6 +1,6 @@
 # Studio
 
-Offisims Studio is the world editor and authoring tool for the Offisims 2D office simulation. It provides a browser-based UI for creating and editing game assets (tilesets, resources, composites, rooms, masks) backed by a Go HTTP server with RAG-powered semantic search.
+OpenLore Studio is the world editor and authoring tool for the OpenLore 2D office simulation. It provides a browser-based UI for creating and editing game assets (tilesets, resources, composites, rooms, masks) backed by a Go HTTP server with RAG-powered semantic search.
 
 ## Architecture
 

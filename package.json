@@ -1,5 +1,5 @@
 {
-  "name": "offisims",
+  "name": "openlore",
   "version": "0.2.0",
   "private": true,
   "workspaces": [
@@ -8,10 +8,10 @@
     "studio/app"
   ],
   "scripts": {
-    "pack:build": "yarn workspace @offisims/pack build",
-    "game:client": "yarn workspace @offisims/client dev",
-    "studio:app": "yarn workspace @offisims/studio dev",
-    "build": "yarn pack:build && yarn workspace @offisims/client build"
+    "pack:build": "yarn workspace @openlore/pack build",
+    "game:client": "yarn workspace @openlore/client dev",
+    "studio:app": "yarn workspace @openlore/studio dev",
+    "build": "yarn pack:build && yarn workspace @openlore/client build"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.11.0",

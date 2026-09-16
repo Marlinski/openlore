@@ -5,8 +5,8 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/offisims/shared/pack"
-	"github.com/offisims/studio/internal/config"
+	"github.com/openlore/shared/pack"
+	"github.com/openlore/studio/internal/config"
 	"github.com/spf13/cobra"
 )
 

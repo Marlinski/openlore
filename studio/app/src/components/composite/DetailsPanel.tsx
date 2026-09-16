@@ -5,7 +5,7 @@
 
 import { useCallback } from 'preact/hooks'
 import { generateId, TILE_SIZE } from '../../lib/pack'
-import type { CompositeObject, CompositePart } from '@offisims/pack'
+import type { CompositeObject, CompositePart } from '@openlore/pack'
 import { useCompositeStore } from '../../store/composite'
 import { useSaveComposite } from '../../api/composites'
 import { useUIStore } from '../../store/ui'

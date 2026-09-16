@@ -7,7 +7,7 @@
 
 import { create } from 'zustand'
 import { generateId } from '../lib/pack'
-import type { TilesetRegion } from '@offisims/pack'
+import type { TilesetRegion } from '@openlore/pack'
 
 // ─── Constants ──────────────────────────────────────────────────────
 

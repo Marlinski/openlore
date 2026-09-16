@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pb "github.com/offisims/shared/pack/pb/packv1"
+	pb "github.com/openlore/shared/pack/pb/packv1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

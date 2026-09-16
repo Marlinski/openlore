@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/offisims/studio/internal/workspace"
+	"github.com/openlore/studio/internal/workspace"
 )
 
 // workspaceHandlers holds workspace management endpoints.

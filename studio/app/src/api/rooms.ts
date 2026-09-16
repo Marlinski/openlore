@@ -3,7 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import type { RoomDefinition } from '@offisims/pack'
+import type { RoomDefinition } from '@openlore/pack'
 import { apiFetch } from './client'
 
 const KEYS = {

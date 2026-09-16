@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks'
-import type { Resource, ResourceFrame } from '@offisims/pack'
+import type { Resource, ResourceFrame } from '@openlore/pack'
 import { useTileset } from '../../api/tilesets'
 import { useSaveResource, useDeleteResource } from '../../api/resources'
 import { loadImage } from '../TilesetPicker'

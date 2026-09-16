@@ -1,4 +1,4 @@
-# Offisims — Root orchestrator
+# OpenLore — Root orchestrator
 #
 # Studio targets delegate to studio/Makefile.
 # Game targets delegate to game/Makefile.
@@ -25,15 +25,15 @@ install:
 proto:
 	npx buf generate
 	@mkdir -p shared/pack/go/pb/packv1 game/server/internal/game/pb/protocolv1 shared/pack/js/pb game/client/src/pb
-	cp gen/go/offisims/pack/v1/pack.pb.go shared/pack/go/pb/packv1/
-	cp gen/go/offisims/protocol/v1/protocol.pb.go game/server/internal/game/pb/protocolv1/
-	cp gen/ts/offisims/pack/v1/pack_pb.ts shared/pack/js/pb/
-	cp gen/ts/offisims/protocol/v1/protocol_pb.ts game/client/src/pb/
+	cp gen/go/openlore/pack/v1/pack.pb.go shared/pack/go/pb/packv1/
+	cp gen/go/openlore/protocol/v1/protocol.pb.go game/server/internal/game/pb/protocolv1/
+	cp gen/ts/openlore/pack/v1/pack_pb.ts shared/pack/js/pb/
+	cp gen/ts/openlore/protocol/v1/protocol_pb.ts game/client/src/pb/
 	rm -rf gen/
 	@echo "Proto generated and copied"
 
 pack:
-	yarn workspace @offisims/pack build
+	yarn workspace @openlore/pack build
 
 # ─── Studio (delegates to studio/Makefile) ───────────────────────
 

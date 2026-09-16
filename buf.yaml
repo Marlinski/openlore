@@ -1,9 +1,9 @@
 version: v2
 modules:
   - path: shared/proto
-    name: buf.build/offisims/pack
+    name: buf.build/openlore/pack
   - path: game/proto
-    name: buf.build/offisims/protocol
+    name: buf.build/openlore/protocol
 lint:
   use:
     - STANDARD

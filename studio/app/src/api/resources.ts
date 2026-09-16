@@ -3,7 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import type { Resource } from '@offisims/pack'
+import type { Resource } from '@openlore/pack'
 import { apiFetch } from './client'
 
 const KEYS = {

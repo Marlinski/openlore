@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	pack "github.com/offisims/shared/pack"
+	pack "github.com/openlore/shared/pack"
 )
 
 // Store manages the set of running Worlds keyed by channel name (e.g. "#lobby").

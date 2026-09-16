@@ -16,8 +16,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/offisims/shared/pack"
-	pb "github.com/offisims/shared/pack/pb/packv1"
+	"github.com/openlore/shared/pack"
+	pb "github.com/openlore/shared/pack/pb/packv1"
 )
 
 // Store discovers and manages packs on disk.

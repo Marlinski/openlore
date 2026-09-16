@@ -11,7 +11,7 @@ import type {
   TexturePlacement,
   CompositeObject,
   CompositePart,
-} from '@offisims/pack'
+} from '@openlore/pack'
 import { getCachedImage, loadImage } from '../TilesetPicker'
 import type { LayerTab } from '../../store/room'
 

@@ -5,7 +5,7 @@
  * Images are cached by path so they're only fetched once.
  */
 
-import type { Pack, TilesetDefinition } from "@offisims/pack";
+import type { Pack, TilesetDefinition } from "@openlore/pack";
 
 /** Cached loaded images by path */
 const imageCache = new Map<string, HTMLImageElement>();

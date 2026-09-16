@@ -8,7 +8,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
-import type { Mask, MaskCut } from '@offisims/pack'
+import type { Mask, MaskCut } from '@openlore/pack'
 import { generateId } from '../../lib/pack'
 import { useMasks, useSaveMask, useDeleteMask } from '../../api/masks'
 import { useCutterStore, type CutEntry, getSharedTags } from '../../store/cutter'

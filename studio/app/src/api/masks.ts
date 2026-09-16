@@ -3,7 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import type { Mask } from '@offisims/pack'
+import type { Mask } from '@openlore/pack'
 import { apiFetch } from './client'
 
 const KEYS = {

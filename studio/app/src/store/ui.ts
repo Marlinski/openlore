@@ -107,7 +107,7 @@ export const useUIStore = create<UIState>()(
         set((s) => ({ tester: { ...s.tester, ...patch } })),
     }),
     {
-      name: 'offisims-studio-ui',
+      name: 'openlore-studio-ui',
       // Only persist panel widths and active tab — per-tab selections reset on reload
       partialize: (s) => ({
         activeTab: s.activeTab,

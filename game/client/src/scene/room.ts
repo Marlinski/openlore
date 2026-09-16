@@ -21,7 +21,7 @@ import {
   type Pack,
   type RoomDefinition,
   type TexturePlacement,
-} from "@offisims/pack";
+} from "@openlore/pack";
 import { TILE_SIZE } from "../constants.js";
 import { findTilesetDef, getCachedImage } from "../assets.js";
 

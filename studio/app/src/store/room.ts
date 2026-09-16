@@ -22,7 +22,7 @@ import type {
   TilesetRegion,
   RoomDefinition,
   CompositeObject,
-} from '@offisims/pack'
+} from '@openlore/pack'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ export type Brush =
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-const EDITOR_STATE_KEY = 'offisims_room_editor_state'
+const EDITOR_STATE_KEY = 'openlore_room_editor_state'
 const DEFAULT_WIDTH = 16
 const DEFAULT_HEIGHT = 12
 const MIN_SIZE = 4

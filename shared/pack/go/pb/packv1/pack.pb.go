@@ -1,4 +1,4 @@
-// Pack data types — single source of truth for all Offisims data shapes.
+// Pack data types — single source of truth for all OpenLore data shapes.
 //
 // These types are shared between Studio (authoring) and Game (runtime).
 // Studio stores entities as individual JSON files. When compiling a pack,
@@ -9,7 +9,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: offisims/pack/v1/pack.proto
+// source: openlore/pack/v1/pack.proto
 
 package packv1
 
@@ -61,11 +61,11 @@ func (x PlacementLayer) String() string {
 }
 
 func (PlacementLayer) Descriptor() protoreflect.EnumDescriptor {
-	return file_offisims_pack_v1_pack_proto_enumTypes[0].Descriptor()
+	return file_openlore_pack_v1_pack_proto_enumTypes[0].Descriptor()
 }
 
 func (PlacementLayer) Type() protoreflect.EnumType {
-	return &file_offisims_pack_v1_pack_proto_enumTypes[0]
+	return &file_openlore_pack_v1_pack_proto_enumTypes[0]
 }
 
 func (x PlacementLayer) Number() protoreflect.EnumNumber {
@@ -74,7 +74,7 @@ func (x PlacementLayer) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PlacementLayer.Descriptor instead.
 func (PlacementLayer) EnumDescriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{0}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{0}
 }
 
 // TilesetDefinition describes a tileset image and its grid layout.
@@ -96,7 +96,7 @@ type TilesetDefinition struct {
 
 func (x *TilesetDefinition) Reset() {
 	*x = TilesetDefinition{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[0]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -108,7 +108,7 @@ func (x *TilesetDefinition) String() string {
 func (*TilesetDefinition) ProtoMessage() {}
 
 func (x *TilesetDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[0]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,7 +121,7 @@ func (x *TilesetDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TilesetDefinition.ProtoReflect.Descriptor instead.
 func (*TilesetDefinition) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{0}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TilesetDefinition) GetId() string {
@@ -189,7 +189,7 @@ type TilesetRegion struct {
 
 func (x *TilesetRegion) Reset() {
 	*x = TilesetRegion{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[1]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +201,7 @@ func (x *TilesetRegion) String() string {
 func (*TilesetRegion) ProtoMessage() {}
 
 func (x *TilesetRegion) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[1]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +214,7 @@ func (x *TilesetRegion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TilesetRegion.ProtoReflect.Descriptor instead.
 func (*TilesetRegion) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{1}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TilesetRegion) GetTilesetId() string {
@@ -268,7 +268,7 @@ type CompositePart struct {
 
 func (x *CompositePart) Reset() {
 	*x = CompositePart{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[2]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +280,7 @@ func (x *CompositePart) String() string {
 func (*CompositePart) ProtoMessage() {}
 
 func (x *CompositePart) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[2]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +293,7 @@ func (x *CompositePart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompositePart.ProtoReflect.Descriptor instead.
 func (*CompositePart) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{2}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CompositePart) GetRegion() *TilesetRegion {
@@ -340,7 +340,7 @@ type CompositeObject struct {
 
 func (x *CompositeObject) Reset() {
 	*x = CompositeObject{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[3]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -352,7 +352,7 @@ func (x *CompositeObject) String() string {
 func (*CompositeObject) ProtoMessage() {}
 
 func (x *CompositeObject) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[3]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -365,7 +365,7 @@ func (x *CompositeObject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompositeObject.ProtoReflect.Descriptor instead.
 func (*CompositeObject) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{3}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CompositeObject) GetId() string {
@@ -418,7 +418,7 @@ type DoorDefinition struct {
 
 func (x *DoorDefinition) Reset() {
 	*x = DoorDefinition{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[4]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +430,7 @@ func (x *DoorDefinition) String() string {
 func (*DoorDefinition) ProtoMessage() {}
 
 func (x *DoorDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[4]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +443,7 @@ func (x *DoorDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DoorDefinition.ProtoReflect.Descriptor instead.
 func (*DoorDefinition) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{4}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DoorDefinition) GetId() string {
@@ -481,7 +481,7 @@ type TexturePlacement struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	GridX int32                  `protobuf:"varint,1,opt,name=grid_x,json=gridX,proto3" json:"grid_x,omitempty"`
 	GridY int32                  `protobuf:"varint,2,opt,name=grid_y,json=gridY,proto3" json:"grid_y,omitempty"`
-	Layer PlacementLayer         `protobuf:"varint,3,opt,name=layer,proto3,enum=offisims.pack.v1.PlacementLayer" json:"layer,omitempty"`
+	Layer PlacementLayer         `protobuf:"varint,3,opt,name=layer,proto3,enum=openlore.pack.v1.PlacementLayer" json:"layer,omitempty"`
 	// For direct tileset placements. Unset if composite_id is used.
 	Region *TilesetRegion `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
 	// For composite placements. Empty if region is used.
@@ -494,7 +494,7 @@ type TexturePlacement struct {
 
 func (x *TexturePlacement) Reset() {
 	*x = TexturePlacement{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[5]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -506,7 +506,7 @@ func (x *TexturePlacement) String() string {
 func (*TexturePlacement) ProtoMessage() {}
 
 func (x *TexturePlacement) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[5]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -519,7 +519,7 @@ func (x *TexturePlacement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TexturePlacement.ProtoReflect.Descriptor instead.
 func (*TexturePlacement) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{5}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TexturePlacement) GetGridX() int32 {
@@ -581,7 +581,7 @@ type RoomDefinition struct {
 
 func (x *RoomDefinition) Reset() {
 	*x = RoomDefinition{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[6]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -593,7 +593,7 @@ func (x *RoomDefinition) String() string {
 func (*RoomDefinition) ProtoMessage() {}
 
 func (x *RoomDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[6]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -606,7 +606,7 @@ func (x *RoomDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomDefinition.ProtoReflect.Descriptor instead.
 func (*RoomDefinition) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{6}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RoomDefinition) GetName() string {
@@ -666,7 +666,7 @@ type ResourceFrame struct {
 
 func (x *ResourceFrame) Reset() {
 	*x = ResourceFrame{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[7]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -678,7 +678,7 @@ func (x *ResourceFrame) String() string {
 func (*ResourceFrame) ProtoMessage() {}
 
 func (x *ResourceFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[7]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -691,7 +691,7 @@ func (x *ResourceFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceFrame.ProtoReflect.Descriptor instead.
 func (*ResourceFrame) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{7}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ResourceFrame) GetTilesetId() string {
@@ -745,7 +745,7 @@ type Resource struct {
 
 func (x *Resource) Reset() {
 	*x = Resource{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[8]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -757,7 +757,7 @@ func (x *Resource) String() string {
 func (*Resource) ProtoMessage() {}
 
 func (x *Resource) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[8]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -770,7 +770,7 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resource.ProtoReflect.Descriptor instead.
 func (*Resource) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{8}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Resource) GetId() string {
@@ -818,7 +818,7 @@ type MaskCut struct {
 
 func (x *MaskCut) Reset() {
 	*x = MaskCut{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[9]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +830,7 @@ func (x *MaskCut) String() string {
 func (*MaskCut) ProtoMessage() {}
 
 func (x *MaskCut) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[9]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +843,7 @@ func (x *MaskCut) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaskCut.ProtoReflect.Descriptor instead.
 func (*MaskCut) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{9}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MaskCut) GetTags() []string {
@@ -905,7 +905,7 @@ type Mask struct {
 
 func (x *Mask) Reset() {
 	*x = Mask{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[10]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -917,7 +917,7 @@ func (x *Mask) String() string {
 func (*Mask) ProtoMessage() {}
 
 func (x *Mask) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[10]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -930,7 +930,7 @@ func (x *Mask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Mask.ProtoReflect.Descriptor instead.
 func (*Mask) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{10}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Mask) GetId() string {
@@ -980,7 +980,7 @@ type TilesetEntry struct {
 
 func (x *TilesetEntry) Reset() {
 	*x = TilesetEntry{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -992,7 +992,7 @@ func (x *TilesetEntry) String() string {
 func (*TilesetEntry) ProtoMessage() {}
 
 func (x *TilesetEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[11]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1005,7 +1005,7 @@ func (x *TilesetEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TilesetEntry.ProtoReflect.Descriptor instead.
 func (*TilesetEntry) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{11}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *TilesetEntry) GetId() string {
@@ -1039,7 +1039,7 @@ type RoomEntry struct {
 
 func (x *RoomEntry) Reset() {
 	*x = RoomEntry{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1051,7 +1051,7 @@ func (x *RoomEntry) String() string {
 func (*RoomEntry) ProtoMessage() {}
 
 func (x *RoomEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[12]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1064,7 +1064,7 @@ func (x *RoomEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomEntry.ProtoReflect.Descriptor instead.
 func (*RoomEntry) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{12}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RoomEntry) GetName() string {
@@ -1086,7 +1086,7 @@ type ResourceEntry struct {
 
 func (x *ResourceEntry) Reset() {
 	*x = ResourceEntry{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[13]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1098,7 +1098,7 @@ func (x *ResourceEntry) String() string {
 func (*ResourceEntry) ProtoMessage() {}
 
 func (x *ResourceEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[13]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1111,7 +1111,7 @@ func (x *ResourceEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceEntry.ProtoReflect.Descriptor instead.
 func (*ResourceEntry) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{13}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ResourceEntry) GetId() string {
@@ -1159,7 +1159,7 @@ type PackManifest struct {
 
 func (x *PackManifest) Reset() {
 	*x = PackManifest{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[14]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1171,7 +1171,7 @@ func (x *PackManifest) String() string {
 func (*PackManifest) ProtoMessage() {}
 
 func (x *PackManifest) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[14]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1184,7 +1184,7 @@ func (x *PackManifest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackManifest.ProtoReflect.Descriptor instead.
 func (*PackManifest) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{14}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PackManifest) GetId() string {
@@ -1295,7 +1295,7 @@ type Pack struct {
 
 func (x *Pack) Reset() {
 	*x = Pack{}
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[15]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1307,7 @@ func (x *Pack) String() string {
 func (*Pack) ProtoMessage() {}
 
 func (x *Pack) ProtoReflect() protoreflect.Message {
-	mi := &file_offisims_pack_v1_pack_proto_msgTypes[15]
+	mi := &file_openlore_pack_v1_pack_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1320,7 @@ func (x *Pack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pack.ProtoReflect.Descriptor instead.
 func (*Pack) Descriptor() ([]byte, []int) {
-	return file_offisims_pack_v1_pack_proto_rawDescGZIP(), []int{15}
+	return file_openlore_pack_v1_pack_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Pack) GetManifest() *PackManifest {
@@ -1365,11 +1365,11 @@ func (x *Pack) GetMasks() []*Mask {
 	return nil
 }
 
-var File_offisims_pack_v1_pack_proto protoreflect.FileDescriptor
+var File_openlore_pack_v1_pack_proto protoreflect.FileDescriptor
 
-const file_offisims_pack_v1_pack_proto_rawDesc = "" +
+const file_openlore_pack_v1_pack_proto_rawDesc = "" +
 	"\n" +
-	"\x1boffisims/pack/v1/pack.proto\x12\x10offisims.pack.v1\"\xb5\x01\n" +
+	"\x1bopenlore/pack/v1/pack.proto\x12\x10openlore.pack.v1\"\xb5\x01\n" +
 	"\x11TilesetDefinition\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
@@ -1388,14 +1388,14 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\x01w\x18\x04 \x01(\x05R\x01w\x12\f\n" +
 	"\x01h\x18\x05 \x01(\x05R\x01h\"\x95\x01\n" +
 	"\rCompositePart\x127\n" +
-	"\x06region\x18\x01 \x01(\v2\x1f.offisims.pack.v1.TilesetRegionR\x06region\x12\x19\n" +
+	"\x06region\x18\x01 \x01(\v2\x1f.openlore.pack.v1.TilesetRegionR\x06region\x12\x19\n" +
 	"\boffset_x\x18\x02 \x01(\x05R\aoffsetX\x12\x19\n" +
 	"\boffset_y\x18\x03 \x01(\x05R\aoffsetY\x12\x15\n" +
 	"\x06z_bias\x18\x04 \x01(\x05R\x05zBias\"\xbe\x01\n" +
 	"\x0fCompositeObject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x125\n" +
-	"\x05parts\x18\x04 \x03(\v2\x1f.offisims.pack.v1.CompositePartR\x05parts\x12#\n" +
+	"\x05parts\x18\x04 \x03(\v2\x1f.openlore.pack.v1.CompositePartR\x05parts\x12#\n" +
 	"\rdisplay_width\x18\x05 \x01(\x05R\fdisplayWidth\x12%\n" +
 	"\x0edisplay_height\x18\x06 \x01(\x05R\rdisplayHeightJ\x04\b\x03\x10\x04\"\\\n" +
 	"\x0eDoorDefinition\x12\x0e\n" +
@@ -1406,8 +1406,8 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\x10TexturePlacement\x12\x15\n" +
 	"\x06grid_x\x18\x01 \x01(\x05R\x05gridX\x12\x15\n" +
 	"\x06grid_y\x18\x02 \x01(\x05R\x05gridY\x126\n" +
-	"\x05layer\x18\x03 \x01(\x0e2 .offisims.pack.v1.PlacementLayerR\x05layer\x127\n" +
-	"\x06region\x18\x04 \x01(\v2\x1f.offisims.pack.v1.TilesetRegionR\x06region\x12!\n" +
+	"\x05layer\x18\x03 \x01(\x0e2 .openlore.pack.v1.PlacementLayerR\x05layer\x127\n" +
+	"\x06region\x18\x04 \x01(\v2\x1f.openlore.pack.v1.TilesetRegionR\x06region\x12!\n" +
 	"\fcomposite_id\x18\x05 \x01(\tR\vcompositeId\x12\x15\n" +
 	"\x06z_bias\x18\x06 \x01(\x05R\x05zBias\"\xf0\x01\n" +
 	"\x0eRoomDefinition\x12\x12\n" +
@@ -1415,9 +1415,9 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\x05width\x18\x02 \x01(\x05R\x05width\x12\x16\n" +
 	"\x06height\x18\x03 \x01(\x05R\x06height\x12 \n" +
 	"\vwalkability\x18\x04 \x03(\bR\vwalkability\x126\n" +
-	"\x05doors\x18\x05 \x03(\v2 .offisims.pack.v1.DoorDefinitionR\x05doors\x12B\n" +
+	"\x05doors\x18\x05 \x03(\v2 .openlore.pack.v1.DoorDefinitionR\x05doors\x12B\n" +
 	"\n" +
-	"placements\x18\x06 \x03(\v2\".offisims.pack.v1.TexturePlacementR\n" +
+	"placements\x18\x06 \x03(\v2\".openlore.pack.v1.TexturePlacementR\n" +
 	"placements\"|\n" +
 	"\rResourceFrame\x12\x1d\n" +
 	"\n" +
@@ -1430,7 +1430,7 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04tags\x18\x03 \x03(\tR\x04tags\x127\n" +
-	"\x06frames\x18\x04 \x03(\v2\x1f.offisims.pack.v1.ResourceFrameR\x06frames\"\xb5\x01\n" +
+	"\x06frames\x18\x04 \x03(\v2\x1f.openlore.pack.v1.ResourceFrameR\x06frames\"\xb5\x01\n" +
 	"\aMaskCut\x12\x12\n" +
 	"\x04tags\x18\x01 \x03(\tR\x04tags\x12\x10\n" +
 	"\x03row\x18\x02 \x01(\x05R\x03row\x12\x1f\n" +
@@ -1448,7 +1448,7 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"tile_width\x18\x03 \x01(\x05R\ttileWidth\x12\x1f\n" +
 	"\vtile_height\x18\x04 \x01(\x05R\n" +
 	"tileHeight\x12-\n" +
-	"\x04cuts\x18\x05 \x03(\v2\x19.offisims.pack.v1.MaskCutR\x04cuts\"H\n" +
+	"\x04cuts\x18\x05 \x03(\v2\x19.openlore.pack.v1.MaskCutR\x04cuts\"H\n" +
 	"\fTilesetEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
@@ -1467,81 +1467,81 @@ const file_offisims_pack_v1_pack_proto_rawDesc = "" +
 	"\x06author\x18\x05 \x01(\tR\x06author\x12\x18\n" +
 	"\acreated\x18\x06 \x01(\tR\acreated\x12\x18\n" +
 	"\aupdated\x18\a \x01(\tR\aupdated\x12G\n" +
-	"\x0ftileset_entries\x18\b \x03(\v2\x1e.offisims.pack.v1.TilesetEntryR\x0etilesetEntries\x12>\n" +
-	"\froom_entries\x18\t \x03(\v2\x1b.offisims.pack.v1.RoomEntryR\vroomEntries\x12J\n" +
+	"\x0ftileset_entries\x18\b \x03(\v2\x1e.openlore.pack.v1.TilesetEntryR\x0etilesetEntries\x12>\n" +
+	"\froom_entries\x18\t \x03(\v2\x1b.openlore.pack.v1.RoomEntryR\vroomEntries\x12J\n" +
 	"\x10resource_entries\x18\n" +
-	" \x03(\v2\x1f.offisims.pack.v1.ResourceEntryR\x0fresourceEntries\x12\x1f\n" +
+	" \x03(\v2\x1f.openlore.pack.v1.ResourceEntryR\x0fresourceEntries\x12\x1f\n" +
 	"\vsource_hash\x18\v \x01(\tR\n" +
 	"sourceHash\x12\x1f\n" +
 	"\vcompiled_at\x18\f \x01(\tR\n" +
 	"compiledAt\x12\x12\n" +
 	"\x04tags\x18\r \x03(\tR\x04tags\"\xe6\x02\n" +
 	"\x04Pack\x12:\n" +
-	"\bmanifest\x18\x01 \x01(\v2\x1e.offisims.pack.v1.PackManifestR\bmanifest\x12?\n" +
-	"\btilesets\x18\x02 \x03(\v2#.offisims.pack.v1.TilesetDefinitionR\btilesets\x12A\n" +
+	"\bmanifest\x18\x01 \x01(\v2\x1e.openlore.pack.v1.PackManifestR\bmanifest\x12?\n" +
+	"\btilesets\x18\x02 \x03(\v2#.openlore.pack.v1.TilesetDefinitionR\btilesets\x12A\n" +
 	"\n" +
-	"composites\x18\x03 \x03(\v2!.offisims.pack.v1.CompositeObjectR\n" +
+	"composites\x18\x03 \x03(\v2!.openlore.pack.v1.CompositeObjectR\n" +
 	"composites\x126\n" +
-	"\x05rooms\x18\x04 \x03(\v2 .offisims.pack.v1.RoomDefinitionR\x05rooms\x128\n" +
-	"\tresources\x18\x05 \x03(\v2\x1a.offisims.pack.v1.ResourceR\tresources\x12,\n" +
-	"\x05masks\x18\x06 \x03(\v2\x16.offisims.pack.v1.MaskR\x05masks*h\n" +
+	"\x05rooms\x18\x04 \x03(\v2 .openlore.pack.v1.RoomDefinitionR\x05rooms\x128\n" +
+	"\tresources\x18\x05 \x03(\v2\x1a.openlore.pack.v1.ResourceR\tresources\x12,\n" +
+	"\x05masks\x18\x06 \x03(\v2\x16.openlore.pack.v1.MaskR\x05masks*h\n" +
 	"\x0ePlacementLayer\x12\x1f\n" +
 	"\x1bPLACEMENT_LAYER_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15PLACEMENT_LAYER_FLOOR\x10\x01\x12\x1a\n" +
 	"\x16PLACEMENT_LAYER_OBJECT\x10\x02B\xae\x01\n" +
-	"\x14com.offisims.pack.v1B\tPackProtoP\x01Z)github.com/offisims/shared/pack/pb/packv1\xa2\x02\x03OPX\xaa\x02\x10Offisims.Pack.V1\xca\x02\x10Offisims\\Pack\\V1\xe2\x02\x1cOffisims\\Pack\\V1\\GPBMetadata\xea\x02\x12Offisims::Pack::V1b\x06proto3"
+	"\x14com.openlore.pack.v1B\tPackProtoP\x01Z)github.com/openlore/shared/pack/pb/packv1\xa2\x02\x03OPX\xaa\x02\x10Openlore.Pack.V1\xca\x02\x10Openlore\\Pack\\V1\xe2\x02\x1cOpenlore\\Pack\\V1\\GPBMetadata\xea\x02\x12Openlore::Pack::V1b\x06proto3"
 
 var (
-	file_offisims_pack_v1_pack_proto_rawDescOnce sync.Once
-	file_offisims_pack_v1_pack_proto_rawDescData []byte
+	file_openlore_pack_v1_pack_proto_rawDescOnce sync.Once
+	file_openlore_pack_v1_pack_proto_rawDescData []byte
 )
 
-func file_offisims_pack_v1_pack_proto_rawDescGZIP() []byte {
-	file_offisims_pack_v1_pack_proto_rawDescOnce.Do(func() {
-		file_offisims_pack_v1_pack_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_offisims_pack_v1_pack_proto_rawDesc), len(file_offisims_pack_v1_pack_proto_rawDesc)))
+func file_openlore_pack_v1_pack_proto_rawDescGZIP() []byte {
+	file_openlore_pack_v1_pack_proto_rawDescOnce.Do(func() {
+		file_openlore_pack_v1_pack_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_openlore_pack_v1_pack_proto_rawDesc), len(file_openlore_pack_v1_pack_proto_rawDesc)))
 	})
-	return file_offisims_pack_v1_pack_proto_rawDescData
+	return file_openlore_pack_v1_pack_proto_rawDescData
 }
 
-var file_offisims_pack_v1_pack_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_offisims_pack_v1_pack_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_offisims_pack_v1_pack_proto_goTypes = []any{
-	(PlacementLayer)(0),       // 0: offisims.pack.v1.PlacementLayer
-	(*TilesetDefinition)(nil), // 1: offisims.pack.v1.TilesetDefinition
-	(*TilesetRegion)(nil),     // 2: offisims.pack.v1.TilesetRegion
-	(*CompositePart)(nil),     // 3: offisims.pack.v1.CompositePart
-	(*CompositeObject)(nil),   // 4: offisims.pack.v1.CompositeObject
-	(*DoorDefinition)(nil),    // 5: offisims.pack.v1.DoorDefinition
-	(*TexturePlacement)(nil),  // 6: offisims.pack.v1.TexturePlacement
-	(*RoomDefinition)(nil),    // 7: offisims.pack.v1.RoomDefinition
-	(*ResourceFrame)(nil),     // 8: offisims.pack.v1.ResourceFrame
-	(*Resource)(nil),          // 9: offisims.pack.v1.Resource
-	(*MaskCut)(nil),           // 10: offisims.pack.v1.MaskCut
-	(*Mask)(nil),              // 11: offisims.pack.v1.Mask
-	(*TilesetEntry)(nil),      // 12: offisims.pack.v1.TilesetEntry
-	(*RoomEntry)(nil),         // 13: offisims.pack.v1.RoomEntry
-	(*ResourceEntry)(nil),     // 14: offisims.pack.v1.ResourceEntry
-	(*PackManifest)(nil),      // 15: offisims.pack.v1.PackManifest
-	(*Pack)(nil),              // 16: offisims.pack.v1.Pack
+var file_openlore_pack_v1_pack_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_openlore_pack_v1_pack_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_openlore_pack_v1_pack_proto_goTypes = []any{
+	(PlacementLayer)(0),       // 0: openlore.pack.v1.PlacementLayer
+	(*TilesetDefinition)(nil), // 1: openlore.pack.v1.TilesetDefinition
+	(*TilesetRegion)(nil),     // 2: openlore.pack.v1.TilesetRegion
+	(*CompositePart)(nil),     // 3: openlore.pack.v1.CompositePart
+	(*CompositeObject)(nil),   // 4: openlore.pack.v1.CompositeObject
+	(*DoorDefinition)(nil),    // 5: openlore.pack.v1.DoorDefinition
+	(*TexturePlacement)(nil),  // 6: openlore.pack.v1.TexturePlacement
+	(*RoomDefinition)(nil),    // 7: openlore.pack.v1.RoomDefinition
+	(*ResourceFrame)(nil),     // 8: openlore.pack.v1.ResourceFrame
+	(*Resource)(nil),          // 9: openlore.pack.v1.Resource
+	(*MaskCut)(nil),           // 10: openlore.pack.v1.MaskCut
+	(*Mask)(nil),              // 11: openlore.pack.v1.Mask
+	(*TilesetEntry)(nil),      // 12: openlore.pack.v1.TilesetEntry
+	(*RoomEntry)(nil),         // 13: openlore.pack.v1.RoomEntry
+	(*ResourceEntry)(nil),     // 14: openlore.pack.v1.ResourceEntry
+	(*PackManifest)(nil),      // 15: openlore.pack.v1.PackManifest
+	(*Pack)(nil),              // 16: openlore.pack.v1.Pack
 }
-var file_offisims_pack_v1_pack_proto_depIdxs = []int32{
-	2,  // 0: offisims.pack.v1.CompositePart.region:type_name -> offisims.pack.v1.TilesetRegion
-	3,  // 1: offisims.pack.v1.CompositeObject.parts:type_name -> offisims.pack.v1.CompositePart
-	0,  // 2: offisims.pack.v1.TexturePlacement.layer:type_name -> offisims.pack.v1.PlacementLayer
-	2,  // 3: offisims.pack.v1.TexturePlacement.region:type_name -> offisims.pack.v1.TilesetRegion
-	5,  // 4: offisims.pack.v1.RoomDefinition.doors:type_name -> offisims.pack.v1.DoorDefinition
-	6,  // 5: offisims.pack.v1.RoomDefinition.placements:type_name -> offisims.pack.v1.TexturePlacement
-	8,  // 6: offisims.pack.v1.Resource.frames:type_name -> offisims.pack.v1.ResourceFrame
-	10, // 7: offisims.pack.v1.Mask.cuts:type_name -> offisims.pack.v1.MaskCut
-	12, // 8: offisims.pack.v1.PackManifest.tileset_entries:type_name -> offisims.pack.v1.TilesetEntry
-	13, // 9: offisims.pack.v1.PackManifest.room_entries:type_name -> offisims.pack.v1.RoomEntry
-	14, // 10: offisims.pack.v1.PackManifest.resource_entries:type_name -> offisims.pack.v1.ResourceEntry
-	15, // 11: offisims.pack.v1.Pack.manifest:type_name -> offisims.pack.v1.PackManifest
-	1,  // 12: offisims.pack.v1.Pack.tilesets:type_name -> offisims.pack.v1.TilesetDefinition
-	4,  // 13: offisims.pack.v1.Pack.composites:type_name -> offisims.pack.v1.CompositeObject
-	7,  // 14: offisims.pack.v1.Pack.rooms:type_name -> offisims.pack.v1.RoomDefinition
-	9,  // 15: offisims.pack.v1.Pack.resources:type_name -> offisims.pack.v1.Resource
-	11, // 16: offisims.pack.v1.Pack.masks:type_name -> offisims.pack.v1.Mask
+var file_openlore_pack_v1_pack_proto_depIdxs = []int32{
+	2,  // 0: openlore.pack.v1.CompositePart.region:type_name -> openlore.pack.v1.TilesetRegion
+	3,  // 1: openlore.pack.v1.CompositeObject.parts:type_name -> openlore.pack.v1.CompositePart
+	0,  // 2: openlore.pack.v1.TexturePlacement.layer:type_name -> openlore.pack.v1.PlacementLayer
+	2,  // 3: openlore.pack.v1.TexturePlacement.region:type_name -> openlore.pack.v1.TilesetRegion
+	5,  // 4: openlore.pack.v1.RoomDefinition.doors:type_name -> openlore.pack.v1.DoorDefinition
+	6,  // 5: openlore.pack.v1.RoomDefinition.placements:type_name -> openlore.pack.v1.TexturePlacement
+	8,  // 6: openlore.pack.v1.Resource.frames:type_name -> openlore.pack.v1.ResourceFrame
+	10, // 7: openlore.pack.v1.Mask.cuts:type_name -> openlore.pack.v1.MaskCut
+	12, // 8: openlore.pack.v1.PackManifest.tileset_entries:type_name -> openlore.pack.v1.TilesetEntry
+	13, // 9: openlore.pack.v1.PackManifest.room_entries:type_name -> openlore.pack.v1.RoomEntry
+	14, // 10: openlore.pack.v1.PackManifest.resource_entries:type_name -> openlore.pack.v1.ResourceEntry
+	15, // 11: openlore.pack.v1.Pack.manifest:type_name -> openlore.pack.v1.PackManifest
+	1,  // 12: openlore.pack.v1.Pack.tilesets:type_name -> openlore.pack.v1.TilesetDefinition
+	4,  // 13: openlore.pack.v1.Pack.composites:type_name -> openlore.pack.v1.CompositeObject
+	7,  // 14: openlore.pack.v1.Pack.rooms:type_name -> openlore.pack.v1.RoomDefinition
+	9,  // 15: openlore.pack.v1.Pack.resources:type_name -> openlore.pack.v1.Resource
+	11, // 16: openlore.pack.v1.Pack.masks:type_name -> openlore.pack.v1.Mask
 	17, // [17:17] is the sub-list for method output_type
 	17, // [17:17] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
@@ -1549,27 +1549,27 @@ var file_offisims_pack_v1_pack_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_offisims_pack_v1_pack_proto_init() }
-func file_offisims_pack_v1_pack_proto_init() {
-	if File_offisims_pack_v1_pack_proto != nil {
+func init() { file_openlore_pack_v1_pack_proto_init() }
+func file_openlore_pack_v1_pack_proto_init() {
+	if File_openlore_pack_v1_pack_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_offisims_pack_v1_pack_proto_rawDesc), len(file_offisims_pack_v1_pack_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_openlore_pack_v1_pack_proto_rawDesc), len(file_openlore_pack_v1_pack_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_offisims_pack_v1_pack_proto_goTypes,
-		DependencyIndexes: file_offisims_pack_v1_pack_proto_depIdxs,
-		EnumInfos:         file_offisims_pack_v1_pack_proto_enumTypes,
-		MessageInfos:      file_offisims_pack_v1_pack_proto_msgTypes,
+		GoTypes:           file_openlore_pack_v1_pack_proto_goTypes,
+		DependencyIndexes: file_openlore_pack_v1_pack_proto_depIdxs,
+		EnumInfos:         file_openlore_pack_v1_pack_proto_enumTypes,
+		MessageInfos:      file_openlore_pack_v1_pack_proto_msgTypes,
 	}.Build()
-	File_offisims_pack_v1_pack_proto = out.File
-	file_offisims_pack_v1_pack_proto_goTypes = nil
-	file_offisims_pack_v1_pack_proto_depIdxs = nil
+	File_openlore_pack_v1_pack_proto = out.File
+	file_openlore_pack_v1_pack_proto_goTypes = nil
+	file_openlore_pack_v1_pack_proto_depIdxs = nil
 }

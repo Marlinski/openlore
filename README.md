@@ -106,7 +106,7 @@ openlore/
 │   ├── proto/              # Protobuf definitions (source of truth for all data types)
 │   └── pack/
 │       ├── go/             # Go pack library (reader, writer, atlas compiler)
-│       └── js/             # TypeScript pack types (@offisims/pack)
+│       └── js/             # TypeScript pack types (@openlore/pack)
 ├── studio/
 │   ├── app/                # World editor SPA (Preact + PixiJS + Vite)
 │   ├── server/             # Go API server (CRUD, RAG, pack compilation)
@@ -128,7 +128,7 @@ openlore/
 
 ### Packages
 
-**`@offisims/pack`** (`shared/pack/js`) -- Protobuf-generated TypeScript types for the `.offpack` format. Source of truth: `shared/proto/`. Build with `make proto && make pack`.
+**`@openlore/pack`** (`shared/pack/js`) -- Protobuf-generated TypeScript types for the `.offpack` format. Source of truth: `shared/proto/`. Build with `make proto && make pack`.
 
 **Studio App** (`studio/app`) -- Browser-based world editor with tabs for:
 1. **Tile Cutter** -- Cut tileset PNGs into tagged resources and masks
@@ -179,7 +179,7 @@ openlore/
 |--------|-------------|
 | `make install` | Install all dependencies (yarn + go mod download) |
 | `make proto` | Generate Go + TypeScript code from protobuf definitions |
-| `make pack` | Build the shared @offisims/pack TypeScript library |
+| `make pack` | Build the shared @openlore/pack TypeScript library |
 | `make studio` | Start Studio (server + app + embedder) |
 | `make game` | Start Game (server + client) |
 | `make dev` | Start all services in parallel |

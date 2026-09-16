@@ -18,7 +18,7 @@
 
 import { useRef, useEffect, useCallback, useMemo } from 'preact/hooks'
 import type { TilesetMeta } from '../../api/tilesets'
-import type { Resource } from '@offisims/pack'
+import type { Resource } from '@openlore/pack'
 import { useResources } from '../../api/resources'
 import { loadImage } from '../TilesetPicker'
 import {

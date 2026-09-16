@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/offisims/studio/internal/workspace"
+	"github.com/openlore/studio/internal/workspace"
 )
 
 // subdirs are the directories scaffolded inside each new workspace.

@@ -22,7 +22,7 @@
  */
 
 import { Application, Container, Sprite, Texture } from "pixi.js";
-import type { Pack, RoomDefinition } from "@offisims/pack";
+import type { Pack, RoomDefinition } from "@openlore/pack";
 import { TILE_SIZE } from "../constants.js";
 import type {
   CharacterDirection,

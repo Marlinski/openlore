@@ -38,7 +38,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/offisims/shared/pack/pb/packv1"
+	pb "github.com/openlore/shared/pack/pb/packv1"
 	"google.golang.org/protobuf/proto"
 )
 

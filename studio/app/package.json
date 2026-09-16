@@ -1,5 +1,5 @@
 {
-  "name": "@offisims/studio",
+  "name": "@openlore/studio",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@offisims/pack": "0.1.0",
+    "@openlore/pack": "0.1.0",
     "@preact/signals": "^1.3.0",
     "@tanstack/react-query": "^5.80.7",
     "openai": "^6.27.0",

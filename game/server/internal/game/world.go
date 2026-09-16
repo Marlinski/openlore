@@ -17,8 +17,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/offisims/game/internal/transport"
-	pack "github.com/offisims/shared/pack"
+	"github.com/openlore/game/internal/transport"
+	pack "github.com/openlore/shared/pack"
 )
 
 // ChannelMeta is the public-facing metadata returned by the API.

@@ -12,7 +12,7 @@
  */
 
 import { useRef, useEffect } from 'preact/hooks'
-import type { Resource, ResourceFrame } from '@offisims/pack'
+import type { Resource, ResourceFrame } from '@openlore/pack'
 import { useTileset } from '../api/tilesets'
 import { loadImage } from './TilesetPicker'
 

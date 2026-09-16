@@ -55,7 +55,7 @@ export function WelcomeScreen() {
   return (
     <div class="welcome">
       <div class="welcome-card">
-        <h1 class="welcome-title">Offisims Studio</h1>
+        <h1 class="welcome-title">OpenLore Studio</h1>
         <p class="welcome-subtitle">Select a workspace or create a new one</p>
 
         {/* Create new workspace */}

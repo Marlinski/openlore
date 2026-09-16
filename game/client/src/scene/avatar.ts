@@ -20,7 +20,7 @@
  */
 
 import { Sprite, Texture, Rectangle } from "pixi.js";
-import type { Pack, Resource, ResourceFrame } from "@offisims/pack";
+import type { Pack, Resource, ResourceFrame } from "@openlore/pack";
 import type { CharacterDirection, AvatarSnapshot } from "../protocol.js";
 import { TILE_SIZE } from "../constants.js";
 import { findTilesetDef } from "../assets.js";

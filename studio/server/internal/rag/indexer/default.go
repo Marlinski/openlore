@@ -26,8 +26,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/image/draw"
 
-	"github.com/offisims/studio/internal/rag/embedder"
-	"github.com/offisims/studio/internal/rag/vector"
+	"github.com/openlore/studio/internal/rag/embedder"
+	"github.com/openlore/studio/internal/rag/vector"
 )
 
 // ─── Constants ───────────────────────────────────────────────────────────────

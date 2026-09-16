@@ -186,7 +186,7 @@ export const useAgentStore = create<AgentState>()(
         set((s) => ({ settings: { ...s.settings, ...patch } })),
     }),
     {
-      name: 'offisims-studio-agent',
+      name: 'openlore-studio-agent',
       // Only persist settings — tools are runtime, messages reset on reload
       partialize: (s) => ({ settings: s.settings }),
     },

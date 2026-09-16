@@ -11,7 +11,7 @@
 
 import { render } from "preact";
 import { useEffect } from "preact/hooks";
-import type { Pack } from "@offisims/pack";
+import type { Pack } from "@openlore/pack";
 import { preloadGameAssets } from "./assets";
 import {
   screen, joinStatus, joinReady, gameData, currentLore, sessionToken,
@@ -23,7 +23,7 @@ import "./styles.css";
 
 // ─── Cookie helpers ───────────────────────────────────────────────
 
-const COOKIE_NAME = "offisims_token";
+const COOKIE_NAME = "openlore_token";
 /** Cookie max-age: 24 hours */
 const COOKIE_MAX_AGE = 86400;
 

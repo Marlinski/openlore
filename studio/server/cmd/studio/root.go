@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/offisims/studio/internal/config"
+	"github.com/openlore/studio/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -15,8 +15,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "studio",
-	Short: "Offisims Studio — world editor and authoring tool",
-	Long: `Offisims Studio provides an HTTP server for editing game assets
+	Short: "OpenLore Studio — world editor and authoring tool",
+	Long: `OpenLore Studio provides an HTTP server for editing game assets
 (rooms, resources, composites, masks) and tools for packing and indexing.
 The server serves multiple workspaces from a studio root directory.
 Each workspace is a subdirectory accessed via URL path prefix:

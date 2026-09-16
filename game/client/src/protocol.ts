@@ -1,5 +1,5 @@
 /**
- * WebSocket protocol types for the Offisims game.
+ * WebSocket protocol types for the OpenLore game.
  *
  * Hand-written (not proto-generated) because the WebSocket protocol
  * is JSON text frames today and will move to binary protobuf in Phase B.

@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'preact/hooks'
-import type { Resource } from '@offisims/pack'
+import type { Resource } from '@openlore/pack'
 import { useResources } from '../../api/resources'
 import { FacetPanel } from './FacetPanel'
 import { ResourceGrid } from './ResourceGrid'

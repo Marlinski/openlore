@@ -6,10 +6,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/offisims/studio/internal/config"
-	httpemb "github.com/offisims/studio/internal/rag/embedder/http"
-	defaultidx "github.com/offisims/studio/internal/rag/indexer"
-	flatvec "github.com/offisims/studio/internal/rag/vector/flat"
+	"github.com/openlore/studio/internal/config"
+	httpemb "github.com/openlore/studio/internal/rag/embedder/http"
+	defaultidx "github.com/openlore/studio/internal/rag/indexer"
+	flatvec "github.com/openlore/studio/internal/rag/vector/flat"
 	"github.com/spf13/cobra"
 )
 

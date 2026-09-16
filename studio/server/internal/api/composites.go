@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	pb "github.com/offisims/shared/pack/pb/packv1"
-	"github.com/offisims/studio/internal/store"
+	pb "github.com/openlore/shared/pack/pb/packv1"
+	"github.com/openlore/studio/internal/store"
 )
 
 func (h *Handlers) listComposites(w http.ResponseWriter, r *http.Request) {

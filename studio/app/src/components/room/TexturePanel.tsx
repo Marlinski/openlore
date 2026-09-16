@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from 'preact/hooks'
 import { TILE_SIZE } from '../../lib/pack'
-import type { TilesetRegion, CompositeObject } from '@offisims/pack'
+import type { TilesetRegion, CompositeObject } from '@openlore/pack'
 import { useTilesets } from '../../api/tilesets'
 import { useComposites } from '../../api/composites'
 import { TilesetPicker, getCachedImage } from '../TilesetPicker'

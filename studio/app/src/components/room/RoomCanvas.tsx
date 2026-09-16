@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useCallback, useMemo } from 'preact/hooks'
 import { TILE_SIZE, getPlacementSize, isFloor, isObject } from '../../lib/pack'
-import type { CompositeObject } from '@offisims/pack'
+import type { CompositeObject } from '@openlore/pack'
 import { useRoomStore } from '../../store/room'
 import { useComposites } from '../../api/composites'
 import {

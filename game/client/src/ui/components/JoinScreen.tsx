@@ -3,7 +3,7 @@
  */
 
 import { useRef } from "preact/hooks";
-import type { Pack } from "@offisims/pack";
+import type { Pack } from "@openlore/pack";
 import { joinStatus, joinReady, gameData } from "../../store";
 
 interface JoinScreenProps {
@@ -46,7 +46,7 @@ export function JoinScreen(props: JoinScreenProps) {
 
   return (
     <div class="join-screen">
-      <h1>Offisims</h1>
+      <h1>OpenLore</h1>
       <form class="join-form" onSubmit={handleSubmit}>
         <label for="name-input">Your Name</label>
         <input

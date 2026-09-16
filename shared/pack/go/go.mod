@@ -1,4 +1,4 @@
-module github.com/offisims/shared/pack
+module github.com/openlore/shared/pack
 
 go 1.24
 

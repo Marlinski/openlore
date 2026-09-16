@@ -10,8 +10,8 @@ help: ## Show this help
 
 # ─── Prerequisites ───────────────────────────────────────────
 
-pack-js: ## Build @offisims/pack (required before app)
-	@yarn workspace @offisims/pack build
+pack-js: ## Build @openlore/pack (required before app)
+	@yarn workspace @openlore/pack build
 
 # ─── Development ─────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ server: ## Start Go API server (port 4000)
 	cd server && CGO_ENABLED=1 GAME_SERVER_URL=http://localhost:3001 go run ./cmd/studio serve --studio-dir $(REPO_ROOT)/data/studio
 
 app: ## Start Vite dev server (port 5173, proxies to :4000)
-	yarn workspace @offisims/studio dev
+	yarn workspace @openlore/studio dev
 
 embedder: ## Start Rust CLIP embedding server (port 7997, requires cargo)
 	cd embedder && cargo run --release -- --port 7997
@@ -38,7 +38,7 @@ embedder: ## Start Rust CLIP embedding server (port 7997, requires cargo)
 # ─── Build ───────────────────────────────────────────────────
 
 build: pack-js ## Production build (frontend → embedded in Go binary)
-	yarn workspace @offisims/studio build
+	yarn workspace @openlore/studio build
 	rm -rf server/cmd/studio/dist
 	cp -r app/dist server/cmd/studio/dist
 	cd server && CGO_ENABLED=1 go build -o studio ./cmd/studio
@@ -63,8 +63,8 @@ check: pack-js ## Type-check Go + TypeScript
 proto: ## Regenerate protobuf code (pack types)
 	cd $(REPO_ROOT) && npx buf generate
 	@mkdir -p $(REPO_ROOT)/shared/pack/go/pb/packv1 $(REPO_ROOT)/shared/pack/js/pb
-	cp $(REPO_ROOT)/gen/go/offisims/pack/v1/pack.pb.go $(REPO_ROOT)/shared/pack/go/pb/packv1/
-	cp $(REPO_ROOT)/gen/ts/offisims/pack/v1/pack_pb.ts $(REPO_ROOT)/shared/pack/js/pb/
+	cp $(REPO_ROOT)/gen/go/openlore/pack/v1/pack.pb.go $(REPO_ROOT)/shared/pack/go/pb/packv1/
+	cp $(REPO_ROOT)/gen/ts/openlore/pack/v1/pack_pb.ts $(REPO_ROOT)/shared/pack/js/pb/
 
 # ─── Utilities ───────────────────────────────────────────────
 

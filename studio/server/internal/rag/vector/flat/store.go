@@ -17,7 +17,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/offisims/studio/internal/rag/vector"
+	"github.com/openlore/studio/internal/rag/vector"
 )
 
 // ─── Persisted data model ────────────────────────────────────────────────────
