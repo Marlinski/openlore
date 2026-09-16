@@ -12,6 +12,10 @@
  *    messages are their real messages.
  *  - A real room transition (PART one channel, JOIN the other) is the door
  *    mechanic, so the avatar walks to a door and leaves.
+ *  - You can talk. Enter opens a chat line and what you type is a real PRIVMSG
+ *    to the channel you are standing in. Text is stripped of CR/LF/NUL before
+ *    it goes near the wire — a raw newline in a PRIVMSG would let a visitor
+ *    inject arbitrary IRC commands — capped at 200 chars, and rate limited.
  *  - You can walk. Click the room and use WASD or the arrow keys. Movement uses
  *    the client's own speed and axis-separated collision against the real
  *    walkability grid, and stepping onto a door really does PART one channel
@@ -19,10 +23,11 @@
  *
  * Two limits are inherent to the server, not worked around here:
  *
- *  1. aircd does not send 353/RPL_NAMREPLY, only 366. There is no way to
- *     enumerate who is already in a channel, so an avatar can only appear once
- *     that nick is *observed* — joining, parting, or speaking. Someone sitting
- *     silently before you loaded the page stays invisible until they act.
+ *  1. aircd's NAMES is a stub: joining a channel yields 366 with no 353, so the
+ *     usual way to learn who is already present returns nothing. WHO does work,
+ *     so on every JOIN the client asks `WHO <channel>` and populates the room
+ *     from the 352 replies. Without that the room looks empty until somebody
+ *     happens to move or speak.
  *  2. IRC carries no positions. A nick is placed at a stable tile derived from
  *     its own name and idles there; it is never walked around at random.
  */
@@ -387,6 +392,7 @@ async function start() {
   // keys are only captured once you click into the room, and released on blur.
   const held = new Set<string>();
   let active = false;
+  let chatOpen = false;
   /** Re-armed once you step off a door, so arriving does not bounce you back. */
   let doorArmed = true;
 
@@ -398,11 +404,76 @@ async function start() {
 
   host.setAttribute("tabindex", "0");
   host.addEventListener("focus", () => setActive(true));
-  host.addEventListener("blur", () => setActive(false));
-  host.addEventListener("pointerdown", () => host!.focus());
+  // Focus moving into the chat input must not count as leaving the room.
+  host.addEventListener("blur", () => { if (!chatOpen) setActive(false); });
+  host.addEventListener("pointerdown", (e) => {
+    if ((e.target as HTMLElement)?.closest?.(".chatbar")) return;
+    host!.focus();
+  });
+
+  // ── Saying something ───────────────────────────────────────────
+  const chatbar = document.getElementById("chatbar") as HTMLFormElement | null;
+  const chatInput = document.getElementById("chatInput") as HTMLInputElement | null;
+
+  /** Cheap flood guard: 5 messages per 30s, and no faster than one per 1.2s. */
+  const sentAt: number[] = [];
+  function canSend(): boolean {
+    const now = Date.now();
+    while (sentAt.length && now - sentAt[0] > 30_000) sentAt.shift();
+    if (sentAt.length >= 5) return false;
+    if (sentAt.length && now - sentAt[sentAt.length - 1] < 1200) return false;
+    return true;
+  }
+
+  function openChat() {
+    if (!chatbar || !chatInput || chatOpen) return;
+    chatOpen = true;
+    held.clear();
+    chatbar.hidden = false;
+    host!.classList.add("chatting");
+    chatInput.value = "";
+    chatInput.disabled = !connected;
+    chatInput.placeholder = connected ? "say something\u2026" : "not connected";
+    chatInput.focus();
+  }
+
+  function closeChat() {
+    if (!chatbar || !chatOpen) return;
+    chatOpen = false;
+    chatbar.hidden = true;
+    host!.classList.remove("chatting");
+    host!.focus();
+  }
+
+  function sendChat() {
+    if (!chatInput) return;
+    // CR, LF and NUL terminate or split an IRC line. Anything that reaches the
+    // wire with them in it can inject commands, so they never get that far.
+    const text = chatInput.value.replace(/[\r\n\0]/g, " ").trim().slice(0, 200);
+    chatInput.value = "";
+    if (!text) { closeChat(); return; }
+    if (!client || !connected) { closeChat(); return; }
+    if (!canSend()) {
+      chatInput.placeholder = "easy \u2014 slow down a moment";
+      return;
+    }
+    sentAt.push(Date.now());
+    client.say(currentChannel, text);
+    // aircd echoes your own PRIVMSG back, so the bubble and the log line arrive
+    // through the normal message path rather than being faked here.
+    closeChat();
+  }
+
+  chatbar?.addEventListener("submit", (e) => { e.preventDefault(); sendChat(); });
+  chatInput?.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Escape") { e.preventDefault(); closeChat(); }
+    else if (e.key === "Enter") { e.preventDefault(); sendChat(); }
+  });
 
   window.addEventListener("keydown", (e) => {
-    if (!active) return;
+    if (!active || chatOpen) return;
+    if (e.code === "Enter") { e.preventDefault(); openChat(); return; }
     if (e.code === "Escape") { host!.blur(); return; }
     if (!MOVE_KEYS.has(e.code)) return;
     e.preventDefault();
@@ -412,6 +483,7 @@ async function start() {
   window.addEventListener("blur", () => held.clear());
 
   function movement(): { dx: number; dy: number } {
+    if (chatOpen) return { dx: 0, dy: 0 };
     let dx = 0, dy = 0;
     if (held.has("KeyW") || held.has("ArrowUp")) dy -= 1;
     if (held.has("KeyS") || held.has("ArrowDown")) dy += 1;
@@ -544,12 +616,27 @@ async function start() {
         break;
 
       case "join":
-        if (e.nick === selfNick) return;
         if (!known.has(e.channel)) known.set(e.channel, new Set());
         known.get(e.channel)!.add(e.nick);
+        if (e.nick === selfNick) {
+          // aircd sends no 353, so ask outright who is already standing here.
+          client?.sendLine("WHO " + e.channel);
+          return;
+        }
         if (e.channel === currentChannel) add(e.nick, false);
         emit("join", e.nick, e.channel, true);
         break;
+
+      case "raw": {
+        // :server 352 <me> <channel> <user> <host> <server> <nick> <flags> :...
+        const f = e.line.split(" ");
+        if (f[1] !== "352" || !f[3] || !f[7]) break;
+        const ch = f[3], who = f[7];
+        if (!known.has(ch)) known.set(ch, new Set());
+        known.get(ch)!.add(who);
+        if (ch === currentChannel && who !== selfNick) add(who, false);
+        break;
+      }
 
       case "part":
         if (e.nick === selfNick) return;
@@ -631,7 +718,7 @@ async function start() {
   const io = new IntersectionObserver((entries) => {
     visible = entries[0]?.isIntersecting ?? false;
     if (visible && !document.hidden) connect();
-    else { setActive(false); disconnect(); }
+    else { closeChat(); setActive(false); disconnect(); }
   }, { threshold: 0.05 });
   io.observe(host);
 

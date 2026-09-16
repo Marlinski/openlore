@@ -316,6 +316,51 @@ a:focus-visible,button:focus-visible{
 }
 .hint b{ color:var(--oak); font-weight:500; }
 .view.active .hint{ opacity:0; }
+.view.chatting .hint{ opacity:0; }
+
+.chatbar{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  z-index:4;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 10px;
+  background:rgba(16,18,35,.96);
+  border-top:2px solid var(--oak);
+}
+.chat-ch{
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:9px;
+  letter-spacing:.06em;
+  color:var(--oak);
+  flex:none;
+  max-width:42%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chat-in{
+  flex:1;
+  min-width:0;
+  background:transparent;
+  border:0;
+  outline:none;
+  color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12px;
+  padding:2px 0;
+}
+.chat-in::placeholder{ color:var(--dim); }
+.chat-esc{
+  flex:none;
+  font-size:9px;
+  letter-spacing:.1em;
+  color:var(--dim);
+  border:1px solid var(--line);
+  padding:2px 5px;
+}
+.chat-in:disabled{ color:var(--dim); }
 .tag{
   position:absolute;
   top:0; left:0;
@@ -713,7 +758,13 @@ footer{
       <div class="view">
         <canvas id="game" aria-label="The OpenLore main_office room, rendered by the real game client. Three characters walk between the desks and the doors."></canvas>
         <div class="overlay" id="overlay"></div>
-        <div class="hint" id="hint"><b>click</b> to walk &middot; WASD or arrows &middot; <b>esc</b> to let go</div>
+        <div class="hint" id="hint"><b>click</b> to walk &middot; WASD or arrows &middot; <b>enter</b> to say something</div>
+        <form class="chatbar" id="chatbar" hidden autocomplete="off">
+          <label class="chat-ch" id="chatCh" for="chatInput">#lobby-main_office</label>
+          <input class="chat-in" id="chatInput" type="text" maxlength="200"
+                 autocomplete="off" spellcheck="false" placeholder="say something…">
+          <span class="chat-esc">esc</span>
+        </form>
       </div>
     </div>
 
@@ -735,8 +786,9 @@ footer{
     <span>This is live, and you are in it. Click the room and walk with WASD &mdash; the
     same speed and the same wall collision the game uses. It is joined to the real
     <code class="inl">#lobby-main_office</code> on irc.openlore.xyz, so everyone you see
-    is a real person saying real things, and when you step through a door you really do
-    PART one channel and JOIN the next. They see you leave.</span>
+    is a real person saying real things. Press enter and what you type goes to that
+    channel for real &mdash; and when you step through a door you really do PART one
+    channel and JOIN the next. They see you arrive, talk, and leave.</span>
   </p>
 </header>
 
@@ -954,6 +1006,8 @@ footer{
     const ch = document.getElementById("ircCh");
     if(rn && d.room) rn.textContent = d.room;
     if(ch && d.channel) ch.textContent = d.channel;
+    const cc = document.getElementById("chatCh");
+    if(cc && d.channel) cc.textContent = d.channel;
   });
 
   /* Presence comes from the IRC client itself, not from counting log lines. */

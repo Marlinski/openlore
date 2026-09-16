@@ -201,6 +201,10 @@ simulation — it is the actual product, live:
   sticking. Stepping onto a door really does PART one channel and JOIN the
   next, and swaps the rendered room — people in the channel see you move.
   Keys are captured only while the room has focus, so the page still scrolls.
+- **You can talk.** Press enter and what you type is a real `PRIVMSG` to the
+  channel you are standing in. Text is stripped of CR/LF/NUL, capped at 200
+  chars and rate limited (5 per 30s, min 1.2s apart) before it goes near the
+  wire — a raw newline in a PRIVMSG lets a sender inject arbitrary IRC commands.
 - **The people are real.** The page connects to `wss://irc.openlore.xyz/ws`
   with `@marlinski/airc` — the same client the game uses — joins
   `#lobby-main_office` and `#lobby-coffee_room`, and renders one `Avatar` per
@@ -209,10 +213,11 @@ simulation — it is the actual product, live:
 
 Two limits come from the server and are not papered over in the client:
 
-1. **aircd does not implement `353`/`RPL_NAMREPLY`** — only `366`. There is no
-   way to enumerate who is already in a channel, so an avatar appears only once
-   that nick is *observed* joining, parting or speaking. Someone sitting
-   silently before the page loaded stays invisible until they act.
+1. **aircd's `NAMES` is a stub** — joining returns `366` with no `353`, so the
+   usual way to learn who is already present yields nothing. `WHO` *does* work,
+   so the client sends `WHO <channel>` on every JOIN and builds the room from
+   the `352` replies. Without that the room looks empty until somebody happens
+   to move or speak. Worth fixing in aircd; the workaround costs a round trip.
 2. **IRC carries no positions.** A nick is placed at a stable tile derived from
    its own name (preferring floor no object covers) and idles there. It is
    never walked around at random.
