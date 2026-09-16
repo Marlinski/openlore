@@ -457,7 +457,7 @@ async function start() {
       addPerson(a.id, a.name, a.characterId, a.x, a.y, false, a.direction);
     }
     addPerson(myAvatarId, myNick || "you", CHARACTERS[0], msg.spawnX, msg.spawnY, true);
-    if (irc && ircReady) joinIrc(currentIrc);
+    syncIrc();
   });
 
   conn.on<ServerAvatarJoinMessage>("avatar-join", (msg) => {
@@ -488,11 +488,9 @@ async function start() {
     addPerson(myAvatarId, myNick || "you", CHARACTERS[0], msg.spawnX, msg.spawnY, true);
     doorArmed = false;
     // The server moves the avatar; the client is what tells IRC about it.
-    if (irc && ircReady && prevIrc !== currentIrc) {
-      irc.part(prevIrc, "through the door");
-      joinIrc(currentIrc);
+    if (prevIrc !== currentIrc) {
       emit("part", myNick, prevIrc, true);
-      emit("join", myNick, currentIrc, true);
+      syncIrc();
     }
   });
 
@@ -527,10 +525,28 @@ async function start() {
   let ircReady = false;
   const joined = new Set<string>();
 
-  function joinIrc(ch: string) {
-    if (!irc || joined.has(ch)) return;
-    joined.add(ch);
-    irc.join(ch);
+  /** Keep the IRC membership equal to the room actually on screen.
+   *  Registration and the server's welcome race, and the first room rendered
+   *  is whichever sorts first in the pack — so joining on registration alone
+   *  can leave you chatting in a room you are not standing in. */
+  function syncIrc() {
+    if (!irc || !ircReady) return;
+    // When a world exists the server decides which room we are in, so wait for
+    // its welcome before joining anything. Otherwise we briefly join the room
+    // that merely sorts first in the pack, then have to leave it again.
+    if (live && !myAvatarId) return;
+    for (const ch of [...joined]) {
+      if (ch === currentIrc) continue;
+      joined.delete(ch);
+      irc.part(ch, "moved room");
+    }
+    if (!joined.has(currentIrc)) {
+      joined.add(currentIrc);
+      irc.join(currentIrc);
+      // Announce the channel we actually landed in, not the one that was on
+      // screen when registration happened.
+      emit("join", myNick, currentIrc);
+    }
   }
 
   function onIrc(e: IrcEvent) {
@@ -539,8 +555,7 @@ async function start() {
         ircReady = true;
         myNick = e.nick;
         if (me) { me.name = e.nick; me.tag.textContent = `${e.nick} (you)`; }
-        joinIrc(currentIrc);
-        emit("join", e.nick, currentIrc);
+        syncIrc();
         updateCount();
         break;
 
@@ -716,14 +731,17 @@ async function start() {
   async function begin() {
     if (started) return;
     started = true;
-    await connectIrc();
-    await connectGame();
+    // Both handshakes are slow and independent: IRC registration walks a MOTD
+    // and the game needs a register round trip. Serialising them left the room
+    // empty for ~9s, so run them together.
+    await Promise.all([connectIrc(), connectGame()]);
     if (!live && irc) {
       // Nothing to spawn us from the server, so stand ourselves up.
       const pool = spawnPool.length ? spawnPool : grid.all;
       const t = pool[hash(myNick) % pool.length] ?? { col: 1, row: 1 };
       const c = centreOf(t);
       addPerson(myNick, myNick, CHARACTERS[hash(myNick) % CHARACTERS.length], c.x, c.y, true);
+      syncIrc();
       irc.sendLine("WHO " + currentIrc);
     }
     updateCount();
