@@ -286,6 +286,7 @@ a:focus-visible,button:focus-visible{
 }
 .view.ready::before{ opacity:0; }
 .view.failed::before{ content:"room unavailable"; opacity:1; }
+.view.offline::before{ content:"irc offline"; opacity:1; }
 /* Vignette + scanlines over the game view only */
 .view::after{
   content:"";
@@ -306,6 +307,7 @@ a:focus-visible,button:focus-visible{
   white-space:nowrap;
   will-change:transform;
 }
+.tag-self{ color:var(--oak); }
 .bub{
   position:absolute;
   top:0; left:0;
@@ -687,7 +689,7 @@ footer{
         <span>#lobby</span>
         <span style="color:var(--line)">/</span>
         <span id="roomName">main_office</span>
-        <span class="rt" id="popCount">3 online</span>
+        <span class="rt" id="popCount">connecting&hellip;</span>
       </div>
       <div class="view">
         <canvas id="game" aria-label="The OpenLore main_office room, rendered by the real game client. Three characters walk between the desks and the doors."></canvas>
@@ -699,24 +701,22 @@ footer{
       <div class="irc-head">
         <span>IRC</span>
         <span class="ch">#lobby-main_office</span>
-        <span class="who" id="ircWho">3 users</span>
+        <span class="who" id="ircWho">&mdash;</span>
       </div>
       <div class="log" id="log" aria-live="polite" aria-label="Live IRC log for the room">
-          <div class="ln join"><span class="t">21:03</span><span class="b">&rarr; <span class="nick">amanda</span> joined #lobby-main_office</span></div>
-          <div class="ln join"><span class="t">21:03</span><span class="b">&rarr; <span class="nick">fiona</span> joined #lobby-main_office</span></div>
-          <div class="ln msg"><span class="t">21:04</span><span class="b"><span class="nick">&lt;amanda&gt;</span> standup in 5</span></div>
-          <div class="ln join"><span class="t">21:04</span><span class="b">&rarr; <span class="nick">arthur</span> joined #lobby-main_office</span></div>
+          <div class="ln part" id="logBoot"><span class="t">--:--</span><span class="b">connecting to irc.openlore.xyz&hellip;</span></div>
         </div>
-      <div class="irc-foot"><span class="led"></span> irc.openlore.xyz &mdash; connect any client</div>
+      <div class="irc-foot"><span class="led" id="ircLed"></span> <span id="ircFoot">irc.openlore.xyz &mdash; connect any client</span></div>
     </div>
   </div>
 
   <p class="stage-note">
     <span class="k">live</span>
-    <span>Not a video and not a mockup. That is the shipping game client &mdash; the same
-    renderer, the same compiled pack, the same 48px art and z-sorting &mdash; running
-    against a local stand-in for the server. Watch someone reach a door: the PART and
-    JOIN land in the log as they cross it.</span>
+    <span>This is live. The office is the shipping game client &mdash; same renderer, same
+    compiled pack, same 48px art &mdash; and it is joined to the real
+    <code class="inl">#lobby-main_office</code> on irc.openlore.xyz. Everyone you see is
+    a real person in that channel, saying real things. Open the office in another tab and
+    you will walk into this frame.</span>
   </p>
 </header>
 
@@ -885,7 +885,6 @@ footer{
   if(!logEl) return;
 
   let seeded = true;
-  let present = 0;
   let clock = 21*60 + 3;
 
   function stamp(){
@@ -921,20 +920,28 @@ footer{
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  function count(kind, payload){
-    const here = typeof payload === "string" && payload.indexOf("coffee_room") === -1;
-    if(kind === "join" && here) present++;
-    if(kind === "part" && here) present = Math.max(0, present - 1);
-    const label = present + (present === 1 ? " user" : " users");
-    if(whoEl) whoEl.textContent = label;
-    if(popEl) popEl.textContent = present + " online";
-  }
 
   window.addEventListener("openlore:irc", function(e){
     const d = (e && e.detail) || {};
     if(seeded){ logEl.innerHTML = ""; seeded = false; }
-    count(d.kind, d.payload);
     line(d.kind || "msg", d.nick || "?", d.payload || "", !!d.flash);
+  });
+
+  /* Presence comes from the IRC client itself, not from counting log lines. */
+  window.addEventListener("openlore:presence", function(e){
+    const d = (e && e.detail) || {};
+    const n = d.count | 0;
+    if(popEl) popEl.textContent = !d.connected ? "connecting\u2026"
+                                : n <= 1 ? "just you"
+                                : n + " here";
+    if(whoEl) whoEl.textContent = !d.connected ? "offline"
+                                : n + (n === 1 ? " user" : " users");
+    const led = document.getElementById("ircLed");
+    if(led) led.style.background = d.connected ? "var(--live)" : "var(--dim)";
+    const foot = document.getElementById("ircFoot");
+    if(foot) foot.textContent = d.connected
+      ? "irc.openlore.xyz \u2014 connect any client"
+      : "irc.openlore.xyz \u2014 reconnecting";
   });
 })();
 </script>

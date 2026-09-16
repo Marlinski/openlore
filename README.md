@@ -188,23 +188,39 @@ openlore/
 
 ## Landing Page
 
-`landing/` serves **openlore.xyz**. The hero is not a video or a mockup — it runs
-the *actual* game client: `landing/demo/` imports `RoomScene` and `Avatar`
-directly from `game/client/src/scene/`, loads a real compiled pack from
-`landing/pack/`, and feeds the avatars the same `applyServerPosition()` calls the
-game server pushes over the WebSocket at ~15/sec. Real atlas art, real room
-layout, real walkability grid, real z-sorting, real character animation.
+`landing/` serves **openlore.xyz**. The hero is not a video, a mockup or a
+simulation — it is the actual product, live:
 
-The only substitution is the network: instead of a `Connection`, a small local
-simulation walks the avatars with BFS over the room's own walkability grid, and
-emits `openlore:irc` events that drive the page's IRC panel — including the
-PART/JOIN pair when an avatar crosses a door.
+- **The room** is drawn by the game client's own renderer. `landing/demo/`
+  imports `RoomScene` and `Avatar` directly from `game/client/src/scene/` and
+  loads a real compiled pack from `landing/pack/`. Real atlas art, real
+  walkability grid, real doors, real anchor-Y z-sorting.
+- **The people are real.** The page connects to `wss://irc.openlore.xyz/ws`
+  with `@marlinski/airc` — the same client the game uses — joins
+  `#lobby-main_office` and `#lobby-coffee_room`, and renders one `Avatar` per
+  nick it observes. Their speech bubbles are their real messages. A real room
+  transition (PART one channel, JOIN the other) walks the avatar out a door.
+
+Two limits come from the server and are not papered over in the client:
+
+1. **aircd does not implement `353`/`RPL_NAMREPLY`** — only `366`. There is no
+   way to enumerate who is already in a channel, so an avatar appears only once
+   that nick is *observed* joining, parting or speaking. Someone sitting
+   silently before the page loaded stays invisible until they act.
+2. **IRC carries no positions.** A nick is placed at a stable tile derived from
+   its own name (preferring floor no object covers) and idles there. It is
+   never walked around at random.
+
+Every visitor holds a real IRC session while the hero is on screen, under a
+`web-xxxxxx` nick so players can tell website traffic from players. The session
+is opened only when the hero is actually visible and dropped on tab-hide and
+page-hide, so idle background tabs do not sit in the channel.
 
 `landing/pack/` is vendored because `data/` is gitignored. Regenerate it with
-`make landing-pack` after changing the world. The script converts protojson enum
-*names* to *numbers*, because the game server marshals with
-`UseEnumNumbers: true` and the client compares against the numeric TS enum — a
-pack with string enums renders nothing.
+`make landing-pack`. The script converts protojson enum *names* to *numbers*,
+because the game server marshals with `UseEnumNumbers: true` and the client
+compares against the numeric TS enum — a pack with string enums renders an
+entirely empty room.
 
 ## Data Pipeline
 

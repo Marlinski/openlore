@@ -1,27 +1,38 @@
 /**
- * Landing-page hero — the real game client, driven locally.
+ * Landing-page hero — the real game client, on the real IRC network.
  *
- * This is deliberately NOT a mock. It imports the same RoomScene and Avatar
- * classes the game client renders with (game/client/src/scene/), loads a real
- * compiled pack (landing/pack/, vendored from data/game/packs/test-pack), and
- * feeds the avatars the same applyServerPosition() calls the game server would
- * push over the WebSocket at ~15/sec. Real atlas art, real room layout, real
- * walkability grid, real doors, real z-sorting, real character animation.
+ * Nothing here is simulated.
  *
- * The only thing missing is the network: instead of a Connection, a small
- * local simulation walks the avatars around using BFS over the room's own
- * walkability grid, and emits `openlore:irc` events so the page's IRC panel
- * stays in sync — including the PART/JOIN pair when someone crosses a door.
+ *  - The room is rendered by the game client's own RoomScene, from a real
+ *    compiled pack (landing/pack/). Real atlas art, real walkability grid,
+ *    real doors, real anchor-Y z-sorting.
+ *  - The people are real. The page connects to wss://irc.openlore.xyz/ws with
+ *    @marlinski/airc — the same client the game uses — joins the two lobby
+ *    channels, and renders one real Avatar per nick it observes. Their
+ *    messages are their real messages.
+ *  - A real room transition (PART one channel, JOIN the other) is the door
+ *    mechanic, so the avatar walks to a door and leaves.
+ *
+ * Two limits are inherent to the server, not worked around here:
+ *
+ *  1. aircd does not send 353/RPL_NAMREPLY, only 366. There is no way to
+ *     enumerate who is already in a channel, so an avatar can only appear once
+ *     that nick is *observed* — joining, parting, or speaking. Someone sitting
+ *     silently before you loaded the page stays invisible until they act.
+ *  2. IRC carries no positions. A nick is placed at a stable tile derived from
+ *     its own name and idles there; it is never walked around at random.
  */
 
 import { Application, Container, TextureSource } from "pixi.js";
 import type { Pack, RoomDefinition } from "@openlore/pack";
+import { AircClient, type IrcEvent } from "@marlinski/airc";
 
 import { RoomScene } from "../../../game/client/src/scene/room.js";
 import {
   Avatar,
   resolveCharacterResources,
   loadCharacterTextures,
+  type CharacterResources,
   type TextureCache,
 } from "../../../game/client/src/scene/avatar.js";
 import { loadImage, getCachedImage } from "../../../game/client/src/assets.js";
@@ -35,28 +46,22 @@ import type {
 
 const PACK_URL = "pack/pack.json";
 const ATLAS_BASE = "pack/";
-const ROOM_NAME = "main_office";
 
-/** Server tick: the real client receives position updates at ~15/sec. */
-const TICK_MS = 66;
-/** Walk speed in tiles/sec. */
+const IRC_URL = "wss://irc.openlore.xyz/ws";
+const LOBBY = "lobby";
+const ROOM_NAME = "main_office";
+const OTHER_ROOM = "coffee_room";
+
+const HERE = `#${LOBBY}-${ROOM_NAME}`;
+const THERE = `#${LOBBY}-${OTHER_ROOM}`;
+
+/** Characters the pack ships. A nick maps to one deterministically. */
+const CHARACTERS = ["amanda", "fiona", "arthur"];
+
+/** Walk speed in tiles/sec, used only for the door walk on a real PART. */
 const SPEED = 2.4;
 
-const CAST = [
-  { id: "u-amanda", name: "amanda", characterId: "amanda" },
-  { id: "u-fiona", name: "fiona", characterId: "fiona" },
-  { id: "u-arthur", name: "arthur", characterId: "arthur" },
-];
-
-const CHATTER: Record<string, string[]> = {
-  amanda: ["standup in 5", "who took my mug", "atlas repacked fine"],
-  fiona: ["build's green", "shipping it", "back in a sec"],
-  arthur: ["54 resources now", "nice", "coffee run — anyone?"],
-};
-
 type Tile = { col: number; row: number };
-
-// ── Small helpers ─────────────────────────────────────────────────
 
 const centreOf = (t: Tile) => ({
   x: t.col * TILE_SIZE + TILE_SIZE / 2,
@@ -69,7 +74,23 @@ function emit(kind: string, nick: string, payload: string, flash = false) {
   );
 }
 
-// ── Pathfinding over the room's own walkability grid ──────────────
+function presence(count: number, connected: boolean) {
+  window.dispatchEvent(
+    new CustomEvent("openlore:presence", { detail: { count, connected } }),
+  );
+}
+
+/** Stable hash so a nick always gets the same character and the same tile. */
+function hash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// ── Pathfinding, used for the walk-to-door on a real PART ─────────
 
 function makeGrid(room: RoomDefinition) {
   const { width, height } = room;
@@ -81,9 +102,8 @@ function makeGrid(room: RoomDefinition) {
   for (let r = 0; r < height; r++)
     for (let c = 0; c < width; c++) if (ok(c, r)) all.push({ col: c, row: r });
 
-  /** Breadth-first path from `from` to `to`, exclusive of `from`. */
   function path(from: Tile, to: Tile): Tile[] | null {
-    if (!ok(to.col, to.row)) return null;
+    if (!ok(to.col, to.row) || !ok(from.col, from.row)) return null;
     const key = (c: number, r: number) => r * width + c;
     const prev = new Map<number, number>();
     const seen = new Set<number>([key(from.col, from.row)]);
@@ -100,13 +120,12 @@ function makeGrid(room: RoomDefinition) {
         }
         return out.reverse();
       }
-      const nbrs = [
+      for (const n of [
         { col: cur.col + 1, row: cur.row },
         { col: cur.col - 1, row: cur.row },
         { col: cur.col, row: cur.row + 1 },
         { col: cur.col, row: cur.row - 1 },
-      ];
-      for (const n of nbrs) {
+      ]) {
         if (!ok(n.col, n.row)) continue;
         const nk = key(n.col, n.row);
         if (seen.has(nk)) continue;
@@ -121,27 +140,22 @@ function makeGrid(room: RoomDefinition) {
   return { all, ok, path };
 }
 
-// ── Local actor: drives one real Avatar ───────────────────────────
+// ── One real person in the room ───────────────────────────────────
 
-interface Actor {
+interface Person {
+  nick: string;
   avatar: Avatar;
-  /** z-sort entry returned by RoomScene.addAvatarSprite, updated each frame. */
-  entry: { sprite: unknown; anchorY: number };
-  /** True when the current path ends on a door tile. */
-  usingDoor: boolean;
+  entry: { anchorY: number };
   x: number;
   y: number;
   dir: CharacterDirection;
   moving: boolean;
-  path: Tile[];
-  wait: number;
-  away: number;
+  /** Set when a real PART/QUIT is walking them out through a door. */
+  leaving: Tile[] | null;
   tag: HTMLElement;
   bubble: HTMLElement | null;
   bubbleT: number;
 }
-
-// ── Boot ──────────────────────────────────────────────────────────
 
 async function start() {
   const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -149,25 +163,19 @@ async function start() {
   const host = canvas?.parentElement;
   if (!canvas || !overlay || !host) return;
 
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  // 1. Load the real pack.
+  // 1. Real pack.
   const pack: Pack = await fetch(PACK_URL).then((r) => r.json());
-
-  // 2. Resolve tileset image paths against the vendored atlas directory, the
-  //    same rewrite preloadGameAssets() does against /data/packs/{id}/.
   for (const ts of pack.tilesets) ts.path = ATLAS_BASE + ts.path;
   await Promise.all(
     pack.tilesets.map((ts) =>
-      loadImage(ts.path).catch((e) => console.warn("[demo]", e)),
+      loadImage(ts.path).catch((e) => console.warn("[hero]", e)),
     ),
   );
 
   const room = pack.rooms.find((r) => r.name === ROOM_NAME) ?? pack.rooms[0];
   if (!room) return;
 
-  // 3. Real PixiJS application. Nearest-neighbour everywhere — this is 48px
-  //    pixel art and must never be smoothed.
+  // 2. Real renderer.
   TextureSource.defaultOptions.scaleMode = "nearest";
   const app = new Application();
   await app.init({
@@ -183,53 +191,41 @@ async function start() {
   const world = new Container();
   app.stage.addChild(world);
 
-  // 4. The real room renderer, from the real pack.
   const textureCache: TextureCache = new Map();
   const scene = new RoomScene(room, pack, textureCache);
   world.addChild(scene.root);
+  host.classList.add("ready");
 
-  // 5. Real avatars with real character sprites.
   const grid = makeGrid(room);
-  const spawn = [...grid.all].sort(() => Math.random() - 0.5);
-  const actors: Actor[] = [];
 
-  CAST.forEach((c, i) => {
-    const res = resolveCharacterResources(c.characterId, pack);
-    if (!res.all.length) return;
+  // Walkable is not the same as visible: plenty of walkable tiles sit under a
+  // desk or a shelf, where an avatar reads as a smear behind furniture. Prefer
+  // tiles no OBJECT-layer placement covers, and fall back to any walkable tile.
+  const covered = new Set<number>();
+  for (const pl of room.placements ?? []) {
+    if (pl.layer !== 2 || !pl.region) continue;
+    const cols = Math.max(1, Math.round((pl.region.w ?? TILE_SIZE) / TILE_SIZE));
+    const rows = Math.max(1, Math.round((pl.region.h ?? TILE_SIZE) / TILE_SIZE));
+    for (let c = 0; c < cols; c++)
+      for (let r = 0; r < rows; r++)
+        covered.add((( pl.gridY ?? 0) + r) * room.width + ((pl.gridX ?? 0) + c));
+  }
+  const openTiles = grid.all.filter((t) => !covered.has(t.row * room.width + t.col));
+  const spawnPool = openTiles.length ? openTiles : grid.all;
+
+  const doorTiles: Tile[] = (room.doors ?? [])
+    .map((d) => ({ col: d.col ?? 0, row: d.row ?? 0 }))
+    .filter((t) => grid.ok(t.col, t.row));
+
+  // Pre-resolve each character's resources once.
+  const charRes = new Map<string, CharacterResources>();
+  for (const name of CHARACTERS) {
+    const res = resolveCharacterResources(name, pack);
+    if (!res.all.length) continue;
     loadCharacterTextures(res, pack, textureCache, getCachedImage);
+    charRes.set(name, res);
+  }
 
-    const tile = spawn[i % spawn.length];
-    const p = centreOf(tile);
-    const snapshot: AvatarSnapshot = {
-      id: c.id,
-      name: c.name,
-      characterId: c.characterId,
-      room: room.name,
-      x: p.x,
-      y: p.y,
-      direction: "down",
-      moving: false,
-      family: "idle",
-    };
-    const avatar = new Avatar(snapshot, res, pack, textureCache, false);
-    const entry = scene.addAvatarSprite(avatar.sprite, avatar.anchorY);
-
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    tag.textContent = c.name;
-    overlay.appendChild(tag);
-
-    actors.push({
-      avatar, entry, usingDoor: false,
-      x: p.x, y: p.y, dir: "down", moving: false,
-      path: [], wait: 0.6 + i * 1.3, away: 0, tag, bubble: null, bubbleT: 0,
-    });
-    emit("join", c.name, `#lobby-${room.name}`);
-  });
-
-  emit("msg", "amanda", "standup in 5");
-
-  // 6. Camera — letterbox the room inside the view, as the real client does.
   function layout() {
     const w = host!.clientWidth, h = host!.clientHeight;
     if (!w || !h) return;
@@ -242,137 +238,245 @@ async function start() {
   layout();
   new ResizeObserver(layout).observe(host);
 
-  // 7. Local simulation — stands in for the game server.
-  const doorTiles: Tile[] = (room.doors ?? []).map((d) => ({
-    col: d.col ?? 0, row: d.row ?? 0,
-  }));
+  // 3. People, created only from observed IRC activity.
+  const people = new Map<string, Person>();
+  let connected = false;
+  let selfNick = "";
 
-  function retarget(a: Actor) {
-    const useDoor = doorTiles.length > 0 && Math.random() < 0.22;
-    const pool = useDoor ? doorTiles : grid.all;
-    const dest = pool[Math.floor(Math.random() * pool.length)];
-    const from = { col: Math.floor(a.x / TILE_SIZE), row: Math.floor(a.y / TILE_SIZE) };
-    const p = grid.path(from, dest);
-    if (p && p.length) {
-      a.path = p;
-      a.usingDoor = useDoor;
-    } else {
-      a.wait = 1;
+  function updateCount() {
+    presence(people.size, connected);
+    host!.classList.toggle("empty", people.size === 0);
+  }
+
+  function tileFor(nick: string): Tile {
+    const pool = spawnPool.length ? spawnPool : [{ col: 1, row: 1 }];
+    return pool[hash(nick) % pool.length];
+  }
+
+  function add(nick: string, self: boolean): Person | null {
+    const existing = people.get(nick);
+    if (existing) return existing;
+    const name = CHARACTERS[hash(nick) % CHARACTERS.length];
+    const res = charRes.get(name);
+    if (!res) return null;
+
+    const p = centreOf(tileFor(nick));
+    const snapshot: AvatarSnapshot = {
+      id: nick, name: nick, characterId: name, room: room!.name,
+      x: p.x, y: p.y, direction: "down", moving: false, family: "idle",
+    };
+    const avatar = new Avatar(snapshot, res, pack, textureCache, self);
+    const entry = scene.addAvatarSprite(avatar.sprite, avatar.anchorY);
+
+    const tag = document.createElement("span");
+    tag.className = "tag" + (self ? " tag-self" : "");
+    tag.textContent = self ? nick + " (you)" : nick;
+    overlay!.appendChild(tag);
+
+    const person: Person = {
+      nick, avatar, entry, x: p.x, y: p.y, dir: "down",
+      moving: false, leaving: null, tag, bubble: null, bubbleT: 0,
+    };
+    people.set(nick, person);
+    updateCount();
+    return person;
+  }
+
+  function drop(nick: string) {
+    const p = people.get(nick);
+    if (!p) return;
+    scene.removeAvatarSprite(p.avatar.sprite);
+    p.tag.remove();
+    if (p.bubble) p.bubble.remove();
+    people.delete(nick);
+    updateCount();
+  }
+
+  /** A real PART/QUIT: walk them to the nearest door, then remove them. */
+  function walkOut(nick: string) {
+    const p = people.get(nick);
+    if (!p) return;
+    const from = {
+      col: Math.floor(p.x / TILE_SIZE),
+      row: Math.floor(p.y / TILE_SIZE),
+    };
+    let best: Tile[] | null = null;
+    for (const d of doorTiles) {
+      const route = grid.path(from, d);
+      if (route && (!best || route.length < best.length)) best = route;
     }
+    if (!best || !best.length) { drop(nick); return; }
+    p.leaving = best;
   }
 
-  function tick(dt: number) {
-    for (const a of actors) {
-      if (a.away > 0) {
-        a.away -= dt;
-        if (a.away <= 0) {
-          a.tag.style.display = "";
-          a.avatar.sprite.visible = true;
-          emit("part", a.avatar.name, "#lobby-coffee_room", true);
-          emit("join", a.avatar.name, `#lobby-${room.name}`, true);
-        }
-        continue;
-      }
-      if (a.wait > 0) {
-        a.wait -= dt;
-        if (a.moving) { a.moving = false; push(a); }
-        if (a.wait <= 0) retarget(a);
-        continue;
-      }
-      if (!a.path.length) {
-        a.wait = 1.4 + Math.random() * 3.2;
-        if (Math.random() < 0.5) say(a);
-        continue;
-      }
-
-      const target = centreOf(a.path[0]);
-      const dx = target.x - a.x, dy = target.y - a.y;
-      const dist = Math.hypot(dx, dy);
-      const step = SPEED * TILE_SIZE * dt;
-
-      if (dist <= step) {
-        a.x = target.x; a.y = target.y;
-        a.path.shift();
-        if (!a.path.length && a.usingDoor) {
-          // Crossed a door. This is the whole mechanic.
-          a.usingDoor = false;
-          a.away = 6;
-          a.moving = false;
-          a.tag.style.display = "none";
-          a.avatar.sprite.visible = false;
-          if (a.bubble) { a.bubble.remove(); a.bubble = null; }
-          emit("part", a.avatar.name, `#lobby-${room.name}`, true);
-          emit("join", a.avatar.name, "#lobby-coffee_room", true);
-        }
-      } else {
-        a.x += (dx / dist) * step;
-        a.y += (dy / dist) * step;
-        a.dir = Math.abs(dx) > Math.abs(dy)
-          ? (dx > 0 ? "right" : "left")
-          : (dy > 0 ? "down" : "up");
-        a.moving = true;
-      }
-      push(a);
-    }
-  }
-
-  /** Exactly what the server sends: position, direction, moving. */
-  function push(a: Actor) {
-    a.avatar.family = a.moving ? "walk" : "idle";
-    a.avatar.applyServerPosition(a.x, a.y, a.dir, a.moving);
-  }
-
-  function say(a: Actor) {
-    const lines = CHATTER[a.avatar.name] ?? ["hey"];
-    const text = lines[Math.floor(Math.random() * lines.length)];
-    if (a.bubble) a.bubble.remove();
+  function say(nick: string, text: string) {
+    const p = people.get(nick) ?? add(nick, nick === selfNick);
+    if (!p) return;
+    if (p.bubble) p.bubble.remove();
     const b = document.createElement("span");
     b.className = "bub";
     b.textContent = text;
     overlay!.appendChild(b);
-    a.bubble = b;
-    a.bubbleT = 3.4;
-    emit("msg", a.avatar.name, text);
+    p.bubble = b;
+    p.bubbleT = 4.5;
   }
 
-  /** Project world coords to overlay pixels for nametags and bubbles. */
-  function syncOverlay(dt: number) {
-    for (const a of actors) {
-      if (a.bubble) {
-        a.bubbleT -= dt;
-        if (a.bubbleT <= 0) { a.bubble.remove(); a.bubble = null; }
-      }
-      if (a.away > 0) continue;
-      // The sprite spans y-1.5*TILE .. y+0.5*TILE, so the head top sits at
-      // y-1.5*TILE. Park the nametag just above it, and the bubble above that.
-      const sx = world.x + a.avatar.x * world.scale.x;
-      const sy = world.y + (a.avatar.y - TILE_SIZE * 1.55) * world.scale.y;
-      a.tag.style.transform = `translate(${sx}px,${sy}px) translate(-50%,-100%)`;
-      if (a.bubble) {
-        a.bubble.style.transform =
-          `translate(${sx}px,${sy - 15}px) translate(-50%,-100%)`;
-      }
-    }
-  }
-
-  // 8. Drive it. Rendering runs on Pixi's ticker; the "server" ticks at 15/sec.
-  let acc = 0;
+  // 4. Frame loop — idle animation, the door walk, and overlay placement.
   app.ticker.add((t) => {
     const dt = t.deltaMS / 1000;
-    if (!reduced && !document.hidden) {
-      acc += t.deltaMS;
-      while (acc >= TICK_MS) { tick(TICK_MS / 1000); acc -= TICK_MS; }
+
+    for (const p of [...people.values()]) {
+      if (p.leaving) {
+        const target = centreOf(p.leaving[0]);
+        const dx = target.x - p.x, dy = target.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        const step = SPEED * TILE_SIZE * dt;
+        if (dist <= step) {
+          p.x = target.x; p.y = target.y;
+          p.leaving.shift();
+          if (!p.leaving.length) { drop(p.nick); continue; }
+        } else {
+          p.x += (dx / dist) * step;
+          p.y += (dy / dist) * step;
+          p.dir = Math.abs(dx) > Math.abs(dy)
+            ? (dx > 0 ? "right" : "left")
+            : (dy > 0 ? "down" : "up");
+          p.moving = true;
+        }
+      }
+      p.avatar.family = p.moving ? "walk" : "idle";
+      p.avatar.applyServerPosition(p.x, p.y, p.dir, p.moving);
+      p.avatar.update(dt);
+      p.entry.anchorY = p.avatar.anchorY;
     }
-    for (const a of actors) a.avatar.update(dt);
-    for (const a of actors) a.entry.anchorY = a.avatar.anchorY;
+
     scene.zSort();
-    syncOverlay(dt);
+
+    for (const p of people.values()) {
+      if (p.bubble) {
+        p.bubbleT -= dt;
+        if (p.bubbleT <= 0) { p.bubble.remove(); p.bubble = null; }
+      }
+      const sx = world.x + p.avatar.x * world.scale.x;
+      const sy = world.y + (p.avatar.y - TILE_SIZE * 1.55) * world.scale.y;
+      p.tag.style.transform = "translate(" + sx + "px," + sy + "px) translate(-50%,-100%)";
+      if (p.bubble) {
+        p.bubble.style.transform =
+          "translate(" + sx + "px," + (sy - 15) + "px) translate(-50%,-100%)";
+      }
+    }
   });
 
-  host.classList.add("ready");
+  // 5. Real IRC.
+  let client: AircClient | null = null;
+
+  function onEvent(e: IrcEvent) {
+    switch (e.type) {
+      case "registered":
+        connected = true;
+        selfNick = e.nick;
+        add(e.nick, true);
+        emit("join", e.nick, HERE);
+        updateCount();
+        break;
+
+      case "join":
+        if (e.nick === selfNick) return;
+        if (e.channel === HERE) add(e.nick, false);
+        if (e.channel === HERE || e.channel === THERE)
+          emit("join", e.nick, e.channel, true);
+        break;
+
+      case "part":
+        if (e.nick === selfNick) return;
+        if (e.channel === HERE) walkOut(e.nick);
+        if (e.channel === HERE || e.channel === THERE)
+          emit("part", e.nick, e.channel, true);
+        break;
+
+      case "quit":
+        if (e.nick === selfNick) return;
+        walkOut(e.nick);
+        emit("part", e.nick, HERE);
+        break;
+
+      case "kick":
+        walkOut(e.nick);
+        emit("part", e.nick, e.channel);
+        break;
+
+      case "message": {
+        const m = e.message;
+        if (!m.target.startsWith("#")) {
+          emit("pm", m.from, m.text);
+        } else {
+          if (m.target === HERE) say(m.from, m.text);
+          emit("msg", m.from, m.text);
+        }
+        break;
+      }
+
+      case "disconnected":
+        connected = false;
+        updateCount();
+        break;
+
+      case "reconnected":
+        connected = true;
+        updateCount();
+        break;
+    }
+  }
+
+  async function connect() {
+    if (client) return;
+    // A clearly-marked visitor nick, so anyone in the channel can tell this is
+    // someone looking at the website rather than a player.
+    const nick = "web-" + Math.random().toString(36).slice(2, 8);
+    const c = new AircClient({ nick, url: IRC_URL, autoJoin: [HERE, THERE] });
+    client = c;
+    c.on(onEvent);
+    try {
+      await c.connect();
+    } catch (err) {
+      console.warn("[hero] IRC connect failed", err);
+      connected = false;
+      host!.classList.add("offline");
+      if (client === c) client = null;
+      updateCount();
+    }
+  }
+
+  function disconnect() {
+    const c = client;
+    if (!c) return;
+    client = null;
+    connected = false;
+    for (const nick of [...people.keys()]) drop(nick);
+    updateCount();
+    c.quit("closed the page").catch(() => {}).finally(() => c.destroy());
+  }
+
+  // Hold an IRC session only while the hero is actually on screen. A landing
+  // page should not keep a connection open for every idle background tab.
+  let visible = false;
+  const io = new IntersectionObserver((entries) => {
+    visible = entries[0]?.isIntersecting ?? false;
+    if (visible && !document.hidden) connect();
+    else disconnect();
+  }, { threshold: 0.05 });
+  io.observe(host);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) disconnect();
+    else if (visible) connect();
+  });
+  window.addEventListener("pagehide", disconnect);
+
+  updateCount();
 }
 
 start().catch((e) => {
-  console.error("[demo] failed to start", e);
+  console.error("[hero] failed to start", e);
   document.getElementById("game")?.parentElement?.classList.add("failed");
 });
