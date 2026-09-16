@@ -5,13 +5,15 @@
   "workspaces": [
     "shared/pack/js",
     "game/client",
-    "studio/app"
+    "studio/app",
+    "landing/demo"
   ],
   "scripts": {
     "pack:build": "yarn workspace @openlore/pack build",
     "game:client": "yarn workspace @openlore/client dev",
     "studio:app": "yarn workspace @openlore/studio dev",
-    "build": "yarn pack:build && yarn workspace @openlore/client build"
+    "build": "yarn pack:build && yarn workspace @openlore/client build",
+    "landing:build": "yarn pack:build && yarn workspace @openlore/landing-demo build"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.11.0",

@@ -264,16 +264,28 @@ a:focus-visible,button:focus-visible{
   position:relative;
   flex:1;
   min-height:0;
+  aspect-ratio:3/2;
   background:#14162a;
   overflow:hidden;
 }
 .view canvas{
   display:block;
   width:100%;
-  height:auto;
+  height:100%;
   image-rendering:pixelated;
   image-rendering:crisp-edges;
 }
+/* Until the real client has booted, hold the frame with a quiet placeholder. */
+.view::before{
+  content:"loading room\2026";
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:"Silkscreen","Courier New",monospace;
+  font-size:10px; letter-spacing:.18em; color:var(--dim);
+  transition:opacity .4s;
+}
+.view.ready::before{ opacity:0; }
+.view.failed::before{ content:"room unavailable"; opacity:1; }
 /* Vignette + scanlines over the game view only */
 .view::after{
   content:"";
@@ -675,10 +687,10 @@ footer{
         <span>#lobby</span>
         <span style="color:var(--line)">/</span>
         <span id="roomName">main_office</span>
-        <span class="rt" id="popCount">4 online</span>
+        <span class="rt" id="popCount">3 online</span>
       </div>
       <div class="view">
-        <canvas id="game" width="352" height="192" aria-label="A pixel-art office seen from above. Four characters walk between desks, the coffee machine and the door."></canvas>
+        <canvas id="game" aria-label="The OpenLore main_office room, rendered by the real game client. Three characters walk between the desks and the doors."></canvas>
         <div class="overlay" id="overlay"></div>
       </div>
     </div>
@@ -687,18 +699,24 @@ footer{
       <div class="irc-head">
         <span>IRC</span>
         <span class="ch">#lobby-main_office</span>
-        <span class="who" id="ircWho">4 users</span>
+        <span class="who" id="ircWho">3 users</span>
       </div>
-      <div class="log" id="log" aria-live="polite" aria-label="Live IRC log for the room"></div>
+      <div class="log" id="log" aria-live="polite" aria-label="Live IRC log for the room">
+          <div class="ln join"><span class="t">21:03</span><span class="b">&rarr; <span class="nick">amanda</span> joined #lobby-main_office</span></div>
+          <div class="ln join"><span class="t">21:03</span><span class="b">&rarr; <span class="nick">fiona</span> joined #lobby-main_office</span></div>
+          <div class="ln msg"><span class="t">21:04</span><span class="b"><span class="nick">&lt;amanda&gt;</span> standup in 5</span></div>
+          <div class="ln join"><span class="t">21:04</span><span class="b">&rarr; <span class="nick">arthur</span> joined #lobby-main_office</span></div>
+        </div>
       <div class="irc-foot"><span class="led"></span> irc.openlore.xyz &mdash; connect any client</div>
     </div>
   </div>
 
   <p class="stage-note">
     <span class="k">live</span>
-    <span>Not a video. The office above is running, and the log beside it is what the room is
-    actually saying. Watch someone walk out the bottom door &mdash; the PART and JOIN
-    land in the log as they cross it.</span>
+    <span>Not a video and not a mockup. That is the shipping game client &mdash; the same
+    renderer, the same compiled pack, the same 48px art and z-sorting &mdash; running
+    against a local stand-in for the server. Watch someone reach a door: the PART and
+    JOIN land in the log as they cross it.</span>
   </p>
 </header>
 
@@ -854,368 +872,70 @@ footer{
   </div>
 </footer>
 
+<script type="module" src="demo.js"></script>
 <script>
+/* The IRC panel. Lines arrive as `openlore:irc` events from the game client
+   running in the hero — including the PART/JOIN pair emitted when an avatar
+   crosses a door. */
 (function(){
   "use strict";
-
-  const cv = document.getElementById("game");
-  if(!cv) return;
-  const ctx = cv.getContext("2d");
-  const overlay = document.getElementById("overlay");
   const logEl = document.getElementById("log");
+  const popEl = document.getElementById("popCount");
+  const whoEl = document.getElementById("ircWho");
+  if(!logEl) return;
 
-  const W = 352, H = 192, T = 16;
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let seeded = true;
+  let present = 0;
+  let clock = 21*60 + 3;
 
-  // ── Palette, sampled from the game's own render ───────────────
-  const C = {
-    void:"#14162a", wallTrim:"#3b3f5e", wallFace:"#e4e5ee", wallBase:"#c5c8d6",
-    floor:"#a9aeb9", grid:"#9ea3af",
-    oak:"#d9b877", oakDark:"#bb9553",
-    panel:"#b5bcc9", panelDark:"#8b93a6",
-    chair:"#4a4f63", chairDark:"#353948",
-    screenOff:"#2b3048", screenLit:"#7593d4", metal:"#9aa3b5", metalDark:"#79839a",
-    leaf:"#4f8f5c", leafDark:"#3b6f47", pot:"#8a5f45", potDark:"#6d4835",
-    shadow:"rgba(20,22,42,.20)",
-    doorDark:"#22263c", doorGlow:"#d9a45e",
-    white:"#f2f1f8", boardEdge:"#8b93a6"
-  };
-
-  const r = (x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w|0,h|0); };
-
-  // ── Static room ───────────────────────────────────────────────
-  function drawRoom(){
-    r(0,0,W,H,C.void);
-    r(0,10,W,38,C.wallFace);        // wall face, rows 1-2
-    r(0,8,W,3,C.wallTrim);          // ceiling trim
-    r(0,44,W,4,C.wallBase);         // baseboard
-    r(0,48,W,128,C.floor);          // floor, rows 3-10
-
-    for(let x=0;x<=W;x+=T) r(x,48,1,128,C.grid);
-    for(let y=48;y<=176;y+=T) r(0,y,W,1,C.grid);
-
-    r(0,176,W,16,C.wallTrim);       // bottom wall
-    r(160,176,32,16,C.doorDark);    // door well
-    r(160,174,32,2,C.doorGlow);     // lit threshold
-    r(158,174,2,18,"#4a4f6e");
-    r(192,174,2,18,"#4a4f6e");
-
-    drawShelf(24,14); drawShelf(44,14);
-    drawBoard(96,14);
-    drawCoffee(272,12);
-    drawWindow(216,14);
-
-    drawDeskRow(64,80);   // cluster A
-    drawDeskRow(208,80);  // cluster B
-
-    drawPlant(14,140); drawPlant(330,140); drawPlant(8,60);
-  }
-
-  function drawShelf(x,y){
-    r(x,y,18,30,C.metalDark);
-    r(x+1,y+1,16,28,C.metal);
-    for(let i=0;i<3;i++) r(x+1,y+2+i*9,16,2,C.metalDark);
-    r(x+3,y+5,4,4,"#c8734f"); r(x+9,y+5,3,4,"#5b7fc4");
-    r(x+3,y+14,5,4,"#4f8f5c"); r(x+10,y+14,4,4,"#d9b877");
-    r(x+4,y+23,8,4,"#8b93a6");
-  }
-  function drawBoard(x,y){
-    r(x,y,42,26,C.boardEdge);
-    r(x+2,y+2,38,22,C.white);
-    r(x+5,y+6,12,3,"#5b7fc4"); r(x+5,y+12,18,2,"#b9bfcc");
-    r(x+5,y+17,9,2,"#b9bfcc");
-    r(x+24,y+7,12,12,"#e8b87a"); r(x+24,y+13,12,6,"#c8734f");
-  }
-  function drawCoffee(x,y){
-    r(x,y,16,32,C.metalDark);
-    r(x+1,y+1,14,30,C.metal);
-    r(x+3,y+4,10,8,C.screenOff);
-    r(x+4,y+5,3,2,C.screenLit);
-    r(x+4,y+16,8,7,"#3a3f52");
-    r(x+6,y+18,4,4,"#6b4a35");
-    r(x+2,y+26,12,3,C.metalDark);
-  }
-  function drawWindow(x,y){
-    r(x,y,40,26,C.metalDark);
-    r(x+2,y+2,36,22,"#7fa8cf");
-    r(x+2,y+2,36,8,"#98bcdc");
-    r(x+19,y+2,2,22,C.metalDark);
-    r(x+2,y+18,36,6,"#6d96be");
-  }
-  function drawPlant(x,y){
-    r(x+3,y+14,10,8,C.potDark);
-    r(x+4,y+14,8,7,C.pot);
-    r(x+1,y,14,15,C.leafDark);
-    r(x+2,y+1,12,12,C.leaf);
-    r(x,y+4,3,6,C.leafDark); r(x+13,y+3,3,7,C.leafDark);
-    r(x+6,y-3,3,5,C.leaf);
-  }
-  // A back-to-back desk row: 4 tiles wide, monitors + chairs above and below.
-  function drawDeskRow(x,y){
-    r(x,y,80,4,C.oakDark);
-    r(x,y-4,80,5,C.oak);          // wood lip, upper desk
-    r(x,y+4,80,18,C.panelDark);
-    r(x+1,y+5,78,16,C.panel);
-    r(x,y+22,80,5,C.oak);         // wood lip, lower desk
-    r(x,y+27,80,3,C.oakDark);
-    // legs
-    r(x+2,y+30,3,6,C.panelDark); r(x+75,y+30,3,6,C.panelDark);
-    // monitors facing down
-    drawMonitor(x+10,y-13); drawMonitor(x+52,y-13);
-    // desk clutter
-    r(x+30,y-7,7,5,C.white); r(x+31,y-6,5,3,"#c8cede");
-    r(x+66,y-8,5,6,"#c8734f");
-    // chairs: one above (facing away), two below (facing us)
-    drawChair(x+16,y-26,true); drawChair(x+58,y-26,true);
-    drawChair(x+16,y+30,false); drawChair(x+58,y+30,false);
-  }
-  function drawMonitor(x,y){
-    r(x+5,y+11,6,2,C.metalDark);
-    r(x+7,y+8,2,4,C.metalDark);
-    r(x,y,16,9,C.metalDark);
-    r(x+1,y+1,14,7,C.screenOff);
-    r(x+2,y+2,6,2,C.screenLit);
-    r(x+2,y+5,9,1,"#4c5878");
-  }
-  function drawChair(x,y,away){
-    r(x,y+9,14,3,C.chairDark);
-    r(x+1,y+3,12,7,C.chair);
-    r(x+1,y,12,4,away?C.chairDark:C.chair);
-    r(x+5,y+12,4,3,C.chairDark);
-  }
-
-  // ── Cast ──────────────────────────────────────────────────────
-  // Corridor routing: everyone travels along row 9 (y=152), which is
-  // always clear of the desk clusters. Same idea as walkability grids.
-  const CORRIDOR = 152;
-  const SPOTS = {
-    deskA1:{x:80,y:138},  deskA2:{x:122,y:138},
-    deskB1:{x:224,y:138}, deskB2:{x:266,y:138},
-    coffee:{x:280,y:60},  window:{x:236,y:64},
-    plant:{x:26,y:150},   centre:{x:176,y:152},
-    door:{x:176,y:182}
-  };
-
-  const CAST = [
-    {name:"amanda",   hair:"#6b4a35", skin:"#e8b48f", shirt:"#e2e6f0", pants:"#5b6a9a",
-     loop:["deskA1","coffee","deskA1","centre"],
-     says:["standup in 5","who moved my chair","ok pushing now"]},
-    {name:"adam",     hair:"#2f2c3f", skin:"#c98f63", shirt:"#7b8ec9", pants:"#3f4560",
-     loop:["window","deskB2","deskB1","deskB2"],
-     says:["build's green","nice","looking at it"]},
-    {name:"dana",     hair:"#c0a060", skin:"#f0c9a4", shirt:"#d08a7a", pants:"#4a5273",
-     loop:["plant","deskA2","centre","deskB2"],
-     says:["the atlas repacked fine","54 resources now","brb"]},
-    {name:"marlinski",hair:"#4a3a2e", skin:"#dba57e", shirt:"#5fd08a", pants:"#39405c",
-     loop:["deskA2","coffee","DOOR","deskA2"],
-     says:["coffee run","anyone want one","back"]}
-  ];
-
-  const avatars = CAST.map((c,i)=>{
-    const s = SPOTS[c.loop[0]];
-    const tag = document.createElement("span");
-    tag.className = "tag"; tag.textContent = c.name;
-    overlay.appendChild(tag);
-    return {
-      ...c, x:s.x, y:s.y, dir:"down", moving:false, anim:0,
-      path:[], step:i, wait:1.2 + i*1.1, away:false, tag, bub:null, bubT:0
-    };
-  });
-
-  // ── Routing ───────────────────────────────────────────────────
-  function routeTo(a, dest){
-    const p = [];
-    if(Math.abs(a.y - CORRIDOR) > 1) p.push({x:a.x, y:CORRIDOR});
-    if(Math.abs(dest.x - a.x) > 1)   p.push({x:dest.x, y:CORRIDOR});
-    p.push({x:dest.x, y:dest.y});
-    a.path = p;
-  }
-
-  const SPEED = 23; // internal px per second
-
-  function advance(a){
-    const key = a.loop[a.step % a.loop.length];
-    a.step++;
-    if(key === "DOOR"){ routeTo(a, SPOTS.door); a.exiting = true; }
-    else { routeTo(a, SPOTS[key]); a.exiting = false; }
-  }
-
-  function updateAvatar(a, dt){
-    if(a.away){
-      a.awayT -= dt;
-      if(a.awayT <= 0){
-        a.away = false;
-        a.tag.style.display = "";
-        a.x = SPOTS.door.x; a.y = SPOTS.door.y;
-        emit("part", a.name, "#lobby-coffee_room", true);
-        emit("join", a.name, "#lobby-main_office", true);
-        advance(a);
-      }
-      return;
-    }
-    if(a.wait > 0){
-      a.wait -= dt; a.moving = false;
-      if(a.wait <= 0 && a.path.length === 0) advance(a);
-      return;
-    }
-    if(a.path.length === 0){
-      a.moving = false;
-      a.wait = 1.6 + Math.random()*3.4;
-      if(Math.random() < 0.55) say(a);
-      return;
-    }
-
-    const t = a.path[0];
-    const dx = t.x - a.x, dy = t.y - a.y;
-    const d = Math.hypot(dx,dy);
-    if(d < 1.2){
-      a.x = t.x; a.y = t.y;
-      a.path.shift();
-      if(a.path.length === 0 && a.exiting){
-        // Crossed the threshold. This is the whole mechanic.
-        a.away = true; a.awayT = 7; a.tag.style.display = "none";
-        if(a.bub){ a.bub.remove(); a.bub = null; }
-        emit("part", a.name, "#lobby-main_office", true);
-        emit("join", a.name, "#lobby-coffee_room", true);
-        a.exiting = false;
-      }
-      return;
-    }
-    const k = Math.min(1, (SPEED*dt)/d);
-    a.x += dx*k; a.y += dy*k;
-    a.moving = true;
-    a.anim += dt*7;
-    a.dir = Math.abs(dx) > Math.abs(dy) ? (dx>0?"right":"left") : (dy>0?"down":"up");
-  }
-
-  function drawAvatar(a){
-    if(a.away) return;
-    const x = Math.round(a.x) - 4;
-    const top = Math.round(a.y) - 16;
-    r(x+1, top+16, 6, 2, C.shadow);
-
-    const bob = a.moving ? (Math.floor(a.anim) % 2) : 0;
-    r(x+1, top+13, 2, bob?2:3, a.pants);
-    r(x+5, top+13, 2, bob?3:2, a.pants);
-    r(x+1, top+15, 2, 1, "#332f42");
-    r(x+5, top+15, 2, 1, "#332f42");
-
-    r(x, top+7, 8, 6, a.shirt);
-    r(x, top+8, 1, 4, a.skin);
-    r(x+7, top+8, 1, 4, a.skin);
-
-    r(x+1, top+3, 6, 4, a.skin);
-    r(x, top, 8, 4, a.hair);
-    r(x, top+3, 1, 2, a.hair);
-    r(x+7, top+3, 1, 2, a.hair);
-
-    const eye = "#2d2740";
-    if(a.dir === "down"){ r(x+2, top+5, 1, 1, eye); r(x+5, top+5, 1, 1, eye); }
-    else if(a.dir === "left"){ r(x+2, top+5, 1, 1, eye); }
-    else if(a.dir === "right"){ r(x+5, top+5, 1, 1, eye); }
-    else { r(x+1, top+3, 6, 3, a.hair); }
-  }
-
-  // ── DOM overlay: nametags + bubbles ───────────────────────────
-  function syncOverlay(){
-    const scale = cv.clientWidth / W;
-    if(!scale) return;
-    for(const a of avatars){
-      if(a.away) continue;
-      const px = a.x*scale, py = (a.y-19)*scale;
-      a.tag.style.transform = `translate(${px}px,${py}px) translateX(-50%)`;
-      if(a.bub){
-        a.bub.style.transform = `translate(${px}px,${(a.y-33)*scale}px) translateX(-50%)`;
-      }
-    }
-  }
-
-  function say(a){
-    if(a.away) return;
-    const text = a.says[Math.floor(Math.random()*a.says.length)];
-    if(a.bub) a.bub.remove();
-    const b = document.createElement("span");
-    b.className = "bub"; b.textContent = text;
-    overlay.appendChild(b);
-    a.bub = b; a.bubT = 3.6;
-    emit("msg", a.name, text);
-  }
-
-  // ── IRC log ───────────────────────────────────────────────────
-  let clock = 21*60 + 3; // minutes since midnight
   function stamp(){
-    clock += Math.random() < .35 ? 1 : 0;
+    if(Math.random() < .35) clock++;
     const h = String(Math.floor(clock/60) % 24).padStart(2,"0");
     const m = String(clock % 60).padStart(2,"0");
-    return h+":"+m;
+    return h + ":" + m;
   }
 
-  function emit(kind, nick, payload, flash){
+  function esc(t){
+    return String(t).replace(/[&<>"]/g, c =>
+      ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+  }
+
+  function line(kind, nick, payload, flash){
     const ln = document.createElement("div");
     ln.className = "ln " + kind + (flash ? " flash" : "");
     const t = document.createElement("span");
     t.className = "t"; t.textContent = stamp();
-    const b = document.createElement("span");
-    b.className = "b";
+    const bd = document.createElement("span");
+    bd.className = "b";
+    const n = '<span class="nick">' + esc(nick) + "</span>";
 
-    if(kind === "join"){
-      b.innerHTML = '&rarr; <span class="nick">'+nick+'</span> joined '+payload;
-    } else if(kind === "part"){
-      b.innerHTML = '&larr; <span class="nick">'+nick+'</span> left '+payload;
-    } else if(kind === "pm"){
-      b.innerHTML = '&lowast; PM from <span class="nick">'+nick+'</span>: '+payload;
-    } else {
-      b.innerHTML = '<span class="nick">&lt;'+nick+'&gt;</span> '+payload;
-    }
-    ln.append(t,b);
+    if(kind === "join")      bd.innerHTML = "&rarr; " + n + " joined " + esc(payload);
+    else if(kind === "part") bd.innerHTML = "&larr; " + n + " left " + esc(payload);
+    else if(kind === "pm")   bd.innerHTML = "&lowast; PM from " + n + ": " + esc(payload);
+    else                     bd.innerHTML = '<span class="nick">&lt;' + esc(nick) +
+                                            "&gt;</span> " + esc(payload);
+
+    ln.append(t, bd);
     logEl.appendChild(ln);
     while(logEl.children.length > 60) logEl.removeChild(logEl.firstChild);
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  // Seed the log so the page is never empty at rest.
-  emit("join","amanda","#lobby-main_office");
-  emit("join","adam","#lobby-main_office");
-  emit("msg","amanda","standup in 5");
-  emit("join","dana","#lobby-main_office");
-  emit("msg","adam","build's green");
-  emit("join","marlinski","#lobby-main_office");
-  emit("pm","dana","did the atlas repack?");
-
-  // ── Loop ──────────────────────────────────────────────────────
-  function frame(dt){
-    for(const a of avatars){
-      updateAvatar(a, dt);
-      if(a.bub){
-        a.bubT -= dt;
-        if(a.bubT <= 0){ a.bub.remove(); a.bub = null; }
-      }
-    }
-    drawRoom();
-    const order = avatars.slice().sort((p,q)=>p.y-q.y); // z-sort by anchor Y
-    for(const a of order) drawAvatar(a);
-    syncOverlay();
+  function count(kind, payload){
+    const here = typeof payload === "string" && payload.indexOf("coffee_room") === -1;
+    if(kind === "join" && here) present++;
+    if(kind === "part" && here) present = Math.max(0, present - 1);
+    const label = present + (present === 1 ? " user" : " users");
+    if(whoEl) whoEl.textContent = label;
+    if(popEl) popEl.textContent = present + " online";
   }
 
-  drawRoom();
-  for(const a of avatars) drawAvatar(a);
-  syncOverlay();
-
-  if(reduced){
-    // Static composed frame; the log stays as seeded.
-    window.addEventListener("resize", syncOverlay);
-  } else {
-    let last = performance.now(), run = true;
-    const io = new IntersectionObserver(es=>{ run = es[0].isIntersecting; }, {threshold:0});
-    io.observe(cv);
-    (function tick(now){
-      const dt = Math.min(0.05, (now-last)/1000);
-      last = now;
-      if(run) frame(dt);
-      requestAnimationFrame(tick);
-    })(last);
-    window.addEventListener("resize", syncOverlay);
-  }
+  window.addEventListener("openlore:irc", function(e){
+    const d = (e && e.detail) || {};
+    if(seeded){ logEl.innerHTML = ""; seeded = false; }
+    count(d.kind, d.payload);
+    line(d.kind || "msg", d.nick || "?", d.payload || "", !!d.flash);
+  });
 })();
 </script>
 </body>

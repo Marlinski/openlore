@@ -12,6 +12,7 @@
 .PHONY: install proto pack \
         studio studio-server studio-app \
         game game-server game-client \
+        landing landing-pack \
         dev kill build check clean
 
 # ─── Setup ───────────────────────────────────────────────────────
@@ -57,6 +58,16 @@ game-server:
 game-client:
 	$(MAKE) -C game client
 
+# ─── Landing (openlore.xyz) ──────────────────────────────────────
+
+# The hero runs the real game client renderer, so it needs a JS build.
+landing: pack
+	yarn workspace @openlore/landing-demo build
+
+# Re-vendor landing/pack/ from a compiled pack (after changing the world).
+landing-pack:
+	python3 landing/vendor-pack.py
+
 # ─── All together ────────────────────────────────────────────────
 
 dev:
@@ -80,6 +91,7 @@ kill:
 build: pack
 	$(MAKE) -C studio build
 	$(MAKE) -C game build
+	$(MAKE) landing
 
 # ─── Type checking ───────────────────────────────────────────────
 

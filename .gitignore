@@ -17,3 +17,6 @@ game/server/game
 
 # Data
 data/
+
+# Built by landing/demo (vite) — see landing/Dockerfile
+landing/demo.js

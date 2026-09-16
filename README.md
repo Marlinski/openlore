@@ -95,7 +95,7 @@ docker run -p 3001:3001 -v ./data/game:/data openlore-game
 docker build -f studio/Dockerfile -t openlore-studio .
 docker run -p 4000:4000 -v ./data/studio:/data openlore-studio
 
-# Landing page (static nginx, serves openlore.xyz)
+# Landing page (nginx; builds the hero demo bundle in a node stage)
 docker build -f landing/Dockerfile -t openlore-landing .
 docker run -p 8080:80 openlore-landing
 ```
@@ -129,8 +129,11 @@ openlore/
 │   ├── client/             # Browser game client (Preact + PixiJS + Vite)
 │   ├── server/             # Authoritative game server (Go, WebSocket)
 │   └── Dockerfile
-├── landing/                # Static landing page for openlore.xyz
-│   ├── index.html          # Self-contained: inline CSS + canvas office demo
+├── landing/                # Landing page for openlore.xyz
+│   ├── index.html          # Page shell — inline CSS, no framework
+│   ├── demo/               # Hero: the real game client, driven locally
+│   ├── pack/               # Vendored .offpack contents the hero renders
+│   ├── vendor-pack.py      # Regenerates landing/pack/ from a compiled pack
 │   ├── nginx.conf
 │   └── Dockerfile
 ├── data/                   # Runtime data (gitignored)
@@ -183,6 +186,26 @@ openlore/
 - Tag-based character resource resolution at runtime (state:/dir: tags)
 - WASD/arrow movement, IRC chat, private messages, door transitions
 
+## Landing Page
+
+`landing/` serves **openlore.xyz**. The hero is not a video or a mockup — it runs
+the *actual* game client: `landing/demo/` imports `RoomScene` and `Avatar`
+directly from `game/client/src/scene/`, loads a real compiled pack from
+`landing/pack/`, and feeds the avatars the same `applyServerPosition()` calls the
+game server pushes over the WebSocket at ~15/sec. Real atlas art, real room
+layout, real walkability grid, real z-sorting, real character animation.
+
+The only substitution is the network: instead of a `Connection`, a small local
+simulation walks the avatars with BFS over the room's own walkability grid, and
+emits `openlore:irc` events that drive the page's IRC panel — including the
+PART/JOIN pair when an avatar crosses a door.
+
+`landing/pack/` is vendored because `data/` is gitignored. Regenerate it with
+`make landing-pack` after changing the world. The script converts protojson enum
+*names* to *numbers*, because the game server marshals with
+`UseEnumNumbers: true` and the client compares against the numeric TS enum — a
+pack with string enums renders nothing.
+
 ## Data Pipeline
 
 1. **Author** content in Studio (tilesets, resources, composites, rooms)
@@ -201,6 +224,8 @@ openlore/
 | `make game` | Start Game (server + client) |
 | `make dev` | Start all services in parallel |
 | `make build` | Production build (Go binaries + frontend bundles) |
+| `make landing` | Build the landing page hero bundle |
+| `make landing-pack` | Re-vendor `landing/pack/` from a compiled pack |
 | `make check` | Lint protobuf, type-check Go + TypeScript |
 | `make clean` | Remove all build artifacts |
 
