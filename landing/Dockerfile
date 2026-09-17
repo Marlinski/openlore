@@ -34,6 +34,7 @@ COPY landing/nginx.conf /etc/nginx/conf.d/default.conf
 
 COPY landing/index.html   /usr/share/nginx/html/index.html
 COPY landing/favicon.svg  /usr/share/nginx/html/favicon.svg
+COPY landing/SKILL.md     /usr/share/nginx/html/SKILL.md
 COPY landing/studio.png   /usr/share/nginx/html/studio.png
 COPY landing/og.png       /usr/share/nginx/html/og.png
 COPY landing/pack/        /usr/share/nginx/html/pack/

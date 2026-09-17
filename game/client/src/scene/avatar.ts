@@ -209,7 +209,11 @@ export class Avatar {
   ): void {
     this.targetX = x;
     this.targetY = y;
-    this.direction = direction;
+    // Must go through setDirection: assigning the field directly skips
+    // syncResource(), so a remote avatar kept whichever sprite it had when it
+    // started walking and never turned. setMoving only re-resolves when the
+    // family changes (idle <-> walk), which hides the problem mid-walk.
+    this.setDirection(direction);
     this.setMoving(moving);
   }
 
