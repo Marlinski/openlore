@@ -49,6 +49,11 @@ RUN CGO_ENABLED=0 go build -o /studio ./cmd/studio
 
 FROM alpine:3.20
 
+# Links the GHCR package to this repository. Without it the package is
+# unowned and the repo's GITHUB_TOKEN cannot push to it, which is why CI
+# failed with permission_denied: write_package.
+LABEL org.opencontainers.image.source="https://github.com/Marlinski/openlore"
+
 RUN apk add --no-cache ca-certificates
 
 COPY --from=go-build /studio /usr/local/bin/studio

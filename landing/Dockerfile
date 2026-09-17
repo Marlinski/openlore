@@ -30,6 +30,11 @@ RUN yarn workspace @openlore/landing-demo build
 
 FROM nginx:1.27-alpine
 
+# Links the GHCR package to this repository. Without it the package is
+# unowned and the repo's GITHUB_TOKEN cannot push to it, which is why CI
+# failed with permission_denied: write_package.
+LABEL org.opencontainers.image.source="https://github.com/Marlinski/openlore"
+
 COPY landing/nginx.conf /etc/nginx/conf.d/default.conf
 
 COPY landing/index.html   /usr/share/nginx/html/index.html
